@@ -91,6 +91,19 @@ input:focus,textarea:focus{border-color:var(--amber)}textarea{min-height:70px;re
 .ben-photo-box .placeholder{font-size:32px;margin-bottom:6px}
 .ben-photo-box .caption{font-size:12px;color:var(--muted);font-weight:500}
 .ben-photo-box.captured .caption{color:var(--green-dark)}
+/* Viewfinder overlay for serial scanning */
+.scan-overlay{position:fixed;inset:0;z-index:999;background:rgba(0,0,0,.85);display:flex;flex-direction:column;align-items:center;justify-content:center;color:#fff;padding:20px}
+.scan-overlay .frame{width:280px;height:120px;border:3px solid var(--amber);border-radius:12px;position:relative;margin:16px 0}
+.scan-overlay .frame::before{content:"";position:absolute;inset:4px;border:1px dashed rgba(245,158,11,.4);border-radius:8px}
+.scan-overlay .corner{position:absolute;width:20px;height:20px;border-color:var(--amber);border-style:solid}
+.scan-overlay .tl{top:-2px;left:-2px;border-width:3px 0 0 3px;border-radius:8px 0 0 0}
+.scan-overlay .tr{top:-2px;right:-2px;border-width:3px 3px 0 0;border-radius:0 8px 0 0}
+.scan-overlay .bl{bottom:-2px;left:-2px;border-width:0 0 3px 3px;border-radius:0 0 0 8px}
+.scan-overlay .br{bottom:-2px;right:-2px;border-width:0 3px 3px 0;border-radius:0 0 8px 0}
+.scan-overlay h3{font-size:16px;font-weight:700;margin-bottom:4px}
+.scan-overlay p{font-size:13px;color:#94a3b8;text-align:center;line-height:1.4}
+.scan-overlay .scan-btn{margin-top:16px;padding:14px 40px;border-radius:50px;border:none;background:linear-gradient(135deg,var(--amber),var(--amber-dark));color:#fff;font-size:15px;font-weight:700;cursor:pointer;font-family:inherit}
+.scan-overlay .scan-cancel{margin-top:10px;padding:8px 20px;border:1px solid #475569;border-radius:8px;background:transparent;color:#94a3b8;font-size:13px;cursor:pointer;font-family:inherit}
 </style>
 </head>
 <body>
@@ -412,7 +425,18 @@ function extractCoordsFromLink(e){
    ═══════════════════════════════════════ */
 function startScan(inputId,fieldKey){
   var fileId;if(inputId.startsWith("panelSerial"))fileId="filePanel"+inputId.replace("panelSerial","");
-  else if(inputId==="inverterSerial")fileId="fileInverter";$(fileId).click();
+  else if(inputId==="inverterSerial")fileId="fileInverter";
+  // Show viewfinder overlay
+  var ov=document.createElement("div");ov.className="scan-overlay";ov.id="scanOverlay";
+  ov.innerHTML='<h3>📷 Scan Serial Number</h3>'
+    +'<p>Position the serial number<br>inside the frame, then tap Capture</p>'
+    +'<div class="frame"><div class="corner tl"></div><div class="corner tr"></div><div class="corner bl"></div><div class="corner br"></div></div>'
+    +'<p style="font-size:11px;color:#fbbf24">Only the center of the photo is read.<br>Fill the frame with just the serial number.</p>'
+    +'<button class="scan-btn" id="scanCapBtn">📷 Capture</button>'
+    +'<button class="scan-cancel" id="scanCanBtn">Cancel</button>';
+  document.body.appendChild(ov);
+  $("scanCapBtn").onclick=function(){ov.remove();$(fileId).click()};
+  $("scanCanBtn").onclick=function(){ov.remove()};
 }
 /* ═══════════════════════════════════════
    GEMINI VISION OCR
@@ -424,13 +448,18 @@ async function compressForOCR(file){
     var img=new Image();
     img.onload=function(){
       var c=document.createElement("canvas");
-      // Scale to max 1200px for faster upload but enough detail for OCR
-      var scale=Math.min(1200/img.width,1200/img.height,1);
-      c.width=img.width*scale;c.height=img.height*scale;
+      // Crop to center 60% of the image — removes peripheral text
+      var cropRatio=0.6;
+      var sx=img.width*(1-cropRatio)/2;
+      var sy=img.height*(1-cropRatio)/2;
+      var sw=img.width*cropRatio;
+      var sh=img.height*cropRatio;
+      // Scale cropped region to max 1200px
+      var scale=Math.min(1200/sw,1200/sh,1);
+      c.width=sw*scale;c.height=sh*scale;
       var ctx=c.getContext("2d");
-      // Increase contrast for label reading
       ctx.filter="contrast(1.4) brightness(1.1)";
-      ctx.drawImage(img,0,0,c.width,c.height);
+      ctx.drawImage(img,sx,sy,sw,sh,0,0,c.width,c.height);
       c.toBlob(function(blob){
         var reader=new FileReader();
         reader.onload=function(){resolve(reader.result.split(",")[1])};
