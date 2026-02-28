@@ -419,6 +419,28 @@ function startScan(inputId,fieldKey){
    ═══════════════════════════════════════ */
 var GEMINI_API_KEY = "AIzaSyCjj6u8nl5mPYMvPtNAAUkqKMmMRQzYbpI";
 
+async function compressForOCR(file){
+  return new Promise(function(resolve){
+    var img=new Image();
+    img.onload=function(){
+      var c=document.createElement("canvas");
+      // Scale to max 1200px for faster upload but enough detail for OCR
+      var scale=Math.min(1200/img.width,1200/img.height,1);
+      c.width=img.width*scale;c.height=img.height*scale;
+      var ctx=c.getContext("2d");
+      // Increase contrast for label reading
+      ctx.filter="contrast(1.4) brightness(1.1)";
+      ctx.drawImage(img,0,0,c.width,c.height);
+      c.toBlob(function(blob){
+        var reader=new FileReader();
+        reader.onload=function(){resolve(reader.result.split(",")[1])};
+        reader.readAsDataURL(blob);
+      },"image/jpeg",0.9);
+    };
+    img.src=URL.createObjectURL(file);
+  });
+}
+
 async function handleScan(fileInput,inputId,fieldKey){
   var file=fileInput.files&&fileInput.files[0];if(!file)return;
   photos[fieldKey]={file:file,serialNumber:""};updatePhotoCount();
@@ -427,44 +449,82 @@ async function handleScan(fileInput,inputId,fieldKey){
   var camId=inputId.startsWith("panelSerial")?"camPanel"+inputId.replace("panelSerial",""):"camInverter";
   $(thumbId).style.display="flex";$(imgId).src=URL.createObjectURL(file);
   $(camId).className="cam-btn scanning";$(camId).textContent="⏳";
+  $(inputId).placeholder="Reading label...";
+
+  // Store for retry
+  window._lastScan={file:file,inputId:inputId,fieldKey:fieldKey,camId:camId};
 
   try{
-    var b64=await fileToBase64(file);
+    if(GEMINI_API_KEY==="PASTE_YOUR_GEMINI_API_KEY_HERE"){
+      throw new Error("API key not configured");
+    }
+    var b64=await compressForOCR(file);
     var res=await fetch("https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key="+GEMINI_API_KEY,{
       method:"POST",
       headers:{"Content-Type":"application/json"},
       body:JSON.stringify({
         contents:[{parts:[
-          {inlineData:{mimeType:file.type||"image/jpeg",data:b64}},
-          {text:"This is a photo of a solar inverter or solar panel serial number label. Extract ALL serial numbers and model numbers visible on this label. Return ONLY the serial/model numbers, one per line, nothing else. No explanations. If you see a barcode number, include that too."}
-        ]}]
+          {inlineData:{mimeType:"image/jpeg",data:b64}},
+          {text:"You are reading a solar equipment label. This is either a Selec inverter label or a ReNew/Waaree solar panel nameplate.\n\nExtract the SERIAL NUMBER and MODEL NUMBER from this label.\n\nRules:\n- Serial numbers are typically 10-20 characters, alphanumeric with dashes\n- Look for fields labeled: Serial No, Sr. No, S/N, Sl. No, Barcode number\n- Also extract: Model No, Part No, Rating\n- Ignore: voltage, current, frequency, weight, dimensions\n- Return EACH number on its own line\n- Format: LABEL: VALUE\n- Example:\n  Serial No: SEL-INV-2024-00847\n  Model No: MAGNUS-2K-1PH\n\nIf you cannot read the label clearly, return: UNREADABLE\nDo NOT guess or make up numbers."}
+        ]}],
+        generationConfig:{temperature:0.1,maxOutputTokens:300}
       })
     });
+
+    if(!res.ok){
+      var errText=await res.text();
+      throw new Error("API "+res.status+": "+errText.substring(0,100));
+    }
+
     var data=await res.json();
     var text=(data.candidates&&data.candidates[0]&&data.candidates[0].content&&data.candidates[0].content.parts&&data.candidates[0].content.parts[0]&&data.candidates[0].content.parts[0].text)||"";
-    var lines=text.split("\n").map(function(l){return l.trim()}).filter(function(l){return l.length>=4&&/[A-Za-z0-9]/.test(l)});
-    // Remove markdown artifacts
-    lines=lines.filter(function(l){return !l.startsWith("*")&&!l.startsWith("#")&&!l.startsWith("-")&&l.indexOf("serial")===- 1&&l.indexOf("Serial")===-1&&l.indexOf("number")===-1&&l.indexOf("Number")===-1&&l.indexOf("Model")===-1&&l.indexOf("model")===-1||/^[A-Za-z0-9\-\/\.]+$/.test(l)});
-    // Clean: keep only lines that look like serial numbers (alphanumeric with optional dashes/dots)
-    var serials=lines.filter(function(l){return /^[A-Za-z0-9\-\/\.\s]{4,}$/.test(l)});
-    if(serials.length===0)serials=lines; // fallback to all lines
 
-    if(serials.length===1){
-      $(inputId).value=serials[0];photos[fieldKey].serialNumber=serials[0];
+    if(text.indexOf("UNREADABLE")!==-1){
+      $(camId).className="cam-btn";$(camId).textContent="🔄";
+      $(inputId).placeholder="AI couldn't read — retake or type";$(inputId).focus();
+      fileInput.value="";return;
+    }
+
+    // Parse "Label: Value" format
+    var lines=text.split("\n").map(function(l){return l.trim()}).filter(function(l){return l.length>=4});
+    var parsed=[];
+    lines.forEach(function(line){
+      // Try "Label: Value" format
+      var m=line.match(/^(.+?):\s*(.+)$/);
+      if(m&&m[2].length>=4){
+        parsed.push({label:m[1].trim(),value:m[2].trim()});
+      } else if(/^[A-Za-z0-9][\w\-\/\.]{3,}$/.test(line.replace(/\s/g,""))){
+        parsed.push({label:"Serial",value:line});
+      }
+    });
+
+    if(parsed.length===0){
+      // Fallback: try to find anything that looks like a serial
+      var anySerial=text.match(/[A-Z]{2,4}[\-\/]?[A-Z0-9]{3,}[\-\/]?[0-9]{3,}/gi);
+      if(anySerial){anySerial.forEach(function(s){parsed.push({label:"Serial",value:s})})}
+    }
+
+    if(parsed.length===1){
+      $(inputId).value=parsed[0].value;photos[fieldKey].serialNumber=parsed[0].value;
       $(camId).className="cam-btn done";$(camId).textContent="✅";
-    } else if(serials.length>1){
-      showModal(serials,inputId,fieldKey,camId);
+    } else if(parsed.length>1){
+      // Show modal with labeled options
+      var cands=parsed.map(function(p){return p.label+": "+p.value});
+      showModal(cands,inputId,fieldKey,camId);
     } else {
-      // Gemini couldn't read it either
-      $(camId).className="cam-btn done";$(camId).textContent="✅";
-      $(inputId).focus();$(inputId).placeholder="Type serial from label";
+      $(camId).className="cam-btn";$(camId).textContent="🔄";
+      $(inputId).placeholder="AI couldn't read — retake or type";$(inputId).focus();
     }
   }catch(e){
-    // API error — fall back to manual
-    $(camId).className="cam-btn done";$(camId).textContent="✅";
-    $(inputId).focus();$(inputId).placeholder="Type serial from label";
+    console.error("Gemini OCR error:",e.message);
+    $(camId).className="cam-btn";$(camId).textContent="🔄";
+    if(e.message.indexOf("API key")!==-1){
+      $(inputId).placeholder="⚠ Gemini API key not set!";
+    } else {
+      $(inputId).placeholder="⚠ "+e.message.substring(0,40)+" — type manually";
+    }
+    $(inputId).focus();
   }
-  // Save typed value to photo record
   $(inputId).oninput=function(){photos[fieldKey].serialNumber=$(inputId).value.trim()};
   fileInput.value="";
 }
@@ -474,9 +534,12 @@ async function handleScan(fileInput,inputId,fieldKey){
    ═══════════════════════════════════════ */
 function showModal(cands,inputId,fieldKey,camId){
   var body=$("modalBody");body.innerHTML="";
-  if(cands.length===0){body.innerHTML='<p class="modal-empty">No serial numbers detected. Try better lighting.</p>';$(camId).className="cam-btn";$(camId).textContent="📷"}
+  if(cands.length===0){body.innerHTML='<p class="modal-empty">Could not read label. Try better lighting or closer photo.</p>';$(camId).className="cam-btn";$(camId).textContent="🔄"}
   else cands.forEach(function(t){var b=document.createElement("button");b.className="modal-option";b.textContent=t;
-    b.onclick=function(){$(inputId).value=t;photos[fieldKey].serialNumber=t;$(camId).className="cam-btn done";$(camId).textContent="✅";closeModal()};body.appendChild(b)});
+    b.onclick=function(){
+      // Extract value part if "Label: Value" format
+      var val=t;var m=t.match(/^.+?:\s*(.+)$/);if(m)val=m[1];
+      $(inputId).value=val;photos[fieldKey].serialNumber=val;$(camId).className="cam-btn done";$(camId).textContent="✅";closeModal()};body.appendChild(b)});
   $("modal").style.display="flex";
 }
 function closeModal(){$("modal").style.display="none"}
@@ -548,8 +611,9 @@ async function handleSubmit(){
     fd.append(ENTRY.subdivision,data.subdivision);fd.append(ENTRY.section,data.section);
     fd.append(ENTRY.distribution,data.distribution);fd.append(ENTRY.coordinates,data.coordinates);
     fd.append(ENTRY.vendor,data.vendor);fd.append(ENTRY.teamLeader,data.teamLeader);fd.append(ENTRY.teamSize,data.teamSize);
-    fd.append(ENTRY.startDate+"_year",data.startDate?data.startDate.split("-")[0]:"");fd.append(ENTRY.startDate+"_month",data.startDate?String(parseInt(data.startDate.split("-")[1])):"");fd.append(ENTRY.startDate+"_day",data.startDate?String(parseInt(data.startDate.split("-")[2])):"");
-    fd.append(ENTRY.completionDate+"_year",data.completionDate?data.completionDate.split("-")[0]:"");fd.append(ENTRY.completionDate+"_month",data.completionDate?String(parseInt(data.completionDate.split("-")[1])):"");fd.append(ENTRY.completionDate+"_day",data.completionDate?String(parseInt(data.completionDate.split("-")[2])):"");
+    // Date fields: Google Forms DateItem needs _year, _month, _day suffixes
+    if(data.startDate){var sd=data.startDate.split("-");fd.append(ENTRY.startDate+"_year",sd[0]);fd.append(ENTRY.startDate+"_month",String(parseInt(sd[1])));fd.append(ENTRY.startDate+"_day",String(parseInt(sd[2])))}
+    if(data.completionDate){var cd=data.completionDate.split("-");fd.append(ENTRY.completionDate+"_year",cd[0]);fd.append(ENTRY.completionDate+"_month",String(parseInt(cd[1])));fd.append(ENTRY.completionDate+"_day",String(parseInt(cd[2])))}
     fd.append(ENTRY.capacity,data.capacity);fd.append(ENTRY.inverterMake,data.inverterMake);fd.append(ENTRY.inverterSerial,data.inverterSerial);
     fd.append(ENTRY.panelMake,data.panelMake);fd.append(ENTRY.panelCapacity,data.panelCapacity);
     fd.append(ENTRY.panelSerial1,data.panelSerial1);fd.append(ENTRY.panelSerial2,data.panelSerial2);
@@ -600,8 +664,8 @@ async function retryQueue(){
       fd.append(ENTRY.aadhar,d.aadhar);fd.append(ENTRY.phone,d.phone);fd.append(ENTRY.address,d.address);
       fd.append(ENTRY.subdivision,d.subdivision);fd.append(ENTRY.section,d.section);fd.append(ENTRY.distribution,d.distribution);fd.append(ENTRY.coordinates,d.coordinates);
       fd.append(ENTRY.vendor,d.vendor);fd.append(ENTRY.teamLeader,d.teamLeader);fd.append(ENTRY.teamSize,d.teamSize);
-      fd.append(ENTRY.startDate+"_year",d.startDate?d.startDate.split("-")[0]:"");fd.append(ENTRY.startDate+"_month",d.startDate?String(parseInt(d.startDate.split("-")[1])):"");fd.append(ENTRY.startDate+"_day",d.startDate?String(parseInt(d.startDate.split("-")[2])):"");
-      fd.append(ENTRY.completionDate+"_year",d.completionDate?d.completionDate.split("-")[0]:"");fd.append(ENTRY.completionDate+"_month",d.completionDate?String(parseInt(d.completionDate.split("-")[1])):"");fd.append(ENTRY.completionDate+"_day",d.completionDate?String(parseInt(d.completionDate.split("-")[2])):"");
+      if(d.startDate){var sd=d.startDate.split("-");fd.append(ENTRY.startDate+"_year",sd[0]);fd.append(ENTRY.startDate+"_month",String(parseInt(sd[1])));fd.append(ENTRY.startDate+"_day",String(parseInt(sd[2])))}
+      if(d.completionDate){var cd=d.completionDate.split("-");fd.append(ENTRY.completionDate+"_year",cd[0]);fd.append(ENTRY.completionDate+"_month",String(parseInt(cd[1])));fd.append(ENTRY.completionDate+"_day",String(parseInt(cd[2])))}
       fd.append(ENTRY.capacity,d.capacity);fd.append(ENTRY.inverterMake,d.inverterMake);fd.append(ENTRY.inverterSerial,d.inverterSerial);
       fd.append(ENTRY.panelMake,d.panelMake);fd.append(ENTRY.panelCapacity,d.panelCapacity);
       fd.append(ENTRY.panelSerial1,d.panelSerial1);fd.append(ENTRY.panelSerial2,d.panelSerial2);
