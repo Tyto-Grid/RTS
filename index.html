@@ -126,7 +126,7 @@ var ENTRY = {
   panelSerial3:    "entry.784990812",
   panelSerial4:    "entry.1158816339",
   discomMeter:     "entry.503874253",
-  checklist:       " entry.1216148611",
+  checklist:       "entry.1216148611",
   remarks:         "entry.997271562",
   photoFolder:     "entry.1881776168",
 };
@@ -152,7 +152,7 @@ var PHOTO_UPLOAD_URL = "https://script.google.com/macros/s/AKfycbydp1BIBKJB7wyeN
     </div>
     <div id="netBadge" class="badge badge-online"><span class="badge-dot" style="background:#4ade80"></span> Online</div>
   </div>
-  <div class="hint"><span style="font-size:16px">📷</span>Scan serial labels with camera · Beneficiary photos upload to Google Drive organized by DT → ESN</div>
+  <div class="hint"><span style="font-size:16px">📷</span>AI reads serial labels automatically (Gemini Vision) · Beneficiary photos upload to Google Drive organized by DT → ESN</div>
   <div id="queueBanner" class="queue-banner" style="display:none"><span id="queueCount"></span><button onclick="retryQueue()">Sync Now</button></div>
 </div>
 
@@ -298,8 +298,7 @@ var PHOTO_UPLOAD_URL = "https://script.google.com/macros/s/AKfycbydp1BIBKJB7wyeN
 <button class="submit-btn idle" id="submitBtn" onclick="handleSubmit()">Submit Installation Record</button>
 <p class="footer">TytoGrid · Solar Vista · v2.0</p>
 
-<!-- Tesseract.js -->
-<script src="https://cdnjs.cloudflare.com/ajax/libs/tesseract.js/5.1.1/tesseract.min.js"></script>
+<!-- Serial photos captured for Drive upload, manual serial entry -->
 
 <script>
 /* ═══════════════════════════════════════
@@ -415,6 +414,11 @@ function startScan(inputId,fieldKey){
   var fileId;if(inputId.startsWith("panelSerial"))fileId="filePanel"+inputId.replace("panelSerial","");
   else if(inputId==="inverterSerial")fileId="fileInverter";$(fileId).click();
 }
+/* ═══════════════════════════════════════
+   GEMINI VISION OCR
+   ═══════════════════════════════════════ */
+var GEMINI_API_KEY = "AIzaSyCjj6u8nl5mPYMvPtNAAUkqKMmMRQzYbpI";
+
 async function handleScan(fileInput,inputId,fieldKey){
   var file=fileInput.files&&fileInput.files[0];if(!file)return;
   photos[fieldKey]={file:file,serialNumber:""};updatePhotoCount();
@@ -423,15 +427,45 @@ async function handleScan(fileInput,inputId,fieldKey){
   var camId=inputId.startsWith("panelSerial")?"camPanel"+inputId.replace("panelSerial",""):"camInverter";
   $(thumbId).style.display="flex";$(imgId).src=URL.createObjectURL(file);
   $(camId).className="cam-btn scanning";$(camId).textContent="⏳";
+
   try{
-    var w=await Tesseract.createWorker("eng",1,{logger:function(){}});
-    await w.setParameters({tessedit_char_whitelist:"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-./: "});
-    var r=await w.recognize(file);await w.terminate();var text=r.data.text||"";
-    var lines=text.split("\n").map(function(l){return l.trim()}).filter(function(l){return l.length>=4});
-    var serials=lines.filter(function(l){return /[A-Za-z0-9]{6,}/.test(l.replace(/[\s-]/g,""))});
-    if(serials.length===1){$(inputId).value=serials[0];photos[fieldKey].serialNumber=serials[0];$(camId).className="cam-btn done";$(camId).textContent="✅"}
-    else showModal(serials.length>1?serials:lines.length>0?lines:[],inputId,fieldKey,camId);
-  }catch(e){$(camId).className="cam-btn";$(camId).textContent="📷"}
+    var b64=await fileToBase64(file);
+    var res=await fetch("https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key="+GEMINI_API_KEY,{
+      method:"POST",
+      headers:{"Content-Type":"application/json"},
+      body:JSON.stringify({
+        contents:[{parts:[
+          {inlineData:{mimeType:file.type||"image/jpeg",data:b64}},
+          {text:"This is a photo of a solar inverter or solar panel serial number label. Extract ALL serial numbers and model numbers visible on this label. Return ONLY the serial/model numbers, one per line, nothing else. No explanations. If you see a barcode number, include that too."}
+        ]}]
+      })
+    });
+    var data=await res.json();
+    var text=(data.candidates&&data.candidates[0]&&data.candidates[0].content&&data.candidates[0].content.parts&&data.candidates[0].content.parts[0]&&data.candidates[0].content.parts[0].text)||"";
+    var lines=text.split("\n").map(function(l){return l.trim()}).filter(function(l){return l.length>=4&&/[A-Za-z0-9]/.test(l)});
+    // Remove markdown artifacts
+    lines=lines.filter(function(l){return !l.startsWith("*")&&!l.startsWith("#")&&!l.startsWith("-")&&l.indexOf("serial")===- 1&&l.indexOf("Serial")===-1&&l.indexOf("number")===-1&&l.indexOf("Number")===-1&&l.indexOf("Model")===-1&&l.indexOf("model")===-1||/^[A-Za-z0-9\-\/\.]+$/.test(l)});
+    // Clean: keep only lines that look like serial numbers (alphanumeric with optional dashes/dots)
+    var serials=lines.filter(function(l){return /^[A-Za-z0-9\-\/\.\s]{4,}$/.test(l)});
+    if(serials.length===0)serials=lines; // fallback to all lines
+
+    if(serials.length===1){
+      $(inputId).value=serials[0];photos[fieldKey].serialNumber=serials[0];
+      $(camId).className="cam-btn done";$(camId).textContent="✅";
+    } else if(serials.length>1){
+      showModal(serials,inputId,fieldKey,camId);
+    } else {
+      // Gemini couldn't read it either
+      $(camId).className="cam-btn done";$(camId).textContent="✅";
+      $(inputId).focus();$(inputId).placeholder="Type serial from label";
+    }
+  }catch(e){
+    // API error — fall back to manual
+    $(camId).className="cam-btn done";$(camId).textContent="✅";
+    $(inputId).focus();$(inputId).placeholder="Type serial from label";
+  }
+  // Save typed value to photo record
+  $(inputId).oninput=function(){photos[fieldKey].serialNumber=$(inputId).value.trim()};
   fileInput.value="";
 }
 
@@ -514,7 +548,8 @@ async function handleSubmit(){
     fd.append(ENTRY.subdivision,data.subdivision);fd.append(ENTRY.section,data.section);
     fd.append(ENTRY.distribution,data.distribution);fd.append(ENTRY.coordinates,data.coordinates);
     fd.append(ENTRY.vendor,data.vendor);fd.append(ENTRY.teamLeader,data.teamLeader);fd.append(ENTRY.teamSize,data.teamSize);
-    fd.append(ENTRY.startDate,data.startDate);fd.append(ENTRY.completionDate,data.completionDate);
+    fd.append(ENTRY.startDate+"_year",data.startDate?data.startDate.split("-")[0]:"");fd.append(ENTRY.startDate+"_month",data.startDate?String(parseInt(data.startDate.split("-")[1])):"");fd.append(ENTRY.startDate+"_day",data.startDate?String(parseInt(data.startDate.split("-")[2])):"");
+    fd.append(ENTRY.completionDate+"_year",data.completionDate?data.completionDate.split("-")[0]:"");fd.append(ENTRY.completionDate+"_month",data.completionDate?String(parseInt(data.completionDate.split("-")[1])):"");fd.append(ENTRY.completionDate+"_day",data.completionDate?String(parseInt(data.completionDate.split("-")[2])):"");
     fd.append(ENTRY.capacity,data.capacity);fd.append(ENTRY.inverterMake,data.inverterMake);fd.append(ENTRY.inverterSerial,data.inverterSerial);
     fd.append(ENTRY.panelMake,data.panelMake);fd.append(ENTRY.panelCapacity,data.panelCapacity);
     fd.append(ENTRY.panelSerial1,data.panelSerial1);fd.append(ENTRY.panelSerial2,data.panelSerial2);
@@ -565,7 +600,8 @@ async function retryQueue(){
       fd.append(ENTRY.aadhar,d.aadhar);fd.append(ENTRY.phone,d.phone);fd.append(ENTRY.address,d.address);
       fd.append(ENTRY.subdivision,d.subdivision);fd.append(ENTRY.section,d.section);fd.append(ENTRY.distribution,d.distribution);fd.append(ENTRY.coordinates,d.coordinates);
       fd.append(ENTRY.vendor,d.vendor);fd.append(ENTRY.teamLeader,d.teamLeader);fd.append(ENTRY.teamSize,d.teamSize);
-      fd.append(ENTRY.startDate,d.startDate);fd.append(ENTRY.completionDate,d.completionDate);
+      fd.append(ENTRY.startDate+"_year",d.startDate?d.startDate.split("-")[0]:"");fd.append(ENTRY.startDate+"_month",d.startDate?String(parseInt(d.startDate.split("-")[1])):"");fd.append(ENTRY.startDate+"_day",d.startDate?String(parseInt(d.startDate.split("-")[2])):"");
+      fd.append(ENTRY.completionDate+"_year",d.completionDate?d.completionDate.split("-")[0]:"");fd.append(ENTRY.completionDate+"_month",d.completionDate?String(parseInt(d.completionDate.split("-")[1])):"");fd.append(ENTRY.completionDate+"_day",d.completionDate?String(parseInt(d.completionDate.split("-")[2])):"");
       fd.append(ENTRY.capacity,d.capacity);fd.append(ENTRY.inverterMake,d.inverterMake);fd.append(ENTRY.inverterSerial,d.inverterSerial);
       fd.append(ENTRY.panelMake,d.panelMake);fd.append(ENTRY.panelCapacity,d.panelCapacity);
       fd.append(ENTRY.panelSerial1,d.panelSerial1);fd.append(ENTRY.panelSerial2,d.panelSerial2);
