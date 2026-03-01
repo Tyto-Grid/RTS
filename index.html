@@ -112,36 +112,36 @@ input:focus,textarea:focus{border-color:var(--amber)}textarea{min-height:70px;re
   CONFIGURATION — PASTE YOUR VALUES HERE
 ═══════════════════════════════════════════════════════ -->
 <script>
-var FORM_URL = "https://docs.google.com/forms/d/e/1FAIpQLSdeqWd2ffU6ZQkjn5H0vhHTlkbEveB2zBj9gSySaNx-LuiCOQ/formResponse";
+var FORM_URL = "https://docs.google.com/forms/d/e/1FAIpQLSeiKmNStLAem7VVcPcTVvkesw9yckavmOBtiBFcyCg1NrUYDA/formResponse";
 
 var ENTRY = {
-  esn:             "entry.895006070",
-  beneficiaryName: "entry.1374841033",
-  aadhar:          "entry.1934288730",
-  phone:           "entry.262931280",
-  address:         "entry.562978470",
-  subdivision:     "entry.801340772",
-  section:         "entry.1226680581",
-  distribution:    "entry.1314504349",
-  coordinates:     "entry.374374415",
-  vendor:          "entry.258114890",
-  teamLeader:      "entry.1705238534",
-  teamSize:        "entry.1884703520",
-  startDate:       "entry.1070391730",
-  completionDate:  "entry.221500865",
-  capacity:        "entry.1786267987",
-  inverterMake:    "entry.279133313",
-  inverterSerial:  "entry.473328046",
-  panelMake:       "entry.419045455",
-  panelCapacity:   "entry.2005135365",
-  panelSerial1:    "entry.1976300107",
-  panelSerial2:    "entry.282321329",
-  panelSerial3:    "entry.784990812",
-  panelSerial4:    "entry.1158816339",
-  discomMeter:     "entry.503874253",
-  checklist:       "entry.1216148611",
-  remarks:         "entry.997271562",
-  photoFolder:     "entry.1881776168",
+  esn:             "entry.689924215",
+  beneficiaryName: "entry.1718426176",
+  aadhar:          "entry.549579580",
+  phone:           "entry.337980216",
+  address:         "entry.1402187406",
+  subdivision:     "entry.498756242",
+  section:         "entry.635864522",
+  distribution:    "entry.1827026408",
+  coordinates:     "entry.1562969410",
+  vendor:          "entry.970931647",
+  teamLeader:      "entry.2064217194",
+  teamSize:        "entry.95229692",
+  startDate:       "entry.774300059",
+  completionDate:  "entry.381603737",
+  capacity:        "entry.129651274",
+  inverterMake:    "entry.2096192693",
+  inverterSerial:  "entry.1481272964",
+  panelMake:       "entry.728563625",
+  panelCapacity:   "entry.811644159",
+  panelSerial1:    "entry.1093362333",
+  panelSerial2:    "entry.1788561133",
+  panelSerial3:    "entry.666073999",
+  panelSerial4:    "entry.1169108856",
+  discomMeter:     "entry.2025858572",
+  checklist:       "entry.809334136",
+  remarks:         "entry.804819832",
+  photoFolder:     "entry.1856209891",
 };
 
 var PHOTO_UPLOAD_URL = "https://script.google.com/macros/s/AKfycbydp1BIBKJB7wyeNUoiH5aYioZvwZ9nFsXv3acWR3-coFm04F8wyFCQl_DZdSd8WckF/exec";
@@ -484,7 +484,7 @@ async function handleScan(fileInput,inputId,fieldKey){
   window._lastScan={file:file,inputId:inputId,fieldKey:fieldKey,camId:camId};
 
   try{
-    if(GEMINI_API_KEY==="PASTE_YOUR_GEMINI_API_KEY_HERE"){
+    if(GEMINI_API_KEY==="AIzaSyA2RXE_CG2PyRX2vp2PNKNtVos8hWk-s5M"){
       throw new Error("API key not configured");
     }
     var b64=await compressForOCR(file);
@@ -510,7 +510,7 @@ async function handleScan(fileInput,inputId,fieldKey){
 
     if(text.indexOf("UNREADABLE")!==-1){
       $(camId).className="cam-btn";$(camId).textContent="🔄";
-      $(inputId).placeholder="AI couldn't read — retake or type";$(inputId).focus();
+      $(inputId).value="";$(inputId).placeholder="Couldn't read — retake or type";$(inputId).focus();
       fileInput.value="";return;
     }
 
@@ -542,15 +542,18 @@ async function handleScan(fileInput,inputId,fieldKey){
       showModal(cands,inputId,fieldKey,camId);
     } else {
       $(camId).className="cam-btn";$(camId).textContent="🔄";
-      $(inputId).placeholder="AI couldn't read — retake or type";$(inputId).focus();
+      $(inputId).value="";$(inputId).placeholder="Couldn't read — retake or type";$(inputId).focus();
     }
   }catch(e){
     console.error("Gemini OCR error:",e.message);
     $(camId).className="cam-btn";$(camId).textContent="🔄";
+    $(inputId).value="";
     if(e.message.indexOf("API key")!==-1){
-      $(inputId).placeholder="⚠ Gemini API key not set!";
+      $(inputId).placeholder="⚠ API key not set — check config";
+    } else if(e.message.indexOf("404")!==-1){
+      $(inputId).placeholder="⚠ Model not found — update needed";
     } else {
-      $(inputId).placeholder="⚠ "+e.message.substring(0,40)+" — type manually";
+      $(inputId).placeholder="⚠ Error — type manually";
     }
     $(inputId).focus();
   }
