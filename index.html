@@ -165,7 +165,7 @@ var PHOTO_UPLOAD_URL = "https://script.google.com/macros/s/AKfycbydp1BIBKJB7wyeN
     </div>
     <div id="netBadge" class="badge badge-online"><span class="badge-dot" style="background:#4ade80"></span> Online</div>
   </div>
-  <div class="hint"><span style="font-size:16px">📷</span>AI reads serial labels automatically (Gemini Vision) · Beneficiary photos upload to Google Drive organized by DT → ESN</div>
+  <div class="hint"><span style="font-size:16px">📷</span>AI reads serial labels automatically (Cloud Vision OCR) · Beneficiary photos upload to Google Drive organized by DT → ESN</div>
   <div id="queueBanner" class="queue-banner" style="display:none"><span id="queueCount"></span><button onclick="retryQueue()">Sync Now</button></div>
 </div>
 
@@ -439,9 +439,9 @@ function startScan(inputId,fieldKey){
   $("scanCanBtn").onclick=function(){ov.remove()};
 }
 /* ═══════════════════════════════════════
-   GEMINI VISION OCR
+   GOOGLE CLOUD VISION OCR
    ═══════════════════════════════════════ */
-var GEMINI_API_KEY = "AIzaSyCjj6u8nl5mPYMvPtNAAUkqKMmMRQzYbpI";
+var VISION_API_KEY = "PASTE_YOUR_CLOUD_VISION_KEY_HERE";
 
 async function compressForOCR(file){
   return new Promise(function(resolve){
@@ -484,19 +484,18 @@ async function handleScan(fileInput,inputId,fieldKey){
   window._lastScan={file:file,inputId:inputId,fieldKey:fieldKey,camId:camId};
 
   try{
-    if(GEMINI_API_KEY==="AIzaSyA2RXE_CG2PyRX2vp2PNKNtVos8hWk-s5M"){
+    if(VISION_API_KEY==="AIzaSyAmto1OpWnncZVKItR5Rter8duZ-CssUic"){
       throw new Error("API key not configured");
     }
     var b64=await compressForOCR(file);
-    var res=await fetch("https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key="+GEMINI_API_KEY,{
+    var res=await fetch("https://vision.googleapis.com/v1/images:annotate?key="+VISION_API_KEY,{
       method:"POST",
       headers:{"Content-Type":"application/json"},
       body:JSON.stringify({
-        contents:[{parts:[
-          {inlineData:{mimeType:"image/jpeg",data:b64}},
-          {text:"You are reading a solar equipment label. This is either a Selec inverter label or a ReNew/Waaree solar panel nameplate.\n\nExtract the SERIAL NUMBER and MODEL NUMBER from this label.\n\nRules:\n- Serial numbers are typically 10-20 characters, alphanumeric with dashes\n- Look for fields labeled: Serial No, Sr. No, S/N, Sl. No, Barcode number\n- Also extract: Model No, Part No, Rating\n- Ignore: voltage, current, frequency, weight, dimensions\n- Return EACH number on its own line\n- Format: LABEL: VALUE\n- Example:\n  Serial No: SEL-INV-2024-00847\n  Model No: MAGNUS-2K-1PH\n\nIf you cannot read the label clearly, return: UNREADABLE\nDo NOT guess or make up numbers."}
-        ]}],
-        generationConfig:{temperature:0.1,maxOutputTokens:300}
+        requests:[{
+          image:{content:b64},
+          features:[{type:"TEXT_DETECTION",maxResults:10}]
+        }]
       })
     });
 
@@ -506,52 +505,69 @@ async function handleScan(fileInput,inputId,fieldKey){
     }
 
     var data=await res.json();
-    var text=(data.candidates&&data.candidates[0]&&data.candidates[0].content&&data.candidates[0].content.parts&&data.candidates[0].content.parts[0]&&data.candidates[0].content.parts[0].text)||"";
-
-    if(text.indexOf("UNREADABLE")!==-1){
+    var resp=data.responses&&data.responses[0];
+    if(!resp||!resp.textAnnotations||resp.textAnnotations.length===0){
       $(camId).className="cam-btn";$(camId).textContent="🔄";
       $(inputId).value="";$(inputId).placeholder="Couldn't read — retake or type";$(inputId).focus();
       fileInput.value="";return;
     }
 
-    // Parse "Label: Value" format
-    var lines=text.split("\n").map(function(l){return l.trim()}).filter(function(l){return l.length>=4});
+    // textAnnotations[0].description = full OCR text
+    var fullText=resp.textAnnotations[0].description||"";
+    var lines=fullText.split("\n").map(function(l){return l.trim()}).filter(function(l){return l.length>=4});
+
+    // Look for "Label: Value" patterns (Serial No: XXX, Sr. No: XXX, S/N: XXX, etc.)
     var parsed=[];
     lines.forEach(function(line){
-      // Try "Label: Value" format
-      var m=line.match(/^(.+?):\s*(.+)$/);
+      var m=line.match(/^(.+?)[\:\-]\s*(.+)$/);
       if(m&&m[2].length>=4){
-        parsed.push({label:m[1].trim(),value:m[2].trim()});
-      } else if(/^[A-Za-z0-9][\w\-\/\.]{3,}$/.test(line.replace(/\s/g,""))){
-        parsed.push({label:"Serial",value:line});
+        var label=m[1].trim().toLowerCase();
+        if(label.indexOf("serial")!==-1||label.indexOf("sr.")!==-1||label.indexOf("s/n")!==-1||
+           label.indexOf("sl.")!==-1||label.indexOf("barcode")!==-1||label.indexOf("model")!==-1||
+           label.indexOf("part")!==-1){
+          parsed.push({label:m[1].trim(),value:m[2].trim()});
+        }
       }
     });
 
-    if(parsed.length===0){
-      // Fallback: try to find anything that looks like a serial
-      var anySerial=text.match(/[A-Z]{2,4}[\-\/]?[A-Z0-9]{3,}[\-\/]?[0-9]{3,}/gi);
-      if(anySerial){anySerial.forEach(function(s){parsed.push({label:"Serial",value:s})})}
-    }
+    // Also find standalone serial-like strings: alphanumeric+dashes, 8+ chars, has both letters & numbers
+    var serials=lines.filter(function(l){
+      var clean=l.replace(/[\s]/g,"");
+      return /^[A-Za-z0-9\-\/\.\:]{8,}$/.test(clean)&&/\d/.test(clean)&&/[A-Za-z]/.test(clean);
+    }).filter(function(s){
+      var low=s.toLowerCase();
+      return low.indexOf("voltage")===-1&&low.indexOf("watt")===-1&&low.indexOf("freq")===-1&&
+        low.indexOf("phase")===-1&&low.indexOf("made")===-1&&low.indexOf("class")===-1;
+    });
+    serials.forEach(function(s){
+      if(!parsed.some(function(p){return p.value===s})){
+        parsed.push({label:"Serial",value:s});
+      }
+    });
 
     if(parsed.length===1){
       $(inputId).value=parsed[0].value;photos[fieldKey].serialNumber=parsed[0].value;
       $(camId).className="cam-btn done";$(camId).textContent="✅";
     } else if(parsed.length>1){
-      // Show modal with labeled options
       var cands=parsed.map(function(p){return p.label+": "+p.value});
       showModal(cands,inputId,fieldKey,camId);
     } else {
-      $(camId).className="cam-btn";$(camId).textContent="🔄";
-      $(inputId).value="";$(inputId).placeholder="Couldn't read — retake or type";$(inputId).focus();
+      // No serial found — show all lines for manual pick
+      if(lines.length>0){
+        showModal(lines,inputId,fieldKey,camId);
+      } else {
+        $(camId).className="cam-btn";$(camId).textContent="🔄";
+        $(inputId).value="";$(inputId).placeholder="Couldn't read — retake or type";$(inputId).focus();
+      }
     }
   }catch(e){
-    console.error("Gemini OCR error:",e.message);
+    console.error("Vision OCR error:",e.message);
     $(camId).className="cam-btn";$(camId).textContent="🔄";
     $(inputId).value="";
     if(e.message.indexOf("API key")!==-1){
-      $(inputId).placeholder="⚠ API key not set — check config";
-    } else if(e.message.indexOf("404")!==-1){
-      $(inputId).placeholder="⚠ Model not found — update needed";
+      $(inputId).placeholder="⚠ Vision API key not set!";
+    } else if(e.message.indexOf("403")!==-1){
+      $(inputId).placeholder="⚠ Key invalid or Vision API not enabled";
     } else {
       $(inputId).placeholder="⚠ Error — type manually";
     }
