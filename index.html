@@ -441,7 +441,7 @@ function startScan(inputId,fieldKey){
 /* ═══════════════════════════════════════
    GOOGLE CLOUD VISION OCR
    ═══════════════════════════════════════ */
-var VISION_API_KEY = "PASTE_YOUR_CLOUD_VISION_KEY_HERE";
+var VISION_API_KEY = "AIzaSyBZa5CKYawQp38tlJog0_qDd0T9hIl8Wcs";
 
 async function compressForOCR(file){
   return new Promise(function(resolve){
@@ -484,7 +484,7 @@ async function handleScan(fileInput,inputId,fieldKey){
   window._lastScan={file:file,inputId:inputId,fieldKey:fieldKey,camId:camId};
 
   try{
-    if(VISION_API_KEY==="AIzaSyCbe4i5M9P5Ssll8_u3g7Nr3ARvNFws-b0"){
+    if(VISION_API_KEY==="PASTE_YOUR_CLOUD_VISION_KEY_HERE"){
       throw new Error("API key not configured");
     }
     var b64=await compressForOCR(file);
