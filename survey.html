@@ -1,0 +1,434 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="theme-color" content="#1a1a2e">
+<title>Solar Vista — Survey Form</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/exifr/7.1.3/full.umd.js"></script>
+<style>
+:root{--bg:#f0f4f8;--card:#fff;--text:#1a1a2e;--muted:#64748b;--light:#94a3b8;--border:#d1d5db;--border-light:#e2e8f0;--amber:#f59e0b;--amber-dark:#f97316;--green:#22c55e;--green-dark:#16a34a;--red:#ef4444;--indigo:#6366f1;--blue:#3b82f6}
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'DM Sans','Segoe UI',sans-serif;background:linear-gradient(135deg,var(--bg),#e2e8f0);color:var(--text);min-height:100vh;padding:16px;-webkit-tap-highlight-color:transparent}
+.header{background:linear-gradient(135deg,#1a1a2e,#16213e);border-radius:16px;padding:20px;margin-bottom:16px;color:#fff}
+.header-top{display:flex;align-items:center;justify-content:space-between}
+.header-left{display:flex;align-items:center;gap:12px}
+.logo{width:40px;height:40px;border-radius:10px;background:linear-gradient(135deg,var(--blue),var(--indigo));display:flex;align-items:center;justify-content:center;font-size:20px}
+.header h1{font-size:18px;font-weight:700}.header .sub{font-size:12px;color:var(--light)}
+.badge{padding:4px 10px;border-radius:20px;font-size:11px;font-weight:600;display:flex;align-items:center;gap:5px}
+.badge-online{background:rgba(34,197,94,.15);color:#4ade80}.badge-offline{background:rgba(239,68,68,.15);color:#f87171}
+.badge-dot{width:6px;height:6px;border-radius:50%}
+.hint{margin-top:14px;padding:10px 14px;border-radius:8px;background:rgba(59,130,246,.15);display:flex;align-items:center;gap:8px;font-size:12px;color:#93c5fd;line-height:1.4}
+.queue-banner{margin-top:10px;padding:10px 14px;border-radius:8px;background:rgba(239,68,68,.15);display:flex;align-items:center;justify-content:space-between}
+.queue-banner span{font-size:12px;color:#fca5a5}
+.queue-banner button{padding:4px 12px;border-radius:6px;border:1px solid #fca5a5;background:transparent;color:#fca5a5;font-size:11px;font-weight:600;cursor:pointer}
+.section{background:var(--card);border-radius:12px;padding:20px;margin-bottom:12px;box-shadow:0 1px 3px rgba(0,0,0,.06)}
+.section h2{margin:0 0 16px;font-size:15px;font-weight:700;color:var(--text);border-bottom:2px solid var(--blue);padding-bottom:8px;display:inline-block}
+.field{margin-bottom:16px}.label{font-size:12px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px;display:block}
+input,textarea,select{width:100%;padding:10px 12px;border:1px solid var(--border);border-radius:8px;font-size:14px;background:var(--card);color:var(--text);outline:none;font-family:inherit}
+input:focus,textarea:focus,select:focus{border-color:var(--blue)}textarea{min-height:70px;resize:vertical}.input-error{border-color:var(--red)!important}
+.grid-2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.grid-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px}
+.yn-group{display:flex;gap:10px}
+.yn-btn{flex:1;padding:12px;border-radius:8px;border:2px solid var(--border-light);background:var(--card);color:var(--muted);font-size:14px;font-weight:600;cursor:pointer;font-family:inherit;transition:all .2s}
+.yn-btn.active-yes{border-color:var(--green);background:#f0fdf4;color:var(--green-dark)}
+.yn-btn.active-no{border-color:var(--red);background:#fef2f2;color:#dc2626}
+.roof-group{display:flex;gap:8px;flex-wrap:wrap}
+.roof-btn{padding:10px 16px;border-radius:8px;border:2px solid var(--border-light);background:var(--card);color:var(--muted);font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;transition:all .2s}
+.roof-btn.active{border-color:var(--blue);background:#eff6ff;color:#2563eb}
+.photo-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.photo-box{border:2px dashed var(--border-light);border-radius:10px;padding:12px;text-align:center;cursor:pointer;transition:all .2s;background:#fafbfc;min-height:100px;display:flex;flex-direction:column;align-items:center;justify-content:center}
+.photo-box.captured{border-color:#bbf7d0;background:#f0fdf4}
+.photo-box img{width:60px;height:60px;object-fit:cover;border-radius:6px;margin-bottom:4px}
+.photo-box .placeholder{font-size:24px;margin-bottom:4px}
+.photo-box .caption{font-size:10px;color:var(--muted);font-weight:500}
+.photo-box.captured .caption{color:var(--green-dark)}
+.gps-row{display:flex;gap:8px;align-items:stretch}.gps-row input{flex:1}
+.gps-btn{width:48px;flex-shrink:0;border-radius:8px;border:1.5px solid var(--border-light);background:linear-gradient(135deg,#f0f4ff,#e0e7ff);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:18px;transition:all .2s}
+.gps-btn.locating{background:linear-gradient(135deg,#fef3c7,#fde68a);cursor:wait}
+.gps-btn.located{background:linear-gradient(135deg,#dcfce7,#bbf7d0)}
+.gps-status{margin-top:4px;font-size:11px;font-weight:500}
+.gps-link{margin-top:4px;font-size:11px}.gps-link a{color:#4f46e5;text-decoration:none;font-weight:500}
+.helper-text{font-size:11px;color:var(--light);margin-top:4px;line-height:1.4}
+.photo-count{margin-top:8px;padding:8px 12px;border-radius:6px;background:#eff6ff;border:1px solid #bfdbfe;font-size:12px;color:#2563eb;font-weight:500}
+.submit-btn{width:100%;padding:16px;border-radius:12px;border:none;color:#fff;font-size:16px;font-weight:700;cursor:pointer;font-family:inherit;transition:all .3s;margin-bottom:12px}
+.submit-btn.idle{background:linear-gradient(135deg,var(--blue),var(--indigo));box-shadow:0 4px 16px rgba(59,130,246,.3)}
+.submit-btn.submitting{background:linear-gradient(135deg,#94a3b8,var(--muted));cursor:wait}
+.submit-btn.success{background:linear-gradient(135deg,var(--green),var(--green-dark));box-shadow:0 4px 16px rgba(34,197,94,.3)}
+.submit-btn.queued{background:linear-gradient(135deg,var(--indigo),#4f46e5)}
+.submit-btn.error{background:linear-gradient(135deg,var(--red),#dc2626)}
+.upload-progress{background:var(--card);border-radius:12px;padding:16px;margin-bottom:12px;box-shadow:0 1px 3px rgba(0,0,0,.06)}
+.upload-bar{height:4px;background:var(--border-light);border-radius:2px;overflow:hidden}
+.upload-fill{height:100%;background:linear-gradient(90deg,var(--blue),var(--indigo));border-radius:2px;transition:width .5s ease}
+.footer{text-align:center;font-size:11px;color:var(--light);margin-bottom:32px}
+</style>
+</head>
+<body>
+
+<!-- ═══════════════════════════════════════════════════════
+  CONFIGURATION
+═══════════════════════════════════════════════════════ -->
+<script>
+var FORM_URL = "https://docs.google.com/forms/d/e/1FAIpQLScIQCWTJqFbo8K8yR7AEsQMpFDB4t9Nb1nPJdnQ-Jr-ZUgiVg/formResponse";
+
+var ENTRY = {
+  subdivision:     "entry.2118951466",
+  section:         "entry.147515554",
+  distribution:    "entry.1130826476",
+  serviceNumber:   "entry.1286216456",
+  beneficiary:     "entry.1556490417",
+  aadhar:          "entry.1910301540",
+  mobile:          "entry.1470777678",
+  consent:         "entry.1513503281",
+  roofType:        "entry.563154158",
+  address:         "entry.871507923",
+  hindrance:       "entry.629929079",
+  mapLink:         "entry.212434549",
+  surveyor:        "entry.814176196",
+};
+
+// Photos upload to Drive (same script as Installation form)
+var PHOTO_UPLOAD_URL = "https://script.google.com/macros/s/AKfycbydp1BIBKJB7wyeNUoiH5aYioZvwZ9nFsXv3acWR3-coFm04F8wyFCQl_DZdSd8WckF/exec";
+</script>
+
+<!-- Header -->
+<div class="header">
+  <div class="header-top">
+    <div class="header-left">
+      <div class="logo">📋</div>
+      <div><h1>Survey Form</h1><p class="sub">PM Surya Ghar · Solar Vista</p></div>
+    </div>
+    <div id="netBadge" class="badge badge-online"><span class="badge-dot" style="background:#4ade80"></span> Online</div>
+  </div>
+  <div class="hint"><span style="font-size:16px">📍</span>GPS auto-extracted from photos · 5 site photos upload to Drive · Coordinates replace Map Link</div>
+  <div id="queueBanner" class="queue-banner" style="display:none"><span id="queueCount"></span><button onclick="retryQueue()">Sync Now</button></div>
+</div>
+
+<!-- Location -->
+<div class="section">
+  <h2>📍 Location Details</h2>
+  <div class="field">
+    <label class="label">Subdivision *</label>
+    <select id="subdivision">
+      <option value="">Select Subdivision</option>
+      <option value="Yemmiganur">Yemmiganur</option>
+      <option value="Guduru">Guduru</option>
+      <option value="Mantralayam">Mantralayam</option>
+    </select>
+  </div>
+  <div class="grid-2">
+    <div class="field"><label class="label">Section Name *</label><input id="section" placeholder="Enter section"></div>
+    <div class="field"><label class="label">Distribution Name *</label><input id="distribution" placeholder="Enter DT name"></div>
+  </div>
+</div>
+
+<!-- Beneficiary -->
+<div class="section">
+  <h2>👤 Beneficiary Details</h2>
+  <div class="field"><label class="label">Service Number *</label><input id="serviceNumber" placeholder="13-digit ESN" inputmode="numeric" maxlength="14"></div>
+  <div class="field"><label class="label">Beneficiary Name *</label><input id="beneficiary" placeholder="Enter full name"></div>
+  <div class="grid-2">
+    <div class="field"><label class="label">Aadhar Number</label><input id="aadhar" placeholder="XXXX XXXX XXXX" maxlength="14" inputmode="numeric"></div>
+    <div class="field"><label class="label">Mobile Number</label><input id="mobile" placeholder="10-digit" maxlength="10" inputmode="tel"></div>
+  </div>
+  <div class="field"><label class="label">Address</label><textarea id="address" placeholder="House No., Street, Village/Town" style="min-height:60px"></textarea></div>
+</div>
+
+<!-- Consent & Roof -->
+<div class="section">
+  <h2>✅ Consent & Roof</h2>
+  <div class="field">
+    <label class="label">Consent *</label>
+    <div class="yn-group">
+      <button class="yn-btn" id="conYes" onclick="setConsent('Yes')">✓ Yes</button>
+      <button class="yn-btn" id="conNo" onclick="setConsent('No')">✗ No</button>
+    </div>
+  </div>
+  <div class="field">
+    <label class="label">Roof Type *</label>
+    <div class="roof-group">
+      <button class="roof-btn" onclick="setRoof(this,'RCC')">RCC</button>
+      <button class="roof-btn" onclick="setRoof(this,'Zinc Sheet')">Zinc Sheet</button>
+    </div>
+  </div>
+</div>
+
+<!-- Site Photos -->
+<div class="section">
+  <h2>📸 Site Photos (5)</h2>
+  <p class="helper-text" style="margin-bottom:12px">Take 5 photos: 4 directional (N/S/E/W) + 1 meter. GPS auto-extracted from first photo.</p>
+  <div class="photo-grid">
+    <div class="photo-box" id="pBox1" onclick="$('fPhoto1').click()"><div class="placeholder" id="pPh1">📷</div><img id="pImg1" style="display:none"><div class="caption" id="pCap1">Photo 1 (N)</div></div>
+    <div class="photo-box" id="pBox2" onclick="$('fPhoto2').click()"><div class="placeholder" id="pPh2">📷</div><img id="pImg2" style="display:none"><div class="caption" id="pCap2">Photo 2 (S)</div></div>
+    <div class="photo-box" id="pBox3" onclick="$('fPhoto3').click()"><div class="placeholder" id="pPh3">📷</div><img id="pImg3" style="display:none"><div class="caption" id="pCap3">Photo 3 (E)</div></div>
+    <div class="photo-box" id="pBox4" onclick="$('fPhoto4').click()"><div class="placeholder" id="pPh4">📷</div><img id="pImg4" style="display:none"><div class="caption" id="pCap4">Photo 4 (W)</div></div>
+    <div class="photo-box" id="pBox5" onclick="$('fPhoto5').click()"><div class="placeholder" id="pPh5">📷</div><img id="pImg5" style="display:none"><div class="caption" id="pCap5">Photo 5 (Meter)</div></div>
+  </div>
+  <input type="file" id="fPhoto1" accept="image/*" capture="environment" style="display:none" onchange="handlePhoto(this,1)">
+  <input type="file" id="fPhoto2" accept="image/*" capture="environment" style="display:none" onchange="handlePhoto(this,2)">
+  <input type="file" id="fPhoto3" accept="image/*" capture="environment" style="display:none" onchange="handlePhoto(this,3)">
+  <input type="file" id="fPhoto4" accept="image/*" capture="environment" style="display:none" onchange="handlePhoto(this,4)">
+  <input type="file" id="fPhoto5" accept="image/*" capture="environment" style="display:none" onchange="handlePhoto(this,5)">
+  <div id="photoCount" class="photo-count" style="display:none"></div>
+</div>
+
+<!-- GPS -->
+<div class="section">
+  <h2>📍 GPS Coordinates</h2>
+  <div class="gps-row"><input id="coordinates" placeholder="Auto from photo · paste Maps link · or tap 📍"><button class="gps-btn" id="gpsBtn" onclick="captureGPS()">📍</button></div>
+  <div id="gpsStatus" class="gps-status" style="display:none"></div>
+  <div id="gpsLink" class="gps-link" style="display:none"></div>
+  <p class="helper-text">GPS extracted from photo EXIF automatically. Tap 📍 to override with device GPS. Paste Google Maps link also works.</p>
+</div>
+
+<!-- Hindrance -->
+<div class="section">
+  <h2>⚠️ Hindrance</h2>
+  <textarea id="hindrance" placeholder="Any hindrance observed — door locked, no consent, roof issue, etc. Leave blank if none."></textarea>
+</div>
+
+<!-- Surveyor -->
+<div class="section">
+  <h2>🧑‍💼 Surveyor</h2>
+  <div class="field"><label class="label">Name of Surveyor *</label><input id="surveyor" placeholder="Enter surveyor name"></div>
+</div>
+
+<!-- Upload Progress -->
+<div id="uploadProgress" class="upload-progress" style="display:none">
+  <div style="display:flex;justify-content:space-between;font-size:12px;color:var(--muted);margin-bottom:8px">
+    <span id="uploadDetail" style="font-weight:600"></span><span id="uploadStep"></span>
+  </div>
+  <div class="upload-bar"><div class="upload-fill" id="uploadBar" style="width:0%"></div></div>
+</div>
+
+<!-- Submit -->
+<button class="submit-btn idle" id="submitBtn" onclick="handleSubmit()">Submit Survey</button>
+<p class="footer">TytoGrid · Solar Vista · Survey PWA v1.0</p>
+
+<script>
+/* ═══════════════════════════════════════
+   STATE
+   ═══════════════════════════════════════ */
+var consent="";
+var roofType="";
+var sitePhotos={1:null,2:null,3:null,4:null,5:null};
+var offlineQueue=[];
+var lastPhotoFolderUrl="";
+
+/* ═══════════════════════════════════════
+   INIT
+   ═══════════════════════════════════════ */
+(function(){
+  $("coordinates").addEventListener("input",extractCoordsFromLink);
+  $("aadhar").addEventListener("input",formatAadhar);
+  window.addEventListener("online",updateNetStatus);
+  window.addEventListener("offline",updateNetStatus);
+  updateNetStatus();
+})();
+
+/* ═══════════════════════════════════════
+   HELPERS
+   ═══════════════════════════════════════ */
+function $(id){return document.getElementById(id)}
+function val(id){return $(id).value.trim()}
+function formatAadhar(e){var v=e.target.value.replace(/\D/g,"");if(v.length>12)v=v.slice(0,12);var p=[];for(var i=0;i<v.length;i+=4)p.push(v.slice(i,i+4));e.target.value=p.join(" ")}
+function setConsent(v){consent=v;$("conYes").className="yn-btn"+(v==="Yes"?" active-yes":"");$("conNo").className="yn-btn"+(v==="No"?" active-no":"")}
+function setRoof(btn,v){roofType=v;document.querySelectorAll(".roof-btn").forEach(function(b){b.className="roof-btn"});btn.className="roof-btn active"}
+function updateNetStatus(){var on=navigator.onLine;$("netBadge").className="badge "+(on?"badge-online":"badge-offline");$("netBadge").innerHTML='<span class="badge-dot" style="background:'+(on?"#4ade80":"#f87171")+'"></span> '+(on?"Online":"Offline")}
+function updatePhotoCount(){
+  var c=0;for(var k in sitePhotos)if(sitePhotos[k])c++;
+  if(c>0){$("photoCount").style.display="block";$("photoCount").textContent="📷 "+c+" of 5 photos captured"}
+  else $("photoCount").style.display="none";
+  $("submitBtn").textContent=c>0?"Submit Survey (+ "+c+" photos)":"Submit Survey";
+}
+function updateQueueBanner(){if(offlineQueue.length>0){$("queueBanner").style.display="flex";$("queueCount").textContent=offlineQueue.length+" queued offline"}else $("queueBanner").style.display="none"}
+
+/* ═══════════════════════════════════════
+   PHOTOS
+   ═══════════════════════════════════════ */
+function handlePhoto(input,num){
+  var file=input.files&&input.files[0];if(!file)return;
+  sitePhotos[num]=file;
+  $("pBox"+num).className="photo-box captured";
+  $("pPh"+num).style.display="none";
+  var img=$("pImg"+num);img.src=URL.createObjectURL(file);img.style.display="block";
+  $("pCap"+num).textContent="✓ Photo "+num;
+  updatePhotoCount();
+  // Extract GPS from first photo with EXIF
+  if(num===1) extractGpsFromPhoto(file);
+  input.value="";
+}
+
+/* ═══════════════════════════════════════
+   GPS — EXIF extract
+   ═══════════════════════════════════════ */
+async function extractGpsFromPhoto(file){
+  if(val("coordinates")) return;
+  try{
+    if(typeof exifr==="undefined") return;
+    var gps=await exifr.gps(file);
+    if(gps&&gps.latitude&&gps.longitude){
+      var lat=gps.latitude.toFixed(6),lng=gps.longitude.toFixed(6);
+      $("coordinates").value=lat+", "+lng;
+      $("gpsBtn").className="gps-btn located";$("gpsBtn").textContent="✅";
+      $("gpsStatus").style.display="block";$("gpsStatus").style.color="var(--green-dark)";
+      $("gpsStatus").textContent="📷 GPS from photo EXIF";
+      $("gpsLink").style.display="block";$("gpsLink").innerHTML='<a href="https://www.google.com/maps?q='+lat+','+lng+'" target="_blank">Open in Google Maps ↗</a>';
+    } else { captureGPS(); }
+  }catch(e){ captureGPS(); }
+}
+
+/* ═══════════════════════════════════════
+   GPS — device fallback
+   ═══════════════════════════════════════ */
+function captureGPS(){
+  if(!navigator.geolocation){alert("GPS not available");return}
+  $("gpsBtn").className="gps-btn locating";$("gpsBtn").textContent="⏳";
+  $("gpsStatus").style.display="block";$("gpsStatus").style.color="var(--amber)";$("gpsStatus").textContent="Locating...";
+  navigator.geolocation.getCurrentPosition(function(pos){
+    var lat=pos.coords.latitude.toFixed(6),lng=pos.coords.longitude.toFixed(6),acc=Math.round(pos.coords.accuracy);
+    $("coordinates").value=lat+", "+lng;$("gpsBtn").className="gps-btn located";$("gpsBtn").textContent="✅";
+    $("gpsStatus").style.color="var(--green-dark)";$("gpsStatus").textContent="Device GPS · Accuracy: ~"+acc+"m";
+    $("gpsLink").style.display="block";$("gpsLink").innerHTML='<a href="https://www.google.com/maps?q='+lat+','+lng+'" target="_blank">Open in Google Maps ↗</a>';
+  },function(err){
+    $("gpsBtn").className="gps-btn";$("gpsBtn").textContent="📍";
+    $("gpsStatus").style.color="var(--red)";$("gpsStatus").textContent="Failed: "+err.message;
+  },{enableHighAccuracy:true,timeout:15000,maximumAge:0});
+}
+function extractCoordsFromLink(e){
+  var v=e.target.value,m=v.match(/@(-?\d+\.\d+),(-?\d+\.\d+)/);
+  if(!m)m=v.match(/q=(-?\d+\.\d+),(-?\d+\.\d+)/);if(!m)m=v.match(/ll=(-?\d+\.\d+),(-?\d+\.\d+)/);
+  if(!m)m=v.match(/^(-?\d+\.\d+)\s*,\s*(-?\d+\.\d+)$/);
+  if(m){var lat=parseFloat(m[1]).toFixed(6),lng=parseFloat(m[2]).toFixed(6);e.target.value=lat+", "+lng;
+    $("gpsBtn").className="gps-btn located";$("gpsBtn").textContent="✅";
+    $("gpsStatus").style.display="block";$("gpsStatus").style.color="var(--green-dark)";$("gpsStatus").textContent="Coordinates extracted";
+    $("gpsLink").style.display="block";$("gpsLink").innerHTML='<a href="https://www.google.com/maps?q='+lat+','+lng+'" target="_blank">Open in Google Maps ↗</a>';
+  }
+}
+
+/* ═══════════════════════════════════════
+   SUBMIT
+   ═══════════════════════════════════════ */
+function setSubmitState(s,t){$("submitBtn").className="submit-btn "+s;if(t)$("submitBtn").textContent=t}
+function showUploadProgress(s,t,d){$("uploadProgress").style.display="block";$("uploadDetail").textContent=d;$("uploadStep").textContent="Step "+s+"/"+t;$("uploadBar").style.width=Math.round(s/t*100)+"%"}
+function hideUploadProgress(){$("uploadProgress").style.display="none"}
+
+async function handleSubmit(){
+  var data={
+    subdivision:val("subdivision"),section:val("section"),distribution:val("distribution"),
+    serviceNumber:val("serviceNumber"),beneficiary:val("beneficiary"),
+    aadhar:val("aadhar"),mobile:val("mobile"),address:val("address"),
+    consent:consent,roofType:roofType,
+    coordinates:val("coordinates"),hindrance:val("hindrance"),surveyor:val("surveyor")
+  };
+
+  var required=["subdivision","section","distribution","serviceNumber","beneficiary","surveyor"];
+  var missing=required.filter(function(f){return !data[f]});
+  required.forEach(function(f){var el=$(f);if(el)el.className=(!data[f])?(el.tagName==="SELECT"?"input-error":"input-error"):""});
+  if(!consent){missing.push("consent")}
+  if(!roofType){missing.push("roofType")}
+  if(missing.length>0){setSubmitState("error","⚠ Fill Required Fields");setTimeout(function(){setSubmitState("idle");updatePhotoCount()},2500);return}
+
+  if(!navigator.onLine){offlineQueue.push(data);updateQueueBanner();setSubmitState("queued","📦 Saved Offline");setTimeout(function(){setSubmitState("idle");updatePhotoCount()},3000);return}
+
+  // Count photos
+  var photoFiles=[];
+  for(var k=1;k<=5;k++)if(sitePhotos[k])photoFiles.push({num:k,file:sitePhotos[k]});
+  var totalSteps=photoFiles.length>0?3:2;
+  lastPhotoFolderUrl="";
+
+  setSubmitState("submitting","⏳ Submitting...");
+
+  // Step 1: Upload photos
+  if(photoFiles.length>0){
+    showUploadProgress(1,totalSteps,"Uploading "+photoFiles.length+" photo(s) to Drive...");
+    try{
+      var pa=[];
+      for(var i=0;i<photoFiles.length;i++){
+        var b64=await fileToBase64(photoFiles[i].file);
+        pa.push({fieldName:"survey_photo_"+photoFiles[i].num,base64:b64,mimeType:photoFiles[i].file.type||"image/jpeg",serialNumber:""});
+      }
+      var res=await fetch(PHOTO_UPLOAD_URL,{method:"POST",headers:{"Content-Type":"application/json"},
+        body:JSON.stringify({esn:data.serviceNumber,beneficiaryName:data.beneficiary,distribution:data.distribution,photos:pa})});
+      var resData=await res.json();
+      if(resData.folderUrl) lastPhotoFolderUrl=resData.folderUrl;
+    }catch(e){
+      showUploadProgress(1,totalSteps,"⚠ Photo upload failed — saving form data anyway");
+      await sleep(1500);
+    }
+  }
+
+  // Step 2: Submit to Google Form
+  showUploadProgress(photoFiles.length>0?2:1,totalSteps,"Submitting form data...");
+  try{
+    var fd=new URLSearchParams();
+    fd.append(ENTRY.subdivision,data.subdivision);
+    fd.append(ENTRY.section,data.section);
+    fd.append(ENTRY.distribution,data.distribution);
+    fd.append(ENTRY.serviceNumber,data.serviceNumber);
+    fd.append(ENTRY.beneficiary,data.beneficiary);
+    fd.append(ENTRY.aadhar,data.aadhar);
+    fd.append(ENTRY.mobile,data.mobile);
+    fd.append(ENTRY.consent,data.consent);
+    fd.append(ENTRY.roofType,data.roofType);
+    fd.append(ENTRY.address,data.address);
+    fd.append(ENTRY.hindrance,data.hindrance);
+    // Send real coordinates instead of Maps link
+    fd.append(ENTRY.mapLink,data.coordinates);
+    fd.append(ENTRY.surveyor,data.surveyor);
+    await fetch(FORM_URL,{method:"POST",mode:"no-cors",headers:{"Content-Type":"application/x-www-form-urlencoded"},body:fd.toString()});
+  }catch(e){
+    offlineQueue.push(data);updateQueueBanner();
+    setSubmitState("queued","📦 Network error — Saved Offline");hideUploadProgress();
+    setTimeout(function(){setSubmitState("idle");updatePhotoCount()},3000);return;
+  }
+
+  // Done
+  showUploadProgress(totalSteps,totalSteps,"Complete!");
+  setSubmitState("success","✓ Submitted — Ready for Next");
+  await sleep(2000);
+
+  // Reset (keep subdivision, section, distribution, surveyor)
+  var keep={subdivision:data.subdivision,section:data.section,distribution:data.distribution,surveyor:data.surveyor};
+  $("serviceNumber").value="";$("beneficiary").value="";$("aadhar").value="";$("mobile").value="";$("address").value="";
+  $("subdivision").value=keep.subdivision;$("section").value=keep.section;$("distribution").value=keep.distribution;
+  $("coordinates").value="";$("gpsStatus").style.display="none";$("gpsLink").style.display="none";$("gpsBtn").className="gps-btn";$("gpsBtn").textContent="📍";
+  $("hindrance").value="";$("surveyor").value=keep.surveyor;
+  consent="";roofType="";$("conYes").className="yn-btn";$("conNo").className="yn-btn";
+  document.querySelectorAll(".roof-btn").forEach(function(b){b.className="roof-btn"});
+  sitePhotos={1:null,2:null,3:null,4:null,5:null};
+  for(var n=1;n<=5;n++){$("pBox"+n).className="photo-box";$("pPh"+n).style.display="block";$("pImg"+n).style.display="none";$("pCap"+n).textContent=["Photo 1 (N)","Photo 2 (S)","Photo 3 (E)","Photo 4 (W)","Photo 5 (Meter)"][n-1]}
+  updatePhotoCount();["serviceNumber","beneficiary"].forEach(function(f){$(f).className=""});
+  hideUploadProgress();setSubmitState("idle");updatePhotoCount();lastPhotoFolderUrl="";
+  window.scrollTo({top:0,behavior:"smooth"});
+}
+
+/* ═══════════════════════════════════════
+   OFFLINE RETRY
+   ═══════════════════════════════════════ */
+async function retryQueue(){
+  if(!navigator.onLine){alert("Still offline.");return}var synced=0,failed=[];
+  for(var i=0;i<offlineQueue.length;i++){var d=offlineQueue[i];
+    try{var fd=new URLSearchParams();
+      fd.append(ENTRY.subdivision,d.subdivision);fd.append(ENTRY.section,d.section);fd.append(ENTRY.distribution,d.distribution);
+      fd.append(ENTRY.serviceNumber,d.serviceNumber);fd.append(ENTRY.beneficiary,d.beneficiary);
+      fd.append(ENTRY.aadhar,d.aadhar);fd.append(ENTRY.mobile,d.mobile);
+      fd.append(ENTRY.consent,d.consent);fd.append(ENTRY.roofType,d.roofType);
+      fd.append(ENTRY.address,d.address);fd.append(ENTRY.hindrance,d.hindrance);
+      fd.append(ENTRY.mapLink,d.coordinates);fd.append(ENTRY.surveyor,d.surveyor);
+      await fetch(FORM_URL,{method:"POST",mode:"no-cors",headers:{"Content-Type":"application/x-www-form-urlencoded"},body:fd.toString()});synced++;
+    }catch(e){failed.push(d)}}
+  offlineQueue=failed;updateQueueBanner();alert("Synced "+synced+" of "+(synced+failed.length)+".")
+}
+
+/* ═══════════════════════════════════════
+   UTILITIES
+   ═══════════════════════════════════════ */
+function fileToBase64(f){return new Promise(function(r,j){var rd=new FileReader();rd.onload=function(){r(rd.result.split(",")[1])};rd.onerror=j;rd.readAsDataURL(f)})}
+function sleep(ms){return new Promise(function(r){setTimeout(r,ms)})}
+</script>
+</body>
+</html>
