@@ -8,7 +8,6 @@
 <meta name="theme-color" content="#1a1a2e">
 <title>Solar Vista — Installation Form</title>
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
-<script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
 <style>
 :root{--bg:#f0f4f8;--card:#fff;--text:#1a1a2e;--muted:#64748b;--light:#94a3b8;--border:#d1d5db;--border-light:#e2e8f0;--amber:#f59e0b;--amber-dark:#f97316;--green:#22c55e;--green-dark:#16a34a;--red:#ef4444;--indigo:#6366f1}
 *{margin:0;padding:0;box-sizing:border-box}
@@ -109,6 +108,9 @@ input:focus,textarea:focus{border-color:var(--amber)}textarea{min-height:70px;re
 </head>
 <body>
 
+<!-- ═══════════════════════════════════════════════════════
+  CONFIGURATION — PASTE YOUR VALUES HERE
+═══════════════════════════════════════════════════════ -->
 <script>
 var FORM_URL = "https://docs.google.com/forms/d/e/1FAIpQLSeiKmNStLAem7VVcPcTVvkesw9yckavmOBtiBFcyCg1NrUYDA/formResponse";
 
@@ -142,9 +144,10 @@ var ENTRY = {
   photoFolder:     "entry.1856209891",
 };
 
-var PHOTO_UPLOAD_URL = "https://script.google.com/macros/s/AKfycbydp1BIBKJB7wyeNUoiH5aYioZvwZ9nFsXv3acWR3-coFm04F8wyFCQl_DZdSd8WckF/exec";
+var PHOTO_UPLOAD_URL = "https://script.google.com/macros/s/AKfycbywFDcRJxheoEuKb3aWiY2mTJzlyW_AfBzw5SuyO5bpa8Hzi5TxOyhWoT89h0cjaLFT/exec";
 </script>
 
+<!-- Modal -->
 <div id="modal" class="modal-overlay" style="display:none" onclick="if(event.target===this)closeModal()">
   <div class="modal">
     <div class="modal-header"><h3>Select Serial Number</h3><p>Tap the correct value from the label</p></div>
@@ -153,6 +156,7 @@ var PHOTO_UPLOAD_URL = "https://script.google.com/macros/s/AKfycbydp1BIBKJB7wyeN
   </div>
 </div>
 
+<!-- Header -->
 <div class="header">
   <div class="header-top">
     <div class="header-left">
@@ -165,6 +169,7 @@ var PHOTO_UPLOAD_URL = "https://script.google.com/macros/s/AKfycbydp1BIBKJB7wyeN
   <div id="queueBanner" class="queue-banner" style="display:none"><span id="queueCount"></span><button onclick="retryQueue()">Sync Now</button></div>
 </div>
 
+<!-- Beneficiary -->
 <div class="section">
   <h2>👤 Beneficiary Details</h2>
   <div class="field"><label class="label">ESN (Electrical Service Number) *</label><input id="esn" placeholder="Enter ESN"></div>
@@ -176,6 +181,7 @@ var PHOTO_UPLOAD_URL = "https://script.google.com/macros/s/AKfycbydp1BIBKJB7wyeN
   <div class="field"><label class="label">Address</label><textarea id="address" placeholder="House No., Street, Village/Town, Mandal, District" style="min-height:60px"></textarea></div>
 </div>
 
+<!-- Beneficiary Photos -->
 <div class="section">
   <h2>📸 Beneficiary Photos</h2>
   <p class="helper-text" style="margin-bottom:12px">Take 2 photos of the beneficiary at the installation site. These upload to Google Drive under DT → ESN folder.</p>
@@ -199,6 +205,7 @@ var PHOTO_UPLOAD_URL = "https://script.google.com/macros/s/AKfycbydp1BIBKJB7wyeN
   </div>
 </div>
 
+<!-- Location -->
 <div class="section">
   <h2>📍 Location Details</h2>
   <div class="grid-3">
@@ -215,6 +222,7 @@ var PHOTO_UPLOAD_URL = "https://script.google.com/macros/s/AKfycbydp1BIBKJB7wyeN
   </div>
 </div>
 
+<!-- Vendor & Team -->
 <div class="section">
   <h2>🏗️ Vendor & Team Details</h2>
   <div class="field"><label class="label">Vendor / Subcontractor *</label><input id="vendor" placeholder="Enter vendor name"></div>
@@ -224,6 +232,7 @@ var PHOTO_UPLOAD_URL = "https://script.google.com/macros/s/AKfycbydp1BIBKJB7wyeN
   </div>
 </div>
 
+<!-- Dates -->
 <div class="section">
   <h2>📅 Project Dates</h2>
   <div class="grid-2">
@@ -233,6 +242,7 @@ var PHOTO_UPLOAD_URL = "https://script.google.com/macros/s/AKfycbydp1BIBKJB7wyeN
   <div id="durationBadge" class="duration-badge" style="display:none"></div>
 </div>
 
+<!-- System Specs -->
 <div class="section">
   <h2>⚡ System Specifications</h2>
   <div class="grid-2">
@@ -246,6 +256,7 @@ var PHOTO_UPLOAD_URL = "https://script.google.com/macros/s/AKfycbydp1BIBKJB7wyeN
   </div>
 </div>
 
+<!-- Panels -->
 <div class="section">
   <h2>🔆 Solar Panel Details</h2>
   <div class="grid-2">
@@ -262,6 +273,7 @@ var PHOTO_UPLOAD_URL = "https://script.google.com/macros/s/AKfycbydp1BIBKJB7wyeN
   <div id="photoCount" class="photo-count" style="display:none"></div>
 </div>
 
+<!-- DISCOM Meter -->
 <div class="section">
   <h2>📊 Net Metering</h2>
   <div class="field"><label class="label">Installation of Meter by DISCOM</label>
@@ -269,6 +281,7 @@ var PHOTO_UPLOAD_URL = "https://script.google.com/macros/s/AKfycbydp1BIBKJB7wyeN
   </div>
 </div>
 
+<!-- Checklist -->
 <div class="section">
   <h2>✅ Completion Checklist</h2>
   <div style="margin-bottom:16px">
@@ -280,11 +293,13 @@ var PHOTO_UPLOAD_URL = "https://script.google.com/macros/s/AKfycbydp1BIBKJB7wyeN
   <div id="checklistContainer"></div>
 </div>
 
+<!-- Remarks -->
 <div class="section">
   <h2>📝 Remarks</h2>
   <textarea id="remarks" placeholder="Any additional notes or observations..."></textarea>
 </div>
 
+<!-- Upload Progress -->
 <div id="uploadProgress" class="upload-progress" style="display:none">
   <div style="display:flex;justify-content:space-between;font-size:12px;color:var(--muted);margin-bottom:8px">
     <span id="uploadDetail" style="font-weight:600"></span><span id="uploadStep"></span>
@@ -292,8 +307,11 @@ var PHOTO_UPLOAD_URL = "https://script.google.com/macros/s/AKfycbydp1BIBKJB7wyeN
   <div class="upload-bar"><div class="upload-fill" id="uploadBar" style="width:0%"></div></div>
 </div>
 
+<!-- Submit -->
 <button class="submit-btn idle" id="submitBtn" onclick="handleSubmit()">Submit Installation Record</button>
 <p class="footer">TytoGrid · Solar Vista · v2.0</p>
+
+<!-- Serial photos captured for Drive upload, manual serial entry -->
 
 <script>
 /* ═══════════════════════════════════════
@@ -403,7 +421,7 @@ function extractCoordsFromLink(e){
 }
 
 /* ═══════════════════════════════════════
-   OCR & BARCODE
+   OCR
    ═══════════════════════════════════════ */
 function startScan(inputId,fieldKey){
   var fileId;if(inputId.startsWith("panelSerial"))fileId="filePanel"+inputId.replace("panelSerial","");
@@ -420,8 +438,10 @@ function startScan(inputId,fieldKey){
   $("scanCapBtn").onclick=function(){ov.remove();$(fileId).click()};
   $("scanCanBtn").onclick=function(){ov.remove()};
 }
-
-var VISION_API_KEY = "AIzaSyBdZAvwvdwwPOlf8_TANg4VLW513dHuTMY";
+/* ═══════════════════════════════════════
+   GOOGLE CLOUD VISION OCR
+   ═══════════════════════════════════════ */
+var VISION_API_KEY = "PASTE_YOUR_CLOUD_VISION_KEY_HERE";
 
 async function compressForOCR(file){
   return new Promise(function(resolve){
@@ -450,156 +470,111 @@ async function compressForOCR(file){
   });
 }
 
-async function handleScan(fileInput, inputId, fieldKey) {
-  var file = fileInput.files && fileInput.files[0];
-  if (!file) return;
-  
-  photos[fieldKey] = { file: file, serialNumber: "" };
-  updatePhotoCount();
-  
-  var thumbId = inputId.startsWith("panelSerial") ? "thumbPanel" + inputId.replace("panelSerial", "") : "thumbInverter";
-  var imgId = inputId.startsWith("panelSerial") ? "imgPanel" + inputId.replace("panelSerial", "") : "imgInverter";
-  var camId = inputId.startsWith("panelSerial") ? "camPanel" + inputId.replace("panelSerial", "") : "camInverter";
-  
-  $(thumbId).style.display = "flex";
-  $(imgId).src = URL.createObjectURL(file);
-  $(camId).className = "cam-btn scanning";
-  $(camId).textContent = "⏳";
-  $(inputId).placeholder = "Scanning Data Matrix...";
+async function handleScan(fileInput,inputId,fieldKey){
+  var file=fileInput.files&&fileInput.files[0];if(!file)return;
+  photos[fieldKey]={file:file,serialNumber:""};updatePhotoCount();
+  var thumbId=inputId.startsWith("panelSerial")?"thumbPanel"+inputId.replace("panelSerial",""):"thumbInverter";
+  var imgId=inputId.startsWith("panelSerial")?"imgPanel"+inputId.replace("panelSerial",""):"imgInverter";
+  var camId=inputId.startsWith("panelSerial")?"camPanel"+inputId.replace("panelSerial",""):"camInverter";
+  $(thumbId).style.display="flex";$(imgId).src=URL.createObjectURL(file);
+  $(camId).className="cam-btn scanning";$(camId).textContent="⏳";
+  $(inputId).placeholder="Reading label...";
 
-  window._lastScan = { file: file, inputId: inputId, fieldKey: fieldKey, camId: camId };
+  // Store for retry
+  window._lastScan={file:file,inputId:inputId,fieldKey:fieldKey,camId:camId};
 
-  var tempDiv = document.createElement("div");
-  tempDiv.id = "qr-reader-temp-" + Date.now();
-  tempDiv.style.display = "none";
-  document.body.appendChild(tempDiv);
-
-  try {
-    // STRICT RULE: Only look for Data Matrix codes. 
-    // This entirely ignores the "User Manual" QR code and all plain text.
-    var scannerConfig = {
-        formatsToSupport: [ Html5QrcodeSupportedFormats.DATA_MATRIX ]
-    };
-    var html5QrCode = new Html5Qrcode(tempDiv.id, scannerConfig);
-    
-    var decodedText = await html5QrCode.scanFile(file, false);
-    
-    $(inputId).value = decodedText;
-    photos[fieldKey].serialNumber = decodedText;
-    $(camId).className = "cam-btn done";
-    $(camId).textContent = "✅";
-    
-    html5QrCode.clear();
-    document.body.removeChild(tempDiv);
-    fileInput.value = "";
-    return;
-
-  } catch (barcodeError) {
-    // Fallback: If no Data Matrix is found, try reading the text using Cloud Vision
-    document.body.removeChild(tempDiv);
-    $(inputId).placeholder = "Reading text label...";
-    
-    try {
-      if (VISION_API_KEY === "PASTE_YOUR_CLOUD_VISION_KEY_HERE") {
-        throw new Error("API key not configured");
-      }
-      var b64 = await compressForOCR(file);
-      var res = await fetch("https://vision.googleapis.com/v1/images:annotate?key=" + VISION_API_KEY, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          requests: [{
-            image: { content: b64 },
-            features: [{ type: "TEXT_DETECTION", maxResults: 10 }]
-          }]
-        })
-      });
-
-      if (!res.ok) {
-        var errText = await res.text();
-        throw new Error("API " + res.status + ": " + errText.substring(0, 100));
-      }
-
-      var data = await res.json();
-      var resp = data.responses && data.responses[0];
-      if (!resp || !resp.textAnnotations || resp.textAnnotations.length === 0) {
-        $(camId).className = "cam-btn";
-        $(camId).textContent = "🔄";
-        $(inputId).value = "";
-        $(inputId).placeholder = "Couldn't read — retake or type";
-        $(inputId).focus();
-        fileInput.value = "";
-        return;
-      }
-
-      var fullText = resp.textAnnotations[0].description || "";
-      var lines = fullText.split("\n").map(function(l) { return l.trim() }).filter(function(l) { return l.length >= 4 });
-
-      var parsed = [];
-      lines.forEach(function(line) {
-        var m = line.match(/^(.+?)[\:\-]\s*(.+)$/);
-        if (m && m[2].length >= 4) {
-          var label = m[1].trim().toLowerCase();
-          if (label.indexOf("serial") !== -1 || label.indexOf("sr.") !== -1 || label.indexOf("s/n") !== -1 ||
-              label.indexOf("sl.") !== -1 || label.indexOf("barcode") !== -1 || label.indexOf("model") !== -1 ||
-              label.indexOf("part") !== -1) {
-            parsed.push({ label: m[1].trim(), value: m[2].trim() });
-          }
-        }
-      });
-
-      var serials = lines.filter(function(l) {
-        var clean = l.replace(/[\s]/g, "");
-        return /^[A-Za-z0-9\-\/\.\:]{8,}$/.test(clean) && /\d/.test(clean) && /[A-Za-z]/.test(clean);
-      }).filter(function(s) {
-        var low = s.toLowerCase();
-        return low.indexOf("voltage") === -1 && low.indexOf("watt") === -1 && low.indexOf("freq") === -1 &&
-               low.indexOf("phase") === -1 && low.indexOf("made") === -1 && low.indexOf("class") === -1;
-      });
-      
-      serials.forEach(function(s) {
-        if (!parsed.some(function(p) { return p.value === s })) {
-          parsed.push({ label: "Serial", value: s });
-        }
-      });
-
-      if (parsed.length === 1) {
-        $(inputId).value = parsed[0].value;
-        photos[fieldKey].serialNumber = parsed[0].value;
-        $(camId).className = "cam-btn done";
-        $(camId).textContent = "✅";
-      } else if (parsed.length > 1) {
-        var cands = parsed.map(function(p) { return p.label + ": " + p.value });
-        showModal(cands, inputId, fieldKey, camId);
-      } else {
-        if (lines.length > 0) {
-          showModal(lines, inputId, fieldKey, camId);
-        } else {
-          $(camId).className = "cam-btn";
-          $(camId).textContent = "🔄";
-          $(inputId).value = "";
-          $(inputId).placeholder = "Couldn't read — retake or type";
-          $(inputId).focus();
-        }
-      }
-    } catch (e) {
-      console.error("Vision OCR error:", e.message);
-      $(camId).className = "cam-btn";
-      $(camId).textContent = "🔄";
-      $(inputId).value = "";
-      if (e.message.indexOf("API key") !== -1) {
-        $(inputId).placeholder = "⚠ Vision API key not set!";
-      } else if (e.message.indexOf("403") !== -1) {
-        $(inputId).placeholder = "⚠ Key invalid or Vision API not enabled";
-      } else {
-        $(inputId).placeholder = "⚠ Error — type manually";
-      }
-      $(inputId).focus();
+  try{
+    if(VISION_API_KEY==="AIzaSyBdZAvwvdwwPOlf8_TANg4VLW513dHuTMY"){
+      throw new Error("API key not configured");
     }
+    var b64=await compressForOCR(file);
+    var res=await fetch("https://vision.googleapis.com/v1/images:annotate?key="+VISION_API_KEY,{
+      method:"POST",
+      headers:{"Content-Type":"application/json"},
+      body:JSON.stringify({
+        requests:[{
+          image:{content:b64},
+          features:[{type:"TEXT_DETECTION",maxResults:10}]
+        }]
+      })
+    });
+
+    if(!res.ok){
+      var errText=await res.text();
+      throw new Error("API "+res.status+": "+errText.substring(0,100));
+    }
+
+    var data=await res.json();
+    var resp=data.responses&&data.responses[0];
+    if(!resp||!resp.textAnnotations||resp.textAnnotations.length===0){
+      $(camId).className="cam-btn";$(camId).textContent="🔄";
+      $(inputId).value="";$(inputId).placeholder="Couldn't read — retake or type";$(inputId).focus();
+      fileInput.value="";return;
+    }
+
+    // textAnnotations[0].description = full OCR text
+    var fullText=resp.textAnnotations[0].description||"";
+    var lines=fullText.split("\n").map(function(l){return l.trim()}).filter(function(l){return l.length>=4});
+
+    // Look for "Label: Value" patterns (Serial No: XXX, Sr. No: XXX, S/N: XXX, etc.)
+    var parsed=[];
+    lines.forEach(function(line){
+      var m=line.match(/^(.+?)[\:\-]\s*(.+)$/);
+      if(m&&m[2].length>=4){
+        var label=m[1].trim().toLowerCase();
+        if(label.indexOf("serial")!==-1||label.indexOf("sr.")!==-1||label.indexOf("s/n")!==-1||
+           label.indexOf("sl.")!==-1||label.indexOf("barcode")!==-1||label.indexOf("model")!==-1||
+           label.indexOf("part")!==-1){
+          parsed.push({label:m[1].trim(),value:m[2].trim()});
+        }
+      }
+    });
+
+    // Also find standalone serial-like strings: alphanumeric+dashes, 8+ chars, has both letters & numbers
+    var serials=lines.filter(function(l){
+      var clean=l.replace(/[\s]/g,"");
+      return /^[A-Za-z0-9\-\/\.\:]{8,}$/.test(clean)&&/\d/.test(clean)&&/[A-Za-z]/.test(clean);
+    }).filter(function(s){
+      var low=s.toLowerCase();
+      return low.indexOf("voltage")===-1&&low.indexOf("watt")===-1&&low.indexOf("freq")===-1&&
+        low.indexOf("phase")===-1&&low.indexOf("made")===-1&&low.indexOf("class")===-1;
+    });
+    serials.forEach(function(s){
+      if(!parsed.some(function(p){return p.value===s})){
+        parsed.push({label:"Serial",value:s});
+      }
+    });
+
+    if(parsed.length===1){
+      $(inputId).value=parsed[0].value;photos[fieldKey].serialNumber=parsed[0].value;
+      $(camId).className="cam-btn done";$(camId).textContent="✅";
+    } else if(parsed.length>1){
+      var cands=parsed.map(function(p){return p.label+": "+p.value});
+      showModal(cands,inputId,fieldKey,camId);
+    } else {
+      // No serial found — show all lines for manual pick
+      if(lines.length>0){
+        showModal(lines,inputId,fieldKey,camId);
+      } else {
+        $(camId).className="cam-btn";$(camId).textContent="🔄";
+        $(inputId).value="";$(inputId).placeholder="Couldn't read — retake or type";$(inputId).focus();
+      }
+    }
+  }catch(e){
+    console.error("Vision OCR error:",e.message);
+    $(camId).className="cam-btn";$(camId).textContent="🔄";
+    $(inputId).value="";
+    if(e.message.indexOf("API key")!==-1){
+      $(inputId).placeholder="⚠ Vision API key not set!";
+    } else if(e.message.indexOf("403")!==-1){
+      $(inputId).placeholder="⚠ Key invalid or Vision API not enabled";
+    } else {
+      $(inputId).placeholder="⚠ Error — type manually";
+    }
+    $(inputId).focus();
   }
-  
-  $(inputId).oninput = function() { photos[fieldKey].serialNumber = $(inputId).value.trim() };
-  fileInput.value = "";
+  $(inputId).oninput=function(){photos[fieldKey].serialNumber=$(inputId).value.trim()};
+  fileInput.value="";
 }
 
 /* ═══════════════════════════════════════
