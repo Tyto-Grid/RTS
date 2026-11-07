@@ -1,735 +1,225 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-<meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="theme-color" content="#1a1a2e">
-<title>Solar Vista — Installation Form</title>
-<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>TytoGrid – Field data, made clear.</title>
+<meta name="description" content="TytoGrid builds back-office software for rooftop-solar EPC contractors: survey and consent collection, site QC, DCR serial checks and portal tracking.">
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Schibsted+Grotesk:wght@400;500;600;800&display=swap" rel="stylesheet">
 <style>
-:root{--bg:#f0f4f8;--card:#fff;--text:#1a1a2e;--muted:#64748b;--light:#94a3b8;--border:#d1d5db;--border-light:#e2e8f0;--amber:#f59e0b;--amber-dark:#f97316;--green:#22c55e;--green-dark:#16a34a;--red:#ef4444;--indigo:#6366f1}
-*{margin:0;padding:0;box-sizing:border-box}
-body{font-family:'DM Sans','Segoe UI',sans-serif;background:linear-gradient(135deg,var(--bg),#e2e8f0);color:var(--text);min-height:100vh;padding:16px;-webkit-tap-highlight-color:transparent}
-@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
-.header{background:linear-gradient(135deg,#1a1a2e,#16213e);border-radius:16px;padding:20px;margin-bottom:16px;color:#fff}
-.header-top{display:flex;align-items:center;justify-content:space-between}
-.header-left{display:flex;align-items:center;gap:12px}
-.logo{width:40px;height:40px;border-radius:10px;background:linear-gradient(135deg,var(--amber),var(--amber-dark));display:flex;align-items:center;justify-content:center;font-size:20px}
-.header h1{font-size:18px;font-weight:700}.header .sub{font-size:12px;color:var(--light)}
-.badge{padding:4px 10px;border-radius:20px;font-size:11px;font-weight:600;display:flex;align-items:center;gap:5px}
-.badge-online{background:rgba(34,197,94,.15);color:#4ade80}.badge-offline{background:rgba(239,68,68,.15);color:#f87171}
-.badge-dot{width:6px;height:6px;border-radius:50%}
-.hint{margin-top:14px;padding:10px 14px;border-radius:8px;background:rgba(245,158,11,.15);display:flex;align-items:center;gap:8px;font-size:12px;color:#fbbf24;line-height:1.4}
-.queue-banner{margin-top:10px;padding:10px 14px;border-radius:8px;background:rgba(239,68,68,.15);display:flex;align-items:center;justify-content:space-between}
-.queue-banner span{font-size:12px;color:#fca5a5}
-.queue-banner button{padding:4px 12px;border-radius:6px;border:1px solid #fca5a5;background:transparent;color:#fca5a5;font-size:11px;font-weight:600;cursor:pointer}
-.section{background:var(--card);border-radius:12px;padding:20px;margin-bottom:12px;box-shadow:0 1px 3px rgba(0,0,0,.06)}
-.section h2{margin:0 0 16px;font-size:15px;font-weight:700;color:var(--text);border-bottom:2px solid var(--amber);padding-bottom:8px;display:inline-block}
-.field{margin-bottom:16px}.label{font-size:12px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px;display:block}
-input,textarea,select{width:100%;padding:10px 12px;border:1px solid var(--border);border-radius:8px;font-size:14px;background:var(--card);color:var(--text);outline:none;font-family:inherit}
-input:focus,textarea:focus{border-color:var(--amber)}textarea{min-height:70px;resize:vertical}.input-error{border-color:var(--red)!important}
-.grid-2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
-.grid-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px}
-.grid-2-1{display:grid;grid-template-columns:2fr 1fr;gap:12px}
-.serial-row{display:flex;gap:8px;align-items:stretch;margin-bottom:4px}
-.serial-row input{flex:1;font-family:'Courier New',monospace;font-weight:600}
-.serial-row input::placeholder{font-family:'DM Sans',sans-serif;font-weight:400}
-.cam-btn{width:48px;flex-shrink:0;border-radius:8px;border:1.5px solid var(--border-light);background:linear-gradient(135deg,#f0f4ff,#e0e7ff);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:20px;transition:all .2s}
-.cam-btn.scanning{background:linear-gradient(135deg,#fef3c7,#fde68a);cursor:wait}
-.cam-btn.done{background:linear-gradient(135deg,#dcfce7,#bbf7d0)}
-.serial-label{font-size:11px;color:var(--light);font-weight:500;display:block;margin-bottom:4px}
-.photo-thumb{margin-top:6px;display:flex;align-items:center;gap:8px}
-.photo-thumb img{width:40px;height:40px;object-fit:cover;border-radius:6px;border:1px solid var(--border-light)}
-.photo-thumb span{font-size:11px;color:var(--green-dark);font-weight:500}
-.yn-group{display:flex;gap:10px}
-.yn-btn{flex:1;padding:12px;border-radius:8px;border:2px solid var(--border-light);background:var(--card);color:var(--muted);font-size:14px;font-weight:600;cursor:pointer;font-family:inherit;transition:all .2s}
-.yn-btn.active-yes{border-color:var(--green);background:#f0fdf4;color:var(--green-dark)}
-.yn-btn.active-no{border-color:var(--red);background:#fef2f2;color:#dc2626}
-.check-item{display:flex;align-items:center;gap:12px;padding:12px;margin-bottom:6px;border-radius:8px;border:1px solid var(--border-light);background:var(--card);cursor:pointer;transition:all .2s;user-select:none}
-.check-item.checked{background:#f0fdf4;border-color:#bbf7d0}
-.check-box{width:22px;height:22px;border-radius:6px;border:2px solid #cbd5e1;display:flex;align-items:center;justify-content:center;flex-shrink:0}
-.check-item.checked .check-box{border:none;background:linear-gradient(135deg,var(--green),var(--green-dark));color:#fff;font-size:13px;font-weight:700}
-.check-item span{font-size:14px;color:#334155}.check-item.checked span{color:var(--green-dark);font-weight:500;text-decoration:line-through}
-.progress-bar{height:6px;background:var(--border-light);border-radius:3px;overflow:hidden}
-.progress-fill{height:100%;border-radius:3px;transition:width .4s ease}
-.progress-amber{background:linear-gradient(90deg,var(--amber),var(--amber-dark))}
-.progress-green{background:linear-gradient(90deg,var(--green),var(--green-dark))}
-.photo-count{margin-top:8px;padding:8px 12px;border-radius:6px;background:#f0fdf4;border:1px solid #bbf7d0;font-size:12px;color:var(--green-dark);font-weight:500}
-.duration-badge{margin-top:4px;padding:8px 12px;border-radius:6px;background:#f0f4ff;font-size:12px;color:#4f46e5;font-weight:500}
-.upload-progress{background:var(--card);border-radius:12px;padding:16px;margin-bottom:12px;box-shadow:0 1px 3px rgba(0,0,0,.06)}
-.upload-bar{height:4px;background:var(--border-light);border-radius:2px;overflow:hidden}
-.upload-fill{height:100%;background:linear-gradient(90deg,var(--indigo),#4f46e5);border-radius:2px;transition:width .5s ease}
-.submit-btn{width:100%;padding:16px;border-radius:12px;border:none;color:#fff;font-size:16px;font-weight:700;cursor:pointer;font-family:inherit;transition:all .3s;margin-bottom:12px}
-.submit-btn.idle{background:linear-gradient(135deg,var(--amber),var(--amber-dark));box-shadow:0 4px 16px rgba(245,158,11,.3)}
-.submit-btn.submitting{background:linear-gradient(135deg,#94a3b8,var(--muted));cursor:wait}
-.submit-btn.success{background:linear-gradient(135deg,var(--green),var(--green-dark));box-shadow:0 4px 16px rgba(34,197,94,.3)}
-.submit-btn.queued{background:linear-gradient(135deg,var(--indigo),#4f46e5)}
-.submit-btn.error{background:linear-gradient(135deg,var(--red),#dc2626)}
-.footer{text-align:center;font-size:11px;color:var(--light);margin-bottom:32px}
-.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.6);display:flex;align-items:flex-end;justify-content:center;z-index:1000;padding:16px}
-.modal{background:#fff;border-radius:16px 16px 12px 12px;width:100%;max-width:400px;max-height:70vh;overflow:hidden;box-shadow:0 -4px 32px rgba(0,0,0,.2)}
-.modal-header{padding:16px 20px;border-bottom:1px solid var(--border-light);background:#f8fafc}
-.modal-header h3{font-size:15px;font-weight:700}.modal-header p{font-size:12px;color:var(--muted);margin-top:4px}
-.modal-body{padding:8px;max-height:50vh;overflow-y:auto}
-.modal-option{display:block;width:100%;text-align:left;padding:14px 16px;margin:4px 0;border-radius:10px;border:1.5px solid var(--border-light);background:#fff;font-size:15px;font-family:'Courier New',monospace;font-weight:600;color:var(--text);cursor:pointer}
-.modal-cancel{width:100%;padding:12px;border-radius:10px;border:1.5px solid var(--border-light);background:#f8fafc;font-size:14px;font-weight:600;color:var(--muted);cursor:pointer;font-family:inherit}
-.modal-footer{padding:12px 16px;border-top:1px solid var(--border-light)}
-.modal-empty{text-align:center;color:var(--light);padding:20px;font-size:14px}
-.gps-row{display:flex;gap:8px;align-items:stretch}.gps-row input{flex:1}
-.gps-btn{width:48px;flex-shrink:0;border-radius:8px;border:1.5px solid var(--border-light);background:linear-gradient(135deg,#f0f4ff,#e0e7ff);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:18px;transition:all .2s}
-.gps-btn.locating{background:linear-gradient(135deg,#fef3c7,#fde68a);cursor:wait}
-.gps-btn.located{background:linear-gradient(135deg,#dcfce7,#bbf7d0)}
-.gps-status{margin-top:4px;font-size:11px;font-weight:500}
-.gps-link{margin-top:4px;font-size:11px}.gps-link a{color:#4f46e5;text-decoration:none;font-weight:500}
-.helper-text{font-size:11px;color:var(--light);margin-top:4px;line-height:1.4}
-/* Beneficiary photo capture */
-.ben-photo-box{border:2px dashed var(--border-light);border-radius:10px;padding:16px;text-align:center;cursor:pointer;transition:all .2s;background:#fafbfc}
-.ben-photo-box.captured{border-color:#bbf7d0;background:#f0fdf4}
-.ben-photo-box img{width:80px;height:80px;object-fit:cover;border-radius:8px;margin-bottom:6px}
-.ben-photo-box .placeholder{font-size:32px;margin-bottom:6px}
-.ben-photo-box .caption{font-size:12px;color:var(--muted);font-weight:500}
-.ben-photo-box.captured .caption{color:var(--green-dark)}
-/* Viewfinder overlay for serial scanning */
-.scan-overlay{position:fixed;inset:0;z-index:999;background:rgba(0,0,0,.85);display:flex;flex-direction:column;align-items:center;justify-content:center;color:#fff;padding:20px}
-.scan-overlay .frame{width:280px;height:120px;border:3px solid var(--amber);border-radius:12px;position:relative;margin:16px 0}
-.scan-overlay .frame::before{content:"";position:absolute;inset:4px;border:1px dashed rgba(245,158,11,.4);border-radius:8px}
-.scan-overlay .corner{position:absolute;width:20px;height:20px;border-color:var(--amber);border-style:solid}
-.scan-overlay .tl{top:-2px;left:-2px;border-width:3px 0 0 3px;border-radius:8px 0 0 0}
-.scan-overlay .tr{top:-2px;right:-2px;border-width:3px 3px 0 0;border-radius:0 8px 0 0}
-.scan-overlay .bl{bottom:-2px;left:-2px;border-width:0 0 3px 3px;border-radius:0 0 0 8px}
-.scan-overlay .br{bottom:-2px;right:-2px;border-width:0 3px 3px 0;border-radius:0 0 8px 0}
-.scan-overlay h3{font-size:16px;font-weight:700;margin-bottom:4px}
-.scan-overlay p{font-size:13px;color:#94a3b8;text-align:center;line-height:1.4}
-.scan-overlay .scan-btn{margin-top:16px;padding:14px 40px;border-radius:50px;border:none;background:linear-gradient(135deg,var(--amber),var(--amber-dark));color:#fff;font-size:15px;font-weight:700;cursor:pointer;font-family:inherit}
-.scan-overlay .scan-cancel{margin-top:10px;padding:8px 20px;border:1px solid #475569;border-radius:8px;background:transparent;color:#94a3b8;font-size:13px;cursor:pointer;font-family:inherit}
+:root {
+  --cell: #142257; --cell-2: #2B3F86; --busbar: #D5DBE8; --day: #F7F8FB; --sun: #F4A62A; --ink: #0E1630; --soft: #4A5677; --done: #1F8A5B; --line: #E3E7F0;
+}
+* { box-sizing: border-box; }
+html { scroll-behavior: smooth; }
+body { margin: 0; background: var(--day); color: var(--ink); font: 17px/1.6 "Schibsted Grotesk", system-ui, -apple-system, "Segoe UI", sans-serif; -webkit-font-smoothing: antialiased; }
+a { color: inherit; }
+:focus-visible { outline: 3px solid var(--sun); outline-offset: 3px; border-radius: 4px; }
+.wrap { max-width: 1120px; margin: 0 auto; padding: 0 24px; }
+
+/* nav */
+.nav { display: flex; align-items: center; gap: 28px; padding-top: 22px; padding-bottom: 22px; }
+.logo { display: flex; align-items: center; gap: 10px; text-decoration: none; font-weight: 800; font-size: 21px; letter-spacing: -.02em; }
+.logo img { width: 38px; height: 38px; }
+.logo .nm { display: flex; flex-direction: column; line-height: 1.05; }
+.logo .tg { font-size: 12.5px; font-weight: 500; letter-spacing: 0; color: var(--soft); margin-top: 3px; }
+.nav .links { display: flex; gap: 24px; margin-left: auto; font-size: 15px; }
+.nav .links a { text-decoration: none; color: var(--soft); } .nav .links a:hover { color: var(--ink); }
+.btn { display: inline-block; text-decoration: none; font-weight: 600; font-size: 16px; padding: 12px 20px; border-radius: 10px; border: 1.5px solid var(--cell); }
+.btn.solid { background: var(--cell); color: #fff; } .btn.solid:hover { background: #0c1640; }
+.btn.line { color: var(--cell); background: transparent; } .btn.line:hover { background: #fff; }
+.nav .btn { padding: 9px 16px; font-size: 15px; }
+
+/* hero */
+.hero { display: grid; grid-template-columns: 1.1fr 1fr; gap: 56px; align-items: center; padding-top: 48px; padding-bottom: 88px; }
+h1 { font-size: clamp(38px, 5.2vw, 62px); line-height: 1.04; letter-spacing: -.035em; font-weight: 800; margin: 0 0 22px; max-width: 13ch; }
+.lead { font-size: 19px; color: var(--soft); max-width: 50ch; margin: 0 0 30px; }
+.cta { display: flex; flex-wrap: wrap; gap: 12px; }
+
+/* the panel: a service number's journey as solar cells lighting up */
+.panel { background: var(--cell); border-radius: 18px; padding: 22px; box-shadow: 0 30px 60px -30px rgba(20,34,87,.55); }
+.panel .head { display: flex; justify-content: space-between; align-items: baseline; color: #AEB8D6; font-size: 13px; margin: 0 4px 14px; }
+.panel .head b { color: #fff; font-weight: 600; font-size: 15px; letter-spacing: .04em; font-variant-numeric: tabular-nums; }
+.cells { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; }
+.c { position: relative; aspect-ratio: 1 / .82; background: var(--cell-2); border-radius: 6px; padding: 12px; color: #C7CFE6; display: flex; flex-direction: column; justify-content: flex-end; overflow: hidden; }
+.c::before, .c::after { content: ""; position: absolute; background: rgba(20,34,87,.45); }
+.c::before { left: 33%; top: 0; bottom: 0; width: 1.5px; } .c::after { left: 66%; top: 0; bottom: 0; width: 1.5px; }
+.c span { position: relative; z-index: 1; font-size: 14px; font-weight: 600; line-height: 1.2; }
+.c small { position: relative; z-index: 1; font-size: 12px; opacity: .8; }
+.c.done { background: #3A519B; color: #fff; }
+.c.done span::before { content: "✓ "; color: var(--sun); }
+.c.on { background: var(--sun); color: var(--cell); }
+.c.on small { opacity: .9; }
+.panel .foot { display: flex; justify-content: space-between; color: #AEB8D6; font-size: 13px; margin: 14px 4px 0; }
+.panel .foot .ok { color: #8FE0B5; }
+@media (prefers-reduced-motion: no-preference) {
+  .c { transition: background .45s ease, color .45s ease; }
+}
+
+/* sections */
+section { padding: 80px 0; }
+h2 { font-size: clamp(28px, 3.4vw, 40px); letter-spacing: -.025em; line-height: 1.1; margin: 0 0 14px; font-weight: 800; }
+.intro { color: var(--soft); max-width: 58ch; margin: 0 0 40px; }
+
+/* products: one live, one in development – shown differently on purpose */
+.products { display: grid; grid-template-columns: 1.25fr 1fr; gap: 20px; align-items: stretch; }
+.prod { border-radius: 20px; padding: 36px; display: flex; flex-direction: column; }
+.prod h3 { font-size: 30px; letter-spacing: -.02em; margin: 0 0 6px; font-weight: 800; }
+.prod .what { font-size: 18px; margin: 0 0 22px; }
+.prod ul { margin: 0 0 30px; padding: 0; list-style: none; }
+.prod li { padding: 10px 0 10px 26px; position: relative; border-top: 1px solid; }
+.prod li::before { content: ""; position: absolute; left: 0; top: 18px; width: 10px; height: 10px; border-radius: 2px; }
+.prod .act { margin-top: auto; display: flex; align-items: center; gap: 16px; flex-wrap: wrap; }
+.sv { background: var(--cell); color: #fff; }
+.sv .what { color: #C7CFE6; } .sv li { border-color: rgba(255,255,255,.12); color: #E6EAF5; } .sv li::before { background: var(--sun); }
+.sv .btn { background: var(--sun); border-color: var(--sun); color: var(--cell); } .sv .btn:hover { background: #ffb944; }
+.cv { background: #fff; border: 1.5px solid var(--line); }
+.cv .what { color: var(--soft); } .cv li { border-color: var(--line); color: var(--ink); } .cv li::before { background: transparent; border: 1.5px solid var(--cell-2); }
+.status { font-size: 14px; color: var(--soft); }
+.status::before { content: ""; display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: var(--sun); margin-right: 8px; vertical-align: 1px; }
+.sv .status { color: #AEB8D6; } .sv .status::before { background: #8FE0B5; }
+
+/* how it works – a real sequence */
+.steps { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0; border-top: 2px solid var(--cell); }
+.step { padding: 26px 28px 0 0; }
+.step .n { font-weight: 800; font-size: 15px; color: var(--cell-2); }
+.step h3 { font-size: 21px; margin: 6px 0 8px; letter-spacing: -.01em; }
+.step p { margin: 0; color: var(--soft); font-size: 16px; }
+
+/* built on site */
+.site { display: grid; grid-template-columns: 1fr 1.3fr; gap: 56px; align-items: start; }
+.site p { margin: 0 0 16px; color: var(--soft); max-width: 60ch; }
+.site p.big { font-size: 22px; line-height: 1.45; color: var(--ink); letter-spacing: -.01em; }
+
+/* contact */
+.contact { background: #fff; border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); }
+.contact .wrap { display: flex; flex-wrap: wrap; gap: 24px; align-items: center; justify-content: space-between; }
+.contact h2 { margin: 0; }
+.contact a.mail { font-size: 22px; font-weight: 600; color: var(--cell); }
+footer { padding: 28px 0 40px; color: var(--soft); font-size: 14px; }
+footer .wrap { display: flex; flex-wrap: wrap; gap: 16px; justify-content: space-between; }
+
+@media (max-width: 900px) {
+  .hero, .products, .site { grid-template-columns: 1fr; }
+  .hero { padding-top: 24px; gap: 40px; }
+  .steps { grid-template-columns: 1fr; border-top: 0; }
+  .step { border-top: 2px solid var(--cell); padding: 20px 0 26px; }
+  .nav .links a:not(.btn) { display: none; }
+  .hero { padding-top: 24px; }
+  section { padding: 60px 0; }
+  .prod { padding: 26px; }
+}
+@media (max-width: 420px) { .wrap { padding: 0 16px; } .c { padding: 9px; } .c span { font-size: 12.5px; } .c small { display: none; } }
 </style>
 </head>
 <body>
+<header class="wrap nav">
+  <a class="logo" href="/" aria-label="TytoGrid home"><img src="/assets/logo-mark.svg" alt=""><span class="nm">TytoGrid<span class="tg">Field data, made clear.</span></span></a>
+  <nav class="links" aria-label="Main">
+    <a href="#products">Products</a><a href="#how">How it works</a><a href="#contact">Contact</a>
+    <a class="btn line" href="/solarvista">Sign in</a>
+  </nav>
+</header>
 
-<!-- ═══════════════════════════════════════════════════════
-  CONFIGURATION — PASTE YOUR VALUES HERE
-═══════════════════════════════════════════════════════ -->
-<script>
-var FORM_URL = "https://docs.google.com/forms/d/e/1FAIpQLSeiKmNStLAem7VVcPcTVvkesw9yckavmOBtiBFcyCg1NrUYDA/formResponse";
-
-var ENTRY = {
-  esn:             "entry.689924215",
-  beneficiaryName: "entry.1718426176",
-  aadhar:          "entry.549579580",
-  phone:           "entry.337980216",
-  address:         "entry.1402187406",
-  subdivision:     "entry.498756242",
-  section:         "entry.635864522",
-  distribution:    "entry.1827026408",
-  coordinates:     "entry.1562969410",
-  vendor:          "entry.970931647",
-  teamLeader:      "entry.2064217194",
-  teamSize:        "entry.95229692",
-  startDate:       "entry.774300059",
-  completionDate:  "entry.381603737",
-  capacity:        "entry.129651274",
-  inverterMake:    "entry.2096192693",
-  inverterSerial:  "entry.1481272964",
-  panelMake:       "entry.728563625",
-  panelCapacity:   "entry.811644159",
-  panelSerial1:    "entry.1093362333",
-  panelSerial2:    "entry.1788561133",
-  panelSerial3:    "entry.666073999",
-  panelSerial4:    "entry.1169108856",
-  discomMeter:     "entry.2025858572",
-  checklist:       "entry.809334136",
-  remarks:         "entry.804819832",
-  photoFolder:     "entry.1856209891",
-};
-
-var PHOTO_UPLOAD_URL = "https://script.google.com/macros/s/AKfycbywFDcRJxheoEuKb3aWiY2mTJzlyW_AfBzw5SuyO5bpa8Hzi5TxOyhWoT89h0cjaLFT/exec";
-</script>
-
-<!-- Modal -->
-<div id="modal" class="modal-overlay" style="display:none" onclick="if(event.target===this)closeModal()">
-  <div class="modal">
-    <div class="modal-header"><h3>Select Serial Number</h3><p>Tap the correct value from the label</p></div>
-    <div class="modal-body" id="modalBody"></div>
-    <div class="modal-footer"><button class="modal-cancel" onclick="closeModal()">Cancel — Enter Manually</button></div>
-  </div>
-</div>
-
-<!-- Header -->
-<div class="header">
-  <div class="header-top">
-    <div class="header-left">
-      <div class="logo">☀️</div>
-      <div><h1>Installation Form</h1><p class="sub">PM Surya Ghar · Solar Vista</p></div>
-    </div>
-    <div id="netBadge" class="badge badge-online"><span class="badge-dot" style="background:#4ade80"></span> Online</div>
-  </div>
-  <div class="hint"><span style="font-size:16px">📷</span>AI reads serial labels automatically (Cloud Vision OCR) · Beneficiary photos upload to Google Drive organized by DT → ESN</div>
-  <div id="queueBanner" class="queue-banner" style="display:none"><span id="queueCount"></span><button onclick="retryQueue()">Sync Now</button></div>
-</div>
-
-<!-- Beneficiary -->
-<div class="section">
-  <h2>👤 Beneficiary Details</h2>
-  <div class="field"><label class="label">ESN (Electrical Service Number) *</label><input id="esn" placeholder="Enter ESN"></div>
-  <div class="field"><label class="label">Beneficiary Name *</label><input id="beneficiaryName" placeholder="Enter full name"></div>
-  <div class="grid-2">
-    <div class="field"><label class="label">Aadhar Number</label><input id="aadhar" placeholder="XXXX XXXX XXXX" maxlength="14" inputmode="numeric"></div>
-    <div class="field"><label class="label">Phone Number</label><input id="phone" placeholder="10-digit mobile" maxlength="10" inputmode="tel"></div>
-  </div>
-  <div class="field"><label class="label">Address</label><textarea id="address" placeholder="House No., Street, Village/Town, Mandal, District" style="min-height:60px"></textarea></div>
-</div>
-
-<!-- Beneficiary Photos -->
-<div class="section">
-  <h2>📸 Beneficiary Photos</h2>
-  <p class="helper-text" style="margin-bottom:12px">Take 2 photos of the beneficiary at the installation site. These upload to Google Drive under DT → ESN folder.</p>
-  <div class="grid-2">
+<main>
+  <div class="wrap hero">
     <div>
-      <div class="ben-photo-box" id="benPhotoBox1" onclick="$('fileBenPhoto1').click()">
-        <div class="placeholder" id="benPlaceholder1">📷</div>
-        <img id="benPreview1" style="display:none">
-        <div class="caption" id="benCaption1">Tap to capture Photo 1</div>
+      <h1>Every rooftop, from survey to inspection, on one record.</h1>
+      <p class="lead">TytoGrid builds back-office software for rooftop-solar EPC contractors. Field teams capture proof on the phone; the office sees what is ready for the portal, and what is holding it up.</p>
+      <div class="cta"><a class="btn solid" href="/solarvista">Sign in to Solar Vista</a><a class="btn line" href="mailto:vrp@tytogrid.com">Write to us</a></div>
+    </div>
+    <figure class="panel" aria-label="Example: one service number moving through the PM Surya Ghar steps" style="margin:0">
+      <div class="head"><span>Service number</span><b>59117 03 000270</b></div>
+      <div class="cells" id="cells">
+        <div class="c"><span>Survey</span><small>GPS and house photo</small></div>
+        <div class="c"><span>Consent form</span><small>signed, 1 page</small></div>
+        <div class="c"><span>ULA application</span><small>MNRE portal</small></div>
+        <div class="c"><span>DCR</span><small>serials matched</small></div>
+        <div class="c"><span>Installation</span><small>consumer OTP</small></div>
+        <div class="c"><span>Inspection</span><small>by the department</small></div>
       </div>
-      <input type="file" id="fileBenPhoto1" accept="image/*" capture="environment" style="display:none" onchange="handleBenPhoto(this,1)">
-    </div>
-    <div>
-      <div class="ben-photo-box" id="benPhotoBox2" onclick="$('fileBenPhoto2').click()">
-        <div class="placeholder" id="benPlaceholder2">📷</div>
-        <img id="benPreview2" style="display:none">
-        <div class="caption" id="benCaption2">Tap to capture Photo 2</div>
+      <div class="foot"><span id="stage">Survey pending</span><span class="ok" id="done"></span></div>
+    </figure>
+  </div>
+
+  <section id="products">
+    <div class="wrap">
+      <h2>Products</h2>
+      <p class="intro">Built for the PM Surya Ghar rooftop programme and the way EPC site offices actually work: many villages, many subcontractors, one portal.</p>
+      <div class="products">
+        <article class="prod sv">
+          <h3>Solar Vista</h3>
+          <p class="what">Field-to-portal tracking for rooftop-solar projects.</p>
+          <ul>
+            <li>Survey and consent collection on the phone – GPS, house photo and the signed form, even without signal</li>
+            <li>Site QC with photo evidence; AI flags what does not match the supervisor's answer</li>
+            <li>Panel and inverter serials checked against the DCR</li>
+            <li>Portal status for every service number: ULA, DCR, installation OTP, inspection</li>
+            <li>Ready-to-upload files for the MNRE portal, batch by batch</li>
+          </ul>
+          <div class="act"><a class="btn" href="/solarvista">Sign in to Solar Vista</a><span class="status">In use on live projects</span></div>
+        </article>
+        <article class="prod cv">
+          <h3>Contract Vista</h3>
+          <p class="what">Hindrances and notices, before they turn into disputes.</p>
+          <ul>
+            <li>Site teams record a hindrance with photos and dates in a minute</li>
+            <li>A draft notice is prepared for the project manager to review and send</li>
+            <li>Intimations left unanswered are escalated to management on time</li>
+          </ul>
+          <div class="act"><a class="btn line" href="mailto:vrp@tytogrid.com?subject=Contract%20Vista%20early%20access">Ask for early access</a><span class="status">In development</span></div>
+        </article>
       </div>
-      <input type="file" id="fileBenPhoto2" accept="image/*" capture="environment" style="display:none" onchange="handleBenPhoto(this,2)">
     </div>
-  </div>
-</div>
+  </section>
 
-<!-- Location -->
-<div class="section">
-  <h2>📍 Location Details</h2>
-  <div class="grid-3">
-    <div class="field"><label class="label">Subdivision</label><input id="subdivision" placeholder="Subdivision"></div>
-    <div class="field"><label class="label">Section</label><input id="section" placeholder="Section"></div>
-    <div class="field"><label class="label">DT (Dist. Transformer)</label><input id="distribution" placeholder="DT name/no."></div>
-  </div>
-  <div class="field">
-    <label class="label">GPS Coordinates / Map Link</label>
-    <div class="gps-row"><input id="coordinates" placeholder="Auto-detect or paste Google Maps link"><button class="gps-btn" id="gpsBtn" onclick="captureGPS()">📍</button></div>
-    <div id="gpsStatus" class="gps-status" style="display:none"></div>
-    <div id="gpsLink" class="gps-link" style="display:none"></div>
-    <p class="helper-text">Tap 📍 to auto-detect, or paste a Google Maps link</p>
-  </div>
-</div>
-
-<!-- Vendor & Team -->
-<div class="section">
-  <h2>🏗️ Vendor & Team Details</h2>
-  <div class="field"><label class="label">Vendor / Subcontractor *</label><input id="vendor" placeholder="Enter vendor name"></div>
-  <div class="grid-2-1">
-    <div class="field"><label class="label">Team Leader Name *</label><input id="teamLeader" placeholder="Enter team leader"></div>
-    <div class="field"><label class="label">Team Size</label><input id="teamSize" type="number" placeholder="e.g. 4"></div>
-  </div>
-</div>
-
-<!-- Dates -->
-<div class="section">
-  <h2>📅 Project Dates</h2>
-  <div class="grid-2">
-    <div class="field"><label class="label">Start Date</label><input id="startDate" type="date"></div>
-    <div class="field"><label class="label">Completion Date</label><input id="completionDate" type="date"></div>
-  </div>
-  <div id="durationBadge" class="duration-badge" style="display:none"></div>
-</div>
-
-<!-- System Specs -->
-<div class="section">
-  <h2>⚡ System Specifications</h2>
-  <div class="grid-2">
-    <div class="field"><label class="label">Capacity (kW)</label><input id="capacity" value="2"></div>
-    <div class="field"><label class="label">Inverter Make</label><input id="inverterMake" value="Selec"></div>
-  </div>
-  <div class="field" style="margin-top:4px">
-    <label class="label">Inverter Serial Number</label>
-    <div class="serial-row"><input id="inverterSerial" placeholder="Scan or enter serial"><button class="cam-btn" id="camInverter" onclick="startScan('inverterSerial','inverter_serial')">📷</button><input type="file" id="fileInverter" accept="image/*" capture="environment" style="display:none" onchange="handleScan(this,'inverterSerial','inverter_serial')"></div>
-    <div class="photo-thumb" id="thumbInverter" style="display:none"><img id="imgInverter"><span>Label captured</span></div>
-  </div>
-</div>
-
-<!-- Panels -->
-<div class="section">
-  <h2>🔆 Solar Panel Details</h2>
-  <div class="grid-2">
-    <div class="field"><label class="label">Panel Make</label><input id="panelMake" value="ReNew"></div>
-    <div class="field"><label class="label">Panel Capacity (Wp)</label><input id="panelCapacity" value="540"></div>
-  </div>
-  <label class="label" style="margin-top:8px">Panel Serial Numbers — 📷 Scan Labels</label>
-  <div class="grid-2" style="margin-top:4px">
-    <div><span class="serial-label">Panel 1</span><div class="serial-row"><input id="panelSerial1" placeholder="Serial No. 1"><button class="cam-btn" id="camPanel1" onclick="startScan('panelSerial1','panel1_serial')">📷</button><input type="file" id="filePanel1" accept="image/*" capture="environment" style="display:none" onchange="handleScan(this,'panelSerial1','panel1_serial')"></div><div class="photo-thumb" id="thumbPanel1" style="display:none"><img id="imgPanel1"><span>Captured</span></div></div>
-    <div><span class="serial-label">Panel 2</span><div class="serial-row"><input id="panelSerial2" placeholder="Serial No. 2"><button class="cam-btn" id="camPanel2" onclick="startScan('panelSerial2','panel2_serial')">📷</button><input type="file" id="filePanel2" accept="image/*" capture="environment" style="display:none" onchange="handleScan(this,'panelSerial2','panel2_serial')"></div><div class="photo-thumb" id="thumbPanel2" style="display:none"><img id="imgPanel2"><span>Captured</span></div></div>
-    <div><span class="serial-label">Panel 3</span><div class="serial-row"><input id="panelSerial3" placeholder="Serial No. 3"><button class="cam-btn" id="camPanel3" onclick="startScan('panelSerial3','panel3_serial')">📷</button><input type="file" id="filePanel3" accept="image/*" capture="environment" style="display:none" onchange="handleScan(this,'panelSerial3','panel3_serial')"></div><div class="photo-thumb" id="thumbPanel3" style="display:none"><img id="imgPanel3"><span>Captured</span></div></div>
-    <div><span class="serial-label">Panel 4</span><div class="serial-row"><input id="panelSerial4" placeholder="Serial No. 4"><button class="cam-btn" id="camPanel4" onclick="startScan('panelSerial4','panel4_serial')">📷</button><input type="file" id="filePanel4" accept="image/*" capture="environment" style="display:none" onchange="handleScan(this,'panelSerial4','panel4_serial')"></div><div class="photo-thumb" id="thumbPanel4" style="display:none"><img id="imgPanel4"><span>Captured</span></div></div>
-  </div>
-  <div id="photoCount" class="photo-count" style="display:none"></div>
-</div>
-
-<!-- DISCOM Meter -->
-<div class="section">
-  <h2>📊 Net Metering</h2>
-  <div class="field"><label class="label">Installation of Meter by DISCOM</label>
-    <div class="yn-group"><button class="yn-btn" id="ynYes" onclick="setDiscom('Yes')">✓ Yes</button><button class="yn-btn" id="ynNo" onclick="setDiscom('No')">✗ No</button></div>
-  </div>
-</div>
-
-<!-- Checklist -->
-<div class="section">
-  <h2>✅ Completion Checklist</h2>
-  <div style="margin-bottom:16px">
-    <div style="display:flex;justify-content:space-between;font-size:12px;color:var(--muted);margin-bottom:6px">
-      <span id="checkCount">0 of 12 completed</span><span id="checkPercent" style="font-weight:600;color:var(--amber)">0%</span>
+  <section id="how" style="padding-top:20px">
+    <div class="wrap">
+      <h2>How it works</h2>
+      <p class="intro">Three places, one record per house.</p>
+      <div class="steps">
+        <div class="step"><div class="n">1</div><h3>On the rooftop</h3><p>Supervisors open a link on their phone – no app store, no password. Photos, serial labels, GPS and forms are captured at the house.</p></div>
+        <div class="step"><div class="n">2</div><h3>In the office</h3><p>The PM and MIS see each village at a glance: what is complete, what needs a re-visit, what is waiting for a document.</p></div>
+        <div class="step"><div class="n">3</div><h3>On the portal</h3><p>Files come out in the portal's own format, and the next day's portal reports show what moved.</p></div>
+      </div>
     </div>
-    <div class="progress-bar"><div class="progress-fill progress-amber" id="checkBar" style="width:0%"></div></div>
-  </div>
-  <div id="checklistContainer"></div>
-</div>
+  </section>
 
-<!-- Remarks -->
-<div class="section">
-  <h2>📝 Remarks</h2>
-  <textarea id="remarks" placeholder="Any additional notes or observations..."></textarea>
-</div>
+  <section>
+    <div class="wrap site">
+      <h2>Built on site, not in a lab.</h2>
+      <div>
+        <p class="big">TytoGrid was started by a project manager with thirty years on EPC sites – dams, hydro, Jal Jeevan Mission and rooftop solar.</p>
+        <p>Every screen answers a question a site office asks every day: which houses are done, which are stuck, and why.</p>
+      </div>
+    </div>
+  </section>
 
-<!-- Upload Progress -->
-<div id="uploadProgress" class="upload-progress" style="display:none">
-  <div style="display:flex;justify-content:space-between;font-size:12px;color:var(--muted);margin-bottom:8px">
-    <span id="uploadDetail" style="font-weight:600"></span><span id="uploadStep"></span>
-  </div>
-  <div class="upload-bar"><div class="upload-fill" id="uploadBar" style="width:0%"></div></div>
-</div>
+  <section class="contact" id="contact">
+    <div class="wrap">
+      <h2>Talk to us</h2>
+      <a class="mail" href="mailto:vrp@tytogrid.com">vrp@tytogrid.com</a>
+    </div>
+  </section>
+</main>
 
-<!-- Submit -->
-<button class="submit-btn idle" id="submitBtn" onclick="handleSubmit()">Submit Installation Record</button>
-<p class="footer">TytoGrid · Solar Vista · v2.0</p>
-
-<!-- Serial photos captured for Drive upload, manual serial entry -->
+<footer><div class="wrap"><span>© 2026 TytoGrid LLP · Field data, made clear.</span><span><a href="/solarvista">Solar Vista sign in</a></span></div></footer>
 
 <script>
-/* ═══════════════════════════════════════
-   STATE
-   ═══════════════════════════════════════ */
-var discomMeter="";
-var photos={}; // serial label photos
-var benPhotos={1:null,2:null}; // beneficiary photos (File objects)
-var offlineQueue=[];
-var lastPhotoFolderUrl=""; // returned by Apps Script after upload
-
-var CHECKLIST=[
-  {id:"site_survey",label:"Site Survey Completed"},
-  {id:"pedestal_concreting",label:"Pedestal Concreting / Foundation Grouting"},
-  {id:"structure_mounting",label:"Module Mounting Structure Installed"},
-  {id:"panel_mounting",label:"Solar Panels Mounted"},
-  {id:"dc_wiring",label:"DC Wiring Completed"},
-  {id:"earthing",label:"Earthing & Lightning Arrestor"},
-  {id:"inverter_install",label:"Inverter Installation"},
-  {id:"inverter_connection",label:"Inverter Connection to Beneficiary Service Meter"},
-  {id:"ac_wiring",label:"AC Wiring & ACDB/DCDB"},
-  {id:"net_meter",label:"Net Meter Connection"},
-  {id:"system_testing",label:"System Testing & Commissioning"},
-  {id:"documentation",label:"Documentation & Photos Submitted"},
-];
-var checkState={};CHECKLIST.forEach(function(c){checkState[c.id]=false});
-
-/* ═══════════════════════════════════════
-   INIT
-   ═══════════════════════════════════════ */
-(function(){
-  var ct=$("checklistContainer");
-  CHECKLIST.forEach(function(item){
-    var d=document.createElement("div");d.className="check-item";d.id="chk_"+item.id;
-    d.onclick=function(){toggleCheck(item.id)};
-    d.innerHTML='<div class="check-box"></div><span>'+item.label+'</span>';ct.appendChild(d);
-  });
-  $("startDate").addEventListener("change",calcDuration);
-  $("completionDate").addEventListener("change",calcDuration);
-  $("coordinates").addEventListener("input",extractCoordsFromLink);
-  $("aadhar").addEventListener("input",formatAadhar);
-  window.addEventListener("online",updateNetStatus);
-  window.addEventListener("offline",updateNetStatus);
-  updateNetStatus();
+// one orchestrated moment: the six cells light up in order, as a house moves through the steps
+(function () {
+  const cells = [...document.querySelectorAll('#cells .c')], st = document.getElementById('stage'), dn = document.getElementById('done');
+  const names = ['Survey', 'Consent form', 'ULA application', 'DCR', 'Installation', 'Inspection'];
+  const finish = () => { cells.forEach((c, k) => { c.classList.toggle('done', k < cells.length - 1); c.classList.toggle('on', k === cells.length - 1); });
+    st.textContent = 'All steps complete'; dn.textContent = '✓ Ready for subsidy request'; };
+  if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return finish();
+  let i = 0;
+  setTimeout(function tick() {
+    if (i < cells.length) { if (i) { cells[i - 1].classList.remove('on'); cells[i - 1].classList.add('done'); } cells[i].classList.add('on'); st.textContent = names[i] + ' done'; i++; setTimeout(tick, 560); } else finish();
+  }, 700);
 })();
-
-/* ═══════════════════════════════════════
-   HELPERS
-   ═══════════════════════════════════════ */
-function $(id){return document.getElementById(id)}
-function val(id){return $(id).value.trim()}
-function formatAadhar(e){var v=e.target.value.replace(/\D/g,"");if(v.length>12)v=v.slice(0,12);var p=[];for(var i=0;i<v.length;i+=4)p.push(v.slice(i,i+4));e.target.value=p.join(" ")}
-function setDiscom(v){discomMeter=v;$("ynYes").className="yn-btn"+(v==="Yes"?" active-yes":"");$("ynNo").className="yn-btn"+(v==="No"?" active-no":"")}
-function toggleCheck(id){checkState[id]=!checkState[id];var el=$("chk_"+id);el.className="check-item"+(checkState[id]?" checked":"");el.querySelector(".check-box").innerHTML=checkState[id]?"✓":"";updateCheckProgress()}
-function updateCheckProgress(){var t=CHECKLIST.length,d=0;CHECKLIST.forEach(function(c){if(checkState[c.id])d++});var p=Math.round(d/t*100);$("checkCount").textContent=d+" of "+t+" completed";$("checkPercent").textContent=p+"%";$("checkPercent").style.color=p===100?"var(--green-dark)":"var(--amber)";$("checkBar").style.width=p+"%";$("checkBar").className="progress-fill "+(p===100?"progress-green":"progress-amber")}
-function calcDuration(){var s=$("startDate").value,e=$("completionDate").value;if(s&&e){var d=Math.max(0,Math.ceil((new Date(e)-new Date(s))/864e5));$("durationBadge").textContent="Duration: "+d+" days";$("durationBadge").style.display="block"}else $("durationBadge").style.display="none"}
-function updateNetStatus(){var on=navigator.onLine;$("netBadge").className="badge "+(on?"badge-online":"badge-offline");$("netBadge").innerHTML='<span class="badge-dot" style="background:'+(on?"#4ade80":"#f87171")+'"></span> '+(on?"Online":"Offline");var btn=$("queueBanner").querySelector("button");if(btn)btn.style.display=on?"inline":"none"}
-function updatePhotoCount(){
-  var c=Object.keys(photos).filter(function(k){return photos[k]&&photos[k].file}).length;
-  if(benPhotos[1])c++;if(benPhotos[2])c++;
-  if(c>0){$("photoCount").style.display="block";$("photoCount").textContent="📷 "+c+" photo"+(c>1?"s":"")+" ready to upload to Drive"}
-  else $("photoCount").style.display="none";
-  $("submitBtn").textContent=c>0?"Submit (+ "+c+" photos)":"Submit Installation Record";
-}
-function updateQueueBanner(){if(offlineQueue.length>0){$("queueBanner").style.display="flex";$("queueCount").textContent=offlineQueue.length+" submission"+(offlineQueue.length>1?"s":"")+" queued offline"}else $("queueBanner").style.display="none"}
-
-/* ═══════════════════════════════════════
-   BENEFICIARY PHOTOS
-   ═══════════════════════════════════════ */
-function handleBenPhoto(input,num){
-  var file=input.files&&input.files[0];if(!file)return;
-  benPhotos[num]=file;
-  var box=$("benPhotoBox"+num);box.className="ben-photo-box captured";
-  $("benPlaceholder"+num).style.display="none";
-  var img=$("benPreview"+num);img.src=URL.createObjectURL(file);img.style.display="block";
-  $("benCaption"+num).textContent="✓ Photo "+num+" captured";
-  updatePhotoCount();
-  input.value="";
-}
-
-/* ═══════════════════════════════════════
-   GPS
-   ═══════════════════════════════════════ */
-function captureGPS(){
-  if(!navigator.geolocation){alert("GPS not available");return}
-  $("gpsBtn").className="gps-btn locating";$("gpsBtn").textContent="⏳";
-  $("gpsStatus").style.display="block";$("gpsStatus").style.color="var(--amber)";$("gpsStatus").textContent="Locating...";
-  navigator.geolocation.getCurrentPosition(function(pos){
-    var lat=pos.coords.latitude.toFixed(6),lng=pos.coords.longitude.toFixed(6),acc=Math.round(pos.coords.accuracy);
-    $("coordinates").value=lat+", "+lng;$("gpsBtn").className="gps-btn located";$("gpsBtn").textContent="✅";
-    $("gpsStatus").style.color="var(--green-dark)";$("gpsStatus").textContent="Accuracy: ~"+acc+"m";
-    $("gpsLink").style.display="block";$("gpsLink").innerHTML='<a href="https://www.google.com/maps?q='+lat+','+lng+'" target="_blank">Open in Google Maps ↗</a>';
-  },function(err){
-    $("gpsBtn").className="gps-btn";$("gpsBtn").textContent="📍";
-    $("gpsStatus").style.color="var(--red)";$("gpsStatus").textContent="Failed: "+err.message;
-  },{enableHighAccuracy:true,timeout:15000,maximumAge:0});
-}
-function extractCoordsFromLink(e){
-  var v=e.target.value,m=v.match(/@(-?\d+\.\d+),(-?\d+\.\d+)/);
-  if(!m)m=v.match(/q=(-?\d+\.\d+),(-?\d+\.\d+)/);if(!m)m=v.match(/ll=(-?\d+\.\d+),(-?\d+\.\d+)/);
-  if(!m)m=v.match(/^(-?\d+\.\d+)\s*,\s*(-?\d+\.\d+)$/);
-  if(m){var lat=parseFloat(m[1]).toFixed(6),lng=parseFloat(m[2]).toFixed(6);e.target.value=lat+", "+lng;
-    $("gpsBtn").className="gps-btn located";$("gpsBtn").textContent="✅";
-    $("gpsStatus").style.display="block";$("gpsStatus").style.color="var(--green-dark)";$("gpsStatus").textContent="Coordinates extracted";
-    $("gpsLink").style.display="block";$("gpsLink").innerHTML='<a href="https://www.google.com/maps?q='+lat+','+lng+'" target="_blank">Open in Google Maps ↗</a>';
-  }
-}
-
-/* ═══════════════════════════════════════
-   OCR
-   ═══════════════════════════════════════ */
-function startScan(inputId,fieldKey){
-  var fileId;if(inputId.startsWith("panelSerial"))fileId="filePanel"+inputId.replace("panelSerial","");
-  else if(inputId==="inverterSerial")fileId="fileInverter";
-  // Show viewfinder overlay
-  var ov=document.createElement("div");ov.className="scan-overlay";ov.id="scanOverlay";
-  ov.innerHTML='<h3>📷 Scan Serial Number</h3>'
-    +'<p>Position the serial number<br>inside the frame, then tap Capture</p>'
-    +'<div class="frame"><div class="corner tl"></div><div class="corner tr"></div><div class="corner bl"></div><div class="corner br"></div></div>'
-    +'<p style="font-size:11px;color:#fbbf24">Only the center of the photo is read.<br>Fill the frame with just the serial number.</p>'
-    +'<button class="scan-btn" id="scanCapBtn">📷 Capture</button>'
-    +'<button class="scan-cancel" id="scanCanBtn">Cancel</button>';
-  document.body.appendChild(ov);
-  $("scanCapBtn").onclick=function(){ov.remove();$(fileId).click()};
-  $("scanCanBtn").onclick=function(){ov.remove()};
-}
-/* ═══════════════════════════════════════
-   GOOGLE CLOUD VISION OCR
-   ═══════════════════════════════════════ */
-var VISION_API_KEY = "PASTE_YOUR_CLOUD_VISION_KEY_HERE";
-
-async function compressForOCR(file){
-  return new Promise(function(resolve){
-    var img=new Image();
-    img.onload=function(){
-      var c=document.createElement("canvas");
-      // Crop to center 60% of the image — removes peripheral text
-      var cropRatio=0.6;
-      var sx=img.width*(1-cropRatio)/2;
-      var sy=img.height*(1-cropRatio)/2;
-      var sw=img.width*cropRatio;
-      var sh=img.height*cropRatio;
-      // Scale cropped region to max 1200px
-      var scale=Math.min(1200/sw,1200/sh,1);
-      c.width=sw*scale;c.height=sh*scale;
-      var ctx=c.getContext("2d");
-      ctx.filter="contrast(1.4) brightness(1.1)";
-      ctx.drawImage(img,sx,sy,sw,sh,0,0,c.width,c.height);
-      c.toBlob(function(blob){
-        var reader=new FileReader();
-        reader.onload=function(){resolve(reader.result.split(",")[1])};
-        reader.readAsDataURL(blob);
-      },"image/jpeg",0.9);
-    };
-    img.src=URL.createObjectURL(file);
-  });
-}
-
-async function handleScan(fileInput,inputId,fieldKey){
-  var file=fileInput.files&&fileInput.files[0];if(!file)return;
-  photos[fieldKey]={file:file,serialNumber:""};updatePhotoCount();
-  var thumbId=inputId.startsWith("panelSerial")?"thumbPanel"+inputId.replace("panelSerial",""):"thumbInverter";
-  var imgId=inputId.startsWith("panelSerial")?"imgPanel"+inputId.replace("panelSerial",""):"imgInverter";
-  var camId=inputId.startsWith("panelSerial")?"camPanel"+inputId.replace("panelSerial",""):"camInverter";
-  $(thumbId).style.display="flex";$(imgId).src=URL.createObjectURL(file);
-  $(camId).className="cam-btn scanning";$(camId).textContent="⏳";
-  $(inputId).placeholder="Reading label...";
-
-  // Store for retry
-  window._lastScan={file:file,inputId:inputId,fieldKey:fieldKey,camId:camId};
-
-  try{
-    if(VISION_API_KEY==="AIzaSyBdZAvwvdwwPOlf8_TANg4VLW513dHuTMY"){
-      throw new Error("API key not configured");
-    }
-    var b64=await compressForOCR(file);
-    var res=await fetch("https://vision.googleapis.com/v1/images:annotate?key="+VISION_API_KEY,{
-      method:"POST",
-      headers:{"Content-Type":"application/json"},
-      body:JSON.stringify({
-        requests:[{
-          image:{content:b64},
-          features:[{type:"TEXT_DETECTION",maxResults:10}]
-        }]
-      })
-    });
-
-    if(!res.ok){
-      var errText=await res.text();
-      throw new Error("API "+res.status+": "+errText.substring(0,100));
-    }
-
-    var data=await res.json();
-    var resp=data.responses&&data.responses[0];
-    if(!resp||!resp.textAnnotations||resp.textAnnotations.length===0){
-      $(camId).className="cam-btn";$(camId).textContent="🔄";
-      $(inputId).value="";$(inputId).placeholder="Couldn't read — retake or type";$(inputId).focus();
-      fileInput.value="";return;
-    }
-
-    // textAnnotations[0].description = full OCR text
-    var fullText=resp.textAnnotations[0].description||"";
-    var lines=fullText.split("\n").map(function(l){return l.trim()}).filter(function(l){return l.length>=4});
-
-    // Look for "Label: Value" patterns (Serial No: XXX, Sr. No: XXX, S/N: XXX, etc.)
-    var parsed=[];
-    lines.forEach(function(line){
-      var m=line.match(/^(.+?)[\:\-]\s*(.+)$/);
-      if(m&&m[2].length>=4){
-        var label=m[1].trim().toLowerCase();
-        if(label.indexOf("serial")!==-1||label.indexOf("sr.")!==-1||label.indexOf("s/n")!==-1||
-           label.indexOf("sl.")!==-1||label.indexOf("barcode")!==-1||label.indexOf("model")!==-1||
-           label.indexOf("part")!==-1){
-          parsed.push({label:m[1].trim(),value:m[2].trim()});
-        }
-      }
-    });
-
-    // Also find standalone serial-like strings: alphanumeric+dashes, 8+ chars, has both letters & numbers
-    var serials=lines.filter(function(l){
-      var clean=l.replace(/[\s]/g,"");
-      return /^[A-Za-z0-9\-\/\.\:]{8,}$/.test(clean)&&/\d/.test(clean)&&/[A-Za-z]/.test(clean);
-    }).filter(function(s){
-      var low=s.toLowerCase();
-      return low.indexOf("voltage")===-1&&low.indexOf("watt")===-1&&low.indexOf("freq")===-1&&
-        low.indexOf("phase")===-1&&low.indexOf("made")===-1&&low.indexOf("class")===-1;
-    });
-    serials.forEach(function(s){
-      if(!parsed.some(function(p){return p.value===s})){
-        parsed.push({label:"Serial",value:s});
-      }
-    });
-
-    if(parsed.length===1){
-      $(inputId).value=parsed[0].value;photos[fieldKey].serialNumber=parsed[0].value;
-      $(camId).className="cam-btn done";$(camId).textContent="✅";
-    } else if(parsed.length>1){
-      var cands=parsed.map(function(p){return p.label+": "+p.value});
-      showModal(cands,inputId,fieldKey,camId);
-    } else {
-      // No serial found — show all lines for manual pick
-      if(lines.length>0){
-        showModal(lines,inputId,fieldKey,camId);
-      } else {
-        $(camId).className="cam-btn";$(camId).textContent="🔄";
-        $(inputId).value="";$(inputId).placeholder="Couldn't read — retake or type";$(inputId).focus();
-      }
-    }
-  }catch(e){
-    console.error("Vision OCR error:",e.message);
-    $(camId).className="cam-btn";$(camId).textContent="🔄";
-    $(inputId).value="";
-    if(e.message.indexOf("API key")!==-1){
-      $(inputId).placeholder="⚠ Vision API key not set!";
-    } else if(e.message.indexOf("403")!==-1){
-      $(inputId).placeholder="⚠ Key invalid or Vision API not enabled";
-    } else {
-      $(inputId).placeholder="⚠ Error — type manually";
-    }
-    $(inputId).focus();
-  }
-  $(inputId).oninput=function(){photos[fieldKey].serialNumber=$(inputId).value.trim()};
-  fileInput.value="";
-}
-
-/* ═══════════════════════════════════════
-   MODAL
-   ═══════════════════════════════════════ */
-function showModal(cands,inputId,fieldKey,camId){
-  var body=$("modalBody");body.innerHTML="";
-  if(cands.length===0){body.innerHTML='<p class="modal-empty">Could not read label. Try better lighting or closer photo.</p>';$(camId).className="cam-btn";$(camId).textContent="🔄"}
-  else cands.forEach(function(t){var b=document.createElement("button");b.className="modal-option";b.textContent=t;
-    b.onclick=function(){
-      // Extract value part if "Label: Value" format
-      var val=t;var m=t.match(/^.+?:\s*(.+)$/);if(m)val=m[1];
-      $(inputId).value=val;photos[fieldKey].serialNumber=val;$(camId).className="cam-btn done";$(camId).textContent="✅";closeModal()};body.appendChild(b)});
-  $("modal").style.display="flex";
-}
-function closeModal(){$("modal").style.display="none"}
-
-/* ═══════════════════════════════════════
-   SUBMIT
-   ═══════════════════════════════════════ */
-function getFormData(){
-  return {esn:val("esn"),beneficiaryName:val("beneficiaryName"),aadhar:val("aadhar"),phone:val("phone"),address:val("address"),
-    subdivision:val("subdivision"),section:val("section"),distribution:val("distribution"),coordinates:val("coordinates"),
-    vendor:val("vendor"),teamLeader:val("teamLeader"),teamSize:val("teamSize"),
-    startDate:val("startDate"),completionDate:val("completionDate"),
-    capacity:val("capacity"),inverterMake:val("inverterMake"),inverterSerial:val("inverterSerial"),
-    panelMake:val("panelMake"),panelCapacity:val("panelCapacity"),
-    panelSerial1:val("panelSerial1"),panelSerial2:val("panelSerial2"),panelSerial3:val("panelSerial3"),panelSerial4:val("panelSerial4"),
-    discomMeter:discomMeter,remarks:val("remarks")}
-}
-function getChecklistString(){return CHECKLIST.filter(function(c){return checkState[c.id]}).map(function(c){return c.label}).join(", ")}
-function setSubmitState(s,t){$("submitBtn").className="submit-btn "+s;if(t)$("submitBtn").textContent=t}
-function showUploadProgress(s,t,d){$("uploadProgress").style.display="block";$("uploadDetail").textContent=d;$("uploadStep").textContent="Step "+s+"/"+t;$("uploadBar").style.width=Math.round(s/t*100)+"%"}
-function hideUploadProgress(){$("uploadProgress").style.display="none"}
-
-async function handleSubmit(){
-  var data=getFormData();
-  var required=["esn","beneficiaryName","vendor","teamLeader"];
-  var missing=required.filter(function(f){return !data[f]});
-  required.forEach(function(f){$(f).className=(!data[f])?"input-error":""});
-  if(missing.length>0){setSubmitState("error","⚠ Fill Required Fields");setTimeout(function(){setSubmitState("idle");updatePhotoCount()},2500);return}
-
-  if(!navigator.onLine){offlineQueue.push({data:data,checklist:getChecklistString()});updateQueueBanner();setSubmitState("queued","📦 Saved Offline");setTimeout(function(){setSubmitState("idle");updatePhotoCount()},3000);return}
-
-  // Count total photos (serial labels + beneficiary)
-  var serialPhotos=Object.keys(photos).filter(function(k){return photos[k]&&photos[k].file});
-  var totalPhotos=serialPhotos.length+(benPhotos[1]?1:0)+(benPhotos[2]?1:0);
-  var totalSteps=totalPhotos>0?3:2;
-  lastPhotoFolderUrl="";
-
-  setSubmitState("submitting","⏳ Submitting...");
-
-  // Step 1: Upload photos first (so we get folder URL for form)
-  if(totalPhotos>0){
-    showUploadProgress(1,totalSteps,"Uploading "+totalPhotos+" photo(s) to Drive...");
-    try{
-      var pa=[];
-      // Beneficiary photos
-      if(benPhotos[1]){var b1=await fileToBase64(benPhotos[1]);pa.push({fieldName:"beneficiary_photo_1",base64:b1,mimeType:benPhotos[1].type||"image/jpeg",serialNumber:""})}
-      if(benPhotos[2]){var b2=await fileToBase64(benPhotos[2]);pa.push({fieldName:"beneficiary_photo_2",base64:b2,mimeType:benPhotos[2].type||"image/jpeg",serialNumber:""})}
-      // Serial label photos
-      for(var i=0;i<serialPhotos.length;i++){var k=serialPhotos[i];
-        var b64=await fileToBase64(photos[k].file);
-        pa.push({fieldName:k,base64:b64,mimeType:photos[k].file.type||"image/jpeg",serialNumber:photos[k].serialNumber||""})}
-
-      var res=await fetch(PHOTO_UPLOAD_URL,{method:"POST",headers:{"Content-Type":"application/json"},
-        body:JSON.stringify({esn:data.esn,beneficiaryName:data.beneficiaryName,distribution:data.distribution,photos:pa})});
-      var resData=await res.json();
-      if(resData.folderUrl) lastPhotoFolderUrl=resData.folderUrl;
-    }catch(e){
-      showUploadProgress(1,totalSteps,"⚠ Photo upload failed — saving form data anyway");
-      await sleep(1500);
-    }
-  }
-
-  // Step 2: Submit form data (with photo folder link)
-  showUploadProgress(totalPhotos>0?2:1,totalSteps,"Submitting form data...");
-  try{
-    var fd=new URLSearchParams();
-    fd.append(ENTRY.esn,data.esn);fd.append(ENTRY.beneficiaryName,data.beneficiaryName);
-    fd.append(ENTRY.aadhar,data.aadhar);fd.append(ENTRY.phone,data.phone);fd.append(ENTRY.address,data.address);
-    fd.append(ENTRY.subdivision,data.subdivision);fd.append(ENTRY.section,data.section);
-    fd.append(ENTRY.distribution,data.distribution);fd.append(ENTRY.coordinates,data.coordinates);
-    fd.append(ENTRY.vendor,data.vendor);fd.append(ENTRY.teamLeader,data.teamLeader);fd.append(ENTRY.teamSize,data.teamSize);
-    // Date fields: Google Forms DateItem needs _year, _month, _day suffixes
-    if(data.startDate){var sd=data.startDate.split("-");fd.append(ENTRY.startDate+"_year",sd[0]);fd.append(ENTRY.startDate+"_month",String(parseInt(sd[1])));fd.append(ENTRY.startDate+"_day",String(parseInt(sd[2])))}
-    if(data.completionDate){var cd=data.completionDate.split("-");fd.append(ENTRY.completionDate+"_year",cd[0]);fd.append(ENTRY.completionDate+"_month",String(parseInt(cd[1])));fd.append(ENTRY.completionDate+"_day",String(parseInt(cd[2])))}
-    fd.append(ENTRY.capacity,data.capacity);fd.append(ENTRY.inverterMake,data.inverterMake);fd.append(ENTRY.inverterSerial,data.inverterSerial);
-    fd.append(ENTRY.panelMake,data.panelMake);fd.append(ENTRY.panelCapacity,data.panelCapacity);
-    fd.append(ENTRY.panelSerial1,data.panelSerial1);fd.append(ENTRY.panelSerial2,data.panelSerial2);
-    fd.append(ENTRY.panelSerial3,data.panelSerial3);fd.append(ENTRY.panelSerial4,data.panelSerial4);
-    fd.append(ENTRY.discomMeter,data.discomMeter);fd.append(ENTRY.checklist,getChecklistString());fd.append(ENTRY.remarks,data.remarks);
-    fd.append(ENTRY.photoFolder,lastPhotoFolderUrl);
-    await fetch(FORM_URL,{method:"POST",mode:"no-cors",headers:{"Content-Type":"application/x-www-form-urlencoded"},body:fd.toString()});
-  }catch(e){
-    offlineQueue.push({data:data,checklist:getChecklistString()});updateQueueBanner();
-    setSubmitState("queued","📦 Network error — Saved Offline");hideUploadProgress();
-    setTimeout(function(){setSubmitState("idle");updatePhotoCount()},3000);return;
-  }
-
-  // Done
-  showUploadProgress(totalSteps,totalSteps,"Complete!");
-  setSubmitState("success","✓ Submitted — Ready for Next");
-  await sleep(2000);
-
-  // Reset (keep vendor, team, start, subdivision, section, DT)
-  var keep={vendor:data.vendor,teamLeader:data.teamLeader,teamSize:data.teamSize,startDate:data.startDate,
-    subdivision:data.subdivision,section:data.section,distribution:data.distribution};
-  $("esn").value="";$("beneficiaryName").value="";$("aadhar").value="";$("phone").value="";$("address").value="";
-  $("subdivision").value=keep.subdivision;$("section").value=keep.section;$("distribution").value=keep.distribution;
-  $("coordinates").value="";$("gpsStatus").style.display="none";$("gpsLink").style.display="none";$("gpsBtn").className="gps-btn";$("gpsBtn").textContent="📍";
-  $("vendor").value=keep.vendor;$("teamLeader").value=keep.teamLeader;$("teamSize").value=keep.teamSize;
-  $("startDate").value=keep.startDate;$("completionDate").value="";
-  $("capacity").value="2";$("inverterMake").value="Selec";$("inverterSerial").value="";
-  $("panelMake").value="ReNew";$("panelCapacity").value="540";
-  $("panelSerial1").value="";$("panelSerial2").value="";$("panelSerial3").value="";$("panelSerial4").value="";
-  $("remarks").value="";discomMeter="";$("ynYes").className="yn-btn";$("ynNo").className="yn-btn";$("durationBadge").style.display="none";
-  CHECKLIST.forEach(function(c){checkState[c.id]=false;$("chk_"+c.id).className="check-item";$("chk_"+c.id).querySelector(".check-box").innerHTML=""});updateCheckProgress();
-  photos={};benPhotos={1:null,2:null};
-  ["Inverter","Panel1","Panel2","Panel3","Panel4"].forEach(function(n){$("thumb"+n).style.display="none";$("cam"+n).className="cam-btn";$("cam"+n).textContent="📷"});
-  [1,2].forEach(function(n){$("benPhotoBox"+n).className="ben-photo-box";$("benPlaceholder"+n).style.display="block";$("benPreview"+n).style.display="none";$("benCaption"+n).textContent="Tap to capture Photo "+n});
-  updatePhotoCount();["esn","beneficiaryName","vendor","teamLeader"].forEach(function(f){$(f).className=""});
-  hideUploadProgress();setSubmitState("idle");updatePhotoCount();lastPhotoFolderUrl="";
-  window.scrollTo({top:0,behavior:"smooth"});
-}
-
-/* ═══════════════════════════════════════
-   OFFLINE RETRY
-   ═══════════════════════════════════════ */
-async function retryQueue(){
-  if(!navigator.onLine){alert("Still offline.");return}var synced=0,failed=[];
-  for(var i=0;i<offlineQueue.length;i++){var item=offlineQueue[i],d=item.data;
-    try{var fd=new URLSearchParams();
-      fd.append(ENTRY.esn,d.esn);fd.append(ENTRY.beneficiaryName,d.beneficiaryName);
-      fd.append(ENTRY.aadhar,d.aadhar);fd.append(ENTRY.phone,d.phone);fd.append(ENTRY.address,d.address);
-      fd.append(ENTRY.subdivision,d.subdivision);fd.append(ENTRY.section,d.section);fd.append(ENTRY.distribution,d.distribution);fd.append(ENTRY.coordinates,d.coordinates);
-      fd.append(ENTRY.vendor,d.vendor);fd.append(ENTRY.teamLeader,d.teamLeader);fd.append(ENTRY.teamSize,d.teamSize);
-      if(d.startDate){var sd=d.startDate.split("-");fd.append(ENTRY.startDate+"_year",sd[0]);fd.append(ENTRY.startDate+"_month",String(parseInt(sd[1])));fd.append(ENTRY.startDate+"_day",String(parseInt(sd[2])))}
-      if(d.completionDate){var cd=d.completionDate.split("-");fd.append(ENTRY.completionDate+"_year",cd[0]);fd.append(ENTRY.completionDate+"_month",String(parseInt(cd[1])));fd.append(ENTRY.completionDate+"_day",String(parseInt(cd[2])))}
-      fd.append(ENTRY.capacity,d.capacity);fd.append(ENTRY.inverterMake,d.inverterMake);fd.append(ENTRY.inverterSerial,d.inverterSerial);
-      fd.append(ENTRY.panelMake,d.panelMake);fd.append(ENTRY.panelCapacity,d.panelCapacity);
-      fd.append(ENTRY.panelSerial1,d.panelSerial1);fd.append(ENTRY.panelSerial2,d.panelSerial2);
-      fd.append(ENTRY.panelSerial3,d.panelSerial3);fd.append(ENTRY.panelSerial4,d.panelSerial4);
-      fd.append(ENTRY.discomMeter,d.discomMeter);fd.append(ENTRY.checklist,item.checklist);fd.append(ENTRY.remarks,d.remarks);
-      fd.append(ENTRY.photoFolder,"");
-      await fetch(FORM_URL,{method:"POST",mode:"no-cors",headers:{"Content-Type":"application/x-www-form-urlencoded"},body:fd.toString()});synced++;
-    }catch(e){failed.push(item)}}
-  offlineQueue=failed;updateQueueBanner();alert("Synced "+synced+" of "+(synced+failed.length)+".")
-}
-
-/* ═══════════════════════════════════════
-   UTILITIES
-   ═══════════════════════════════════════ */
-function fileToBase64(f){return new Promise(function(r,j){var rd=new FileReader();rd.onload=function(){r(rd.result.split(",")[1])};rd.onerror=j;rd.readAsDataURL(f)})}
-function sleep(ms){return new Promise(function(r){setTimeout(r,ms)})}
 </script>
 </body>
 </html>

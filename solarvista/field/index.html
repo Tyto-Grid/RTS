@@ -1,0 +1,360 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Survey – Kuppam</title>
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<meta name="theme-color" content="#142257">
+<link rel="manifest" href="/solarvista/field/manifest.json">
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="/assets/icon-192.png">
+<script src="/solarvista/config.js"></script>
+<style>
+:root{
+  --bg:#f4f6f8; --card:#fff; --ink:#1b2230; --muted:#667085; --line:#dfe3e8; --accent:#1F3A93; --accent-ink:#fff;
+  --ok:#137a3f; --ok-bg:#e4f5eb; --warn:#9a6200; --warn-bg:#fff3d6; --bad:#b42318; --bad-bg:#fdeceb; --chip:#eef2f7;
+  --p1:#137a3f; --p1-bg:#e4f5eb; --p2:#9a6200; --p2-bg:#fff3d6; --p3:#3d5a99; --p3-bg:#e8eefb;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#12151b; --card:#1b2029; --ink:#e7eaf0; --muted:#98a2b3; --line:#2c3340; --accent:#6f9bff; --accent-ink:#0d1220;
+    --ok:#5fd394; --ok-bg:#16301f; --warn:#f2c14e; --warn-bg:#33290f; --bad:#ff8a80; --bad-bg:#3a1a18; --chip:#242a35;
+    --p1:#5fd394; --p1-bg:#16301f; --p2:#f2c14e; --p2-bg:#33290f; --p3:#9db7ff; --p3-bg:#1d2840;
+  }
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,"Noto Sans Telugu",sans-serif}
+.wrap{max-width:560px;margin:0 auto;padding:12px 16px 40px}
+h1{font-size:20px;margin:6px 0 2px}
+.sub{color:var(--muted);font-size:13px;margin-bottom:10px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px;margin:12px 0}
+.card h2{font-size:15px;margin:0 0 8px;color:var(--muted);font-weight:600}
+label{display:block;font-size:13px;color:var(--muted);margin:10px 0 4px}
+input{width:100%;font:inherit;color:inherit;background:var(--card);border:1px solid var(--line);border-radius:10px;padding:11px 12px}
+input:focus{outline:2px solid var(--accent);border-color:transparent}
+input[readonly]{background:var(--chip)}
+.mono{font-family:ui-monospace,Consolas,monospace;letter-spacing:.3px}
+button{font:inherit;border-radius:10px;border:1px solid var(--line);background:var(--card);color:inherit;padding:10px 14px;cursor:pointer}
+button.primary{background:var(--accent);border-color:var(--accent);color:var(--accent-ink);font-weight:600}
+button:disabled{opacity:.5}
+.list{display:flex;flex-direction:column;gap:6px;margin-top:8px}
+.row{display:flex;justify-content:space-between;gap:8px;align-items:center;text-align:left;width:100%;padding:10px 12px}
+.row .l{min-width:0}.row .n{font-size:13px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.row.done{opacity:.6}
+.tag{display:inline-block;border-radius:6px;padding:1px 7px;font-size:11.5px;font-weight:700;white-space:nowrap}
+.t1{background:var(--p1-bg);color:var(--p1)}.t2{background:var(--p2-bg);color:var(--p2)}.t3{background:var(--p3-bg);color:var(--p3)}
+.tdone{background:var(--chip);color:var(--muted)}
+.grp{font-weight:700;font-size:13px;margin:14px 0 2px;color:var(--muted)}
+.msg{font-size:13.5px;margin-top:6px;padding:6px 9px;border-radius:8px}
+.m-ok{background:var(--ok-bg);color:var(--ok)}.m-warn{background:var(--warn-bg);color:var(--warn)}.m-bad{background:var(--bad-bg);color:var(--bad)}.m-info{background:var(--chip);color:var(--muted)}
+.seg{display:flex;gap:6px}.seg button{flex:1;padding:11px 6px}
+.seg button.on{background:var(--accent);border-color:var(--accent);color:var(--accent-ink);font-weight:600}
+.btns{display:flex;gap:6px;margin-top:8px}.btns button{flex:1;padding:10px}
+.thumb img{width:100%;max-height:220px;object-fit:contain;border-radius:8px;background:var(--bg);margin-top:8px}
+.errors{color:var(--bad);font-size:14px}.errors li{margin:2px 0}
+.top{display:flex;align-items:center;gap:8px}.top h1{flex:1}
+.back{padding:6px 12px;font-size:14px}
+.hidden{display:none!important}
+.more{width:100%;margin-top:8px;font-size:14px}
+.small{font-size:12px;font-weight:400}
+
+/* brand */
+.band{margin:-12px -16px 14px;padding:18px 16px 16px;background:linear-gradient(135deg,#142257 0%,#22397f 100%);color:#fff;display:flex;gap:12px;align-items:center;border-bottom:4px solid #F4A62A}
+.band svg{flex:0 0 auto;border-radius:10px;box-shadow:0 0 0 1px rgba(255,255,255,.15)}
+.band .org{font-size:13px;font-weight:600;color:#F4A62A;letter-spacing:.2px}
+.band h1{margin:1px 0 2px;color:#fff;font-size:21px}
+.band .sub{margin:0;color:#c9d2ec}
+.card{border-top:3px solid #F4A62A}
+.card h2{color:#142257;font-weight:700}
+.top h1{color:var(--accent)}
+.row:active,.row:hover{border-color:#F4A62A}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]) .card h2{color:#9db7ff}}
+</style>
+</head>
+<body>
+<div id="qBar" class="hidden" style="position:sticky;top:0;z-index:9;background:#fff3d6;color:#7a4d00;border-bottom:1px solid #f0d58a;padding:9px 16px;font-size:14px;display:flex;gap:10px;align-items:center">
+  <span id="qTxt" style="flex:1"></span><button id="qSend" style="padding:5px 12px;font-size:13px">Send now</button></div>
+<!-- 1. distributions -->
+<div class="wrap" id="pDist">
+  <header class="band"><svg width="40" height="40" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="TytoGrid"><defs><clipPath id="tgLensF"><circle cx="37" cy="37" r="16"/></clipPath></defs>
+<rect width="64" height="64" rx="15" fill="#142257"/><g fill="#34488F"><rect x="11" y="11" width="8" height="8" rx="1.8"/><rect x="22" y="11" width="8" height="8" rx="1.8"/><rect x="33" y="11" width="8" height="8" rx="1.8"/><rect x="44" y="11" width="8" height="8" rx="1.8"/><rect x="11" y="22" width="8" height="8" rx="1.8"/><rect x="22" y="22" width="8" height="8" rx="1.8"/><rect x="33" y="22" width="8" height="8" rx="1.8"/><rect x="44" y="22" width="8" height="8" rx="1.8"/><rect x="11" y="33" width="8" height="8" rx="1.8"/><rect x="22" y="33" width="8" height="8" rx="1.8"/><rect x="33" y="33" width="8" height="8" rx="1.8"/><rect x="44" y="33" width="8" height="8" rx="1.8"/><rect x="11" y="44" width="8" height="8" rx="1.8"/><rect x="22" y="44" width="8" height="8" rx="1.8"/><rect x="33" y="44" width="8" height="8" rx="1.8"/><rect x="44" y="44" width="8" height="8" rx="1.8"/></g>
+<g clip-path="url(#tgLensF)"><circle cx="37" cy="37" r="16" fill="#142257"/><g fill="#F4A62A" transform="translate(37 37) scale(1.6) translate(-37 -37)"><rect x="11" y="11" width="8" height="8" rx="1.8"/><rect x="22" y="11" width="8" height="8" rx="1.8"/><rect x="33" y="11" width="8" height="8" rx="1.8"/><rect x="44" y="11" width="8" height="8" rx="1.8"/><rect x="11" y="22" width="8" height="8" rx="1.8"/><rect x="22" y="22" width="8" height="8" rx="1.8"/><rect x="33" y="22" width="8" height="8" rx="1.8"/><rect x="44" y="22" width="8" height="8" rx="1.8"/><rect x="11" y="33" width="8" height="8" rx="1.8"/><rect x="22" y="33" width="8" height="8" rx="1.8"/><rect x="33" y="33" width="8" height="8" rx="1.8"/><rect x="44" y="33" width="8" height="8" rx="1.8"/><rect x="11" y="44" width="8" height="8" rx="1.8"/><rect x="22" y="44" width="8" height="8" rx="1.8"/><rect x="33" y="44" width="8" height="8" rx="1.8"/><rect x="44" y="44" width="8" height="8" rx="1.8"/></g></g>
+<circle cx="37" cy="37" r="16" fill="none" stroke="#FFFFFF" stroke-width="2.4"/></svg><div><div class="org">Kasu Infra Projects Pvt. Ltd.</div><h1>Survey · Kuppam</h1><div class="sub">Consent forms for ULA – installed houses first.</div></div></header>
+  <div class="card"><h2>1 · Your name</h2><input id="by" autocomplete="name" placeholder="Supervisor name"></div>
+  <div class="card"><h2>2 · Distribution (village)</h2>
+    <input id="dq" placeholder="Type to search" autocomplete="off">
+    <div class="msg m-info" id="dMsg">Loading…</div>
+    <div class="list" id="dList"></div>
+    <button class="more" id="typeSn">Service number not in any list? Type it</button>
+  </div>
+</div>
+<!-- 2. houses of one distribution -->
+<div class="wrap hidden" id="pHouses">
+  <div class="top"><button class="back" id="hBack">‹ Villages</button><h1 id="hTitle"></h1></div>
+  <div class="sub" id="hSub"></div>
+  <input id="hq" class="mono" inputmode="search" placeholder="Last digits of service no. or name" autocomplete="off">
+  <div id="hList"></div>
+  <button class="more" id="typeSn2">Service number not in this list? Type it</button>
+</div>
+<!-- 3. survey form -->
+<div class="wrap hidden" id="pForm">
+  <div class="top"><button class="back" id="fBack">‹ Back</button><h1>Survey</h1></div>
+  <div class="card"><h2>House</h2>
+    <label for="sn">Service number *</label>
+    <input id="sn" class="mono" inputmode="numeric" maxlength="13" placeholder="13 digits starting 59">
+    <div id="snMsg"></div>
+    <label for="dist">Distribution *</label>
+    <input id="dist" autocomplete="off">
+    <label for="bname">Beneficiary name * <span class="small">(name on the service connection)</span></label>
+    <input id="bname" autocomplete="off" placeholder="As on the electricity bill">
+    <label>Gender of the beneficiary *</label>
+    <div class="seg" id="gender"><button data-g="Male">Male</button><button data-g="Female">Female</button><button data-g="Other">Other</button></div>
+    <label for="dbmob">Mobile in the database</label>
+    <input id="dbmob" class="mono" readonly placeholder="not in the files">
+    <label for="mob">Working mobile now * <span class="small">(ask the beneficiary)</span></label>
+    <input id="mob" class="mono" inputmode="tel" placeholder="10 digits">
+  </div>
+  <div class="card"><h2>Location</h2><div id="loc" class="msg m-info">Not taken yet</div><button id="gps" style="margin-top:8px">📍 Get location</button></div>
+  <div class="card"><h2>Photo of the house</h2>
+    <div class="thumb hidden" id="phWrap"><img id="ph" alt="House"></div>
+    <div class="btns"><button id="phCam">📷 Camera</button><button id="phGal">🖼 Gallery</button></div></div>
+  <div class="card"><h2>Consent form (signed, 1 page)</h2>
+    <div id="cfInfo" class="msg m-info">Photograph the signed form, or choose a PDF / JPEG file. No Aadhaar.</div>
+    <div class="thumb hidden" id="cfWrap"><img id="cf" alt="Consent form"></div>
+    <div class="btns"><button id="cfCam">📷 Camera</button><button id="cfFile">📎 File (PDF / JPEG)</button></div></div>
+  <ul class="errors" id="err"></ul>
+  <button class="primary" id="submit" style="width:100%;padding:14px;font-size:16px;margin:8px 0 30px">Submit survey</button>
+  <input type="file" id="camIn" accept="image/*" capture="environment" class="hidden">
+  <input type="file" id="galIn" accept="image/*" class="hidden">
+  <input type="file" id="fileIn" accept="application/pdf,image/jpeg,image/png" class="hidden">
+</div>
+<!-- 4. done -->
+<div class="wrap hidden" id="pDone"><div class="card" style="text-align:center"><div style="font-size:40px">✓</div><h2>Survey saved</h2>
+  <div id="doneTxt"></div><button class="primary" id="next" style="margin-top:12px;width:100%;padding:12px">Next house</button></div></div>
+
+<div style="text-align:center;font-size:12px;color:var(--muted);padding:4px 0 22px">Solar Vista by TytoGrid · Field data, made clear.</div>
+<script>
+const $ = id => document.getElementById(id);
+const esc = s => String(s == null ? '' : s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+const norm = s => String(s || '').toUpperCase().replace(/[^0-9A-Z]/g, '');
+const SN_RE = /^59\d{11}$/;
+const PR = { 1: ['t1', 'P1 · consent only'], 2: ['t2', 'P2 · Excel + consent'], 3: ['t3', 'P3 · not installed'] };
+const PRT = { P1: 1, P2: 2, P3: 3 };
+// server calls go to the Apps Script back end (exec URL in /solarvista/config.js). A network failure is marked e.offline.
+function run(fn, ...args) {
+  return fetch(window.SV_API, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify({ fn, args }) })
+    .catch(() => { const e = new Error('No signal – could not reach the server.'); e.offline = true; throw e; })
+    .then(r => { if (!r.ok) { const e = new Error('Server busy (' + r.status + ') – try again.'); e.offline = r.status >= 500; throw e; } return r.json(); })
+    .then(j => { if (!j.ok) throw new Error(j.error || 'Server error'); return j.data; });
+}
+// ---------------------------------------------------------------- offline: surveys wait on the phone until there is signal
+const QDB = () => new Promise((ok, fail) => { const r = indexedDB.open('kuppam-survey', 1); r.onupgradeneeded = () => r.result.createObjectStore('q', { keyPath: 'cid' }); r.onsuccess = () => ok(r.result); r.onerror = () => fail(r.error); });
+async function qAll() { const db = await QDB(); return new Promise(ok => { const t = db.transaction('q').objectStore('q').getAll(); t.onsuccess = () => ok(t.result || []); t.onerror = () => ok([]); }); }
+async function qPut(item) { const db = await QDB(); return new Promise((ok, fail) => { const t = db.transaction('q', 'readwrite'); t.objectStore('q').put(item); t.oncomplete = ok; t.onerror = () => fail(t.error); }); }
+async function qDel(cid) { const db = await QDB(); return new Promise(ok => { const t = db.transaction('q', 'readwrite'); t.objectStore('q').delete(cid); t.oncomplete = ok; t.onerror = ok; }); }
+let qBusy = false;
+async function qShow() {
+  let n = 0; try { n = (await qAll()).length; } catch (e) {}
+  $('qBar').classList.toggle('hidden', !n); $('qBar').style.display = n ? 'flex' : 'none';
+  $('qTxt').textContent = n + ' survey' + (n === 1 ? '' : 's') + ' saved on this phone, waiting for signal. Keep the page; they send by themselves.';
+}
+async function qFlush() {
+  if (qBusy) return; qBusy = true;
+  try {
+    for (const it of await qAll()) {
+      try { await run('submitSurvey', it.payload); await qDel(it.cid); }
+      catch (e) { if (e.offline) break; it.error = e.message; await qPut(it); }          // a real error (e.g. not allowed) stays with its message
+    }
+  } catch (e) {}
+  qBusy = false; qShow();
+}
+function cache(k, v) { try { if (v === undefined) { const x = localStorage.getItem('c_' + k); return x ? JSON.parse(x) : null; } localStorage.setItem('c_' + k, JSON.stringify({ at: Date.now(), v })); } catch (e) { return null; } }
+function store(k, v) { try { if (v === undefined) return localStorage.getItem(k); localStorage.setItem(k, v); } catch (e) { return null; } }
+function show(id) { ['pDist', 'pHouses', 'pForm', 'pDone'].forEach(p => $(p).classList.toggle('hidden', p !== id)); window.scrollTo(0, 0); }
+
+let DISTS = [], HOUSES = [], CUR = '', F = { gender: '', gps: null, photo: null, consent: null, site: null };
+
+// ---------------------------------------------------------------- distributions
+async function loadDists() {
+  $('dMsg').textContent = 'Loading…'; $('dMsg').classList.remove('hidden');
+  try { const j = await run('getDists'); cache('dists', j); DISTS = JSON.parse(j); drawDists(); }
+  catch (e) { const c = cache('dists'); if (c) { DISTS = JSON.parse(c.v); drawDists(); $('dMsg').classList.remove('hidden'); $('dMsg').textContent = 'No signal – list from ' + new Date(c.at).toLocaleString('en-GB', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' }) + '.'; }
+    else $('dMsg').textContent = 'Could not load: ' + (e.message || e) + ' – check mobile data and reopen.'; }
+}
+function drawDists() {
+  const q = norm($('dq').value), L = DISTS.filter(d => !q || norm(d.d).includes(q));
+  $('dMsg').classList.toggle('hidden', !!L.length); if (!L.length) $('dMsg').textContent = DISTS.length ? 'No village matches.' : 'No houses to survey.';
+  $('dList').innerHTML = L.map(d => '<button class="row" data-d="' + esc(d.d) + '"><span class="l"><b>' + esc(d.d) + '</b><div class="n">' + esc(d.sec || '') +
+    (d.done ? ' · ' + d.done + ' surveyed' : '') + '</div></span><span>' +
+    (d.p1 ? '<span class="tag t1">P1 ' + d.p1 + '</span> ' : '') + (d.p2 ? '<span class="tag t2">P2 ' + d.p2 + '</span> ' : '') + (d.p3 ? '<span class="tag t3">P3 ' + d.p3 + '</span>' : '') +
+    '</span></button>').join('');
+}
+// ---------------------------------------------------------------- houses
+async function openDist(d) {
+  CUR = d; store('dist', d); $('hTitle').textContent = d; $('hSub').textContent = 'Loading…'; $('hList').innerHTML = ''; $('hq').value = ''; show('pHouses');
+  try { const j = await run('getHouses', d); cache('h_' + d, j); HOUSES = JSON.parse(j); await markQueued(); drawHouses(); }
+  catch (e) { const c = cache('h_' + d); if (c) { HOUSES = JSON.parse(c.v); await markQueued(); drawHouses(); $('hSub').textContent += ' · no signal – list from ' + new Date(c.at).toLocaleString('en-GB', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' }); }
+    else $('hSub').textContent = 'Could not load: ' + (e.message || e) + ' – open this village once with signal to keep it on the phone.'; }
+}
+async function markQueued() { try { (await qAll()).forEach(it => { const h = HOUSES.find(x => x[0] === it.payload.sn); if (h && !h[4]) { h[4] = it.at; h[5] = 'waiting to send'; } }); } catch (e) {} }
+function drawHouses() {
+  const q = norm($('hq').value), L = HOUSES.filter(h => !q || h[0].endsWith(q) || h[0].includes(q) || norm(h[1]).includes(q));
+  const todo = HOUSES.filter(h => !h[4]).length;
+  $('hSub').textContent = todo + ' to survey · ' + (HOUSES.length - todo) + ' surveyed';
+  const head = { 1: 'P1 – installed, consent only (fastest to ULA)', 2: 'P2 – installed, Excel + consent', 3: 'P3 – not installed yet' };
+  let html = '';
+  [1, 2, 3].forEach(p => {
+    const g = L.filter(h => h[3] === p); if (!g.length) return;
+    const open = g.filter(h => !h[4]), done = g.filter(h => h[4]);
+    html += '<div class="grp">' + head[p] + ' · ' + open.length + '</div><div class="list">' + open.concat(done).slice(0, 300).map(h =>
+      '<button class="row' + (h[4] ? ' done' : '') + '" data-sn="' + h[0] + '"><span class="l"><span class="mono">' + h[0] + '</span><div class="n">' + esc(h[1] || 'name not in the files') + '</div></span>' +
+      (h[4] ? '<span class="tag tdone">✓ ' + esc(h[4].slice(5, 10).split('-').reverse().join('-')) + '</span>' : '<span class="tag ' + PR[p][0] + '">P' + p + '</span>') + '</button>').join('') +
+      (g.length > 300 ? '<div class="sub">… type digits to find the rest</div>' : '') + '</div>';
+  });
+  $('hList').innerHTML = html || '<div class="msg m-info">No house matches.</div>';
+}
+// ---------------------------------------------------------------- form
+function resetForm() {
+  ['sn', 'bname', 'mob', 'dbmob'].forEach(id => $(id).value = '');
+  Object.assign(F, { gender: '', photo: null, consent: null, site: null, gps: null });
+  document.querySelectorAll('#gender button').forEach(b => b.classList.remove('on'));
+  $('phWrap').classList.add('hidden'); $('cfWrap').classList.add('hidden'); $('snMsg').innerHTML = ''; $('err').innerHTML = '';
+  $('cfInfo').className = 'msg m-info'; $('cfInfo').textContent = 'Photograph the signed form, or choose a PDF / JPEG file. No Aadhaar.';
+}
+function openForm(h) {               // h = house row from the list, or null (typed by hand)
+  resetForm(); show('pForm');
+  $('dist').value = CUR || store('dist') || '';
+  if (h) {
+    $('sn').value = h[0]; $('sn').readOnly = true; $('bname').value = h[1] || ''; $('dbmob').value = h[2] || '';
+    F.site = { prio: 'P' + h[3] };
+    $('snMsg').innerHTML = '<div class="msg ' + (h[4] ? 'm-warn' : 'm-info') + '"><span class="tag ' + PR[h[3]][0] + '">' + PR[h[3]][1] + '</span>' +
+      (h[4] ? ' Already surveyed on ' + esc(h[4]) + ' by ' + esc(h[5]) + '. Submitting again replaces it.' : '') + '</div>';
+  } else { $('sn').readOnly = false; setTimeout(() => $('sn').focus(), 50); }
+  gps();
+}
+let snT = null;
+function snCheck() {
+  if ($('sn').readOnly) return;
+  const sn = $('sn').value.replace(/\D/g, ''); $('sn').value = sn; $('snMsg').innerHTML = ''; F.site = null;
+  if (sn.length < 8) return;
+  clearTimeout(snT);
+  snT = setTimeout(() => run('houseStatus', sn).then(st => {
+    if ($('sn').value !== sn) return;
+    if (!st.known && !SN_RE.test(sn)) { if (sn.length >= 13) $('snMsg').innerHTML = '<div class="msg m-bad">Service numbers here are 13 digits starting 59.</div>'; return; }
+    F.site = st;
+    if (st.ula) { $('snMsg').innerHTML = '<div class="msg m-bad">ULA already created (' + esc(st.ula) + ') – no survey needed.</div>'; return; }
+    if (st.known) { if (!$('bname').value) $('bname').value = st.name || ''; $('dbmob').value = st.dbmob || ''; if (st.dist) $('dist').value = st.dist; }
+    const p = PRT[st.prio];
+    $('snMsg').innerHTML = '<div class="msg ' + (st.last ? 'm-warn' : 'm-info') + '">' + (p ? '<span class="tag ' + PR[p][0] + '">' + PR[p][1] + '</span> ' :
+      st.known ? ({ CONSENT_ACC: 'Consent already accepted on the portal', CA_NV: 'CA status not verified on the portal', OTHER: 'In the files' }[st.prio] || 'In the files') + ' – survey only if the office asked for it. ' : 'Not in any list – it will go for Excel upload. ') +
+      (st.last ? 'Already surveyed on ' + esc(st.last.at) + ' by ' + esc(st.last.by) + '. Submitting again replaces it.' : '') + '</div>';
+  }).catch(() => {}), 300);
+}
+function gps() {
+  if (!navigator.geolocation) { $('loc').textContent = 'This phone cannot give a location.'; return; }
+  $('loc').className = 'msg m-info'; $('loc').textContent = 'Getting location…';
+  navigator.geolocation.getCurrentPosition(p => {
+    F.gps = { lat: p.coords.latitude, lng: p.coords.longitude, acc: p.coords.accuracy };
+    $('loc').className = 'msg ' + (p.coords.accuracy <= 50 ? 'm-ok' : 'm-warn');
+    $('loc').innerHTML = '✓ ' + F.gps.lat.toFixed(6) + ', ' + F.gps.lng.toFixed(6) + ' (±' + Math.round(F.gps.acc) + ' m)' + (p.coords.accuracy > 50 ? ' – weak signal: step outside and tap again' : '');
+  }, e => { $('loc').className = 'msg m-bad'; $('loc').textContent = 'No location: ' + (e.code === 1 ? 'allow location for this site in the browser' : 'try again outside'); },
+  { enableHighAccuracy: true, timeout: 20000, maximumAge: 0 });
+}
+const blobToDataUrl = b => new Promise((res, rej) => { const fr = new FileReader(); fr.onload = () => res(fr.result); fr.onerror = rej; fr.readAsDataURL(b); });
+async function bitmap(file) {
+  try { return await createImageBitmap(file, { imageOrientation: 'from-image' }); } catch (e) {}
+  try { return await createImageBitmap(file); } catch (e) {}
+  return await new Promise((res, rej) => { const u = URL.createObjectURL(file), im = new Image(); im.onload = () => { res(im); setTimeout(() => URL.revokeObjectURL(u), 2000); }; im.onerror = () => { URL.revokeObjectURL(u); rej(new Error('format')); }; im.src = u; });
+}
+async function toJpeg(file, maxSide) {
+  const img = await bitmap(file), sc = Math.min(1, maxSide / Math.max(img.width, img.height)), c = document.createElement('canvas');
+  c.width = Math.round(img.width * sc); c.height = Math.round(img.height * sc); c.getContext('2d').drawImage(img, 0, 0, c.width, c.height);
+  const url = c.toDataURL('image/jpeg', 0.82); c.width = 0; c.height = 0; return url;
+}
+function photoMsg(file) {
+  const t = String((file && file.type) || '') + ' ' + String((file && file.name) || '');
+  if (file && file.size === 0) return 'That photo is only in the cloud (e.g. Google Photos). Open it once in the Gallery so it downloads, or use 📷 Camera.';
+  if (/hei[cf]/i.test(t)) return 'HEIC photo – the browser cannot open it. Use 📷 Camera here.';
+  return 'Could not read that photo. Try again, or use 📷 Camera.';
+}
+async function onPhoto(file) {
+  if (!file) return;
+  try { F.photo = await toJpeg(file, 1600); $('ph').src = F.photo; $('phWrap').classList.remove('hidden'); } catch (e) { alert(photoMsg(file)); }
+}
+async function onConsent(file) {
+  if (!file) return;
+  if (file.type === 'application/pdf' || /\.pdf$/i.test(file.name)) {
+    if (file.size > 10 * 1024 * 1024) { alert('PDF larger than 10 MB – photograph the form instead.'); return; }
+    F.consent = (await blobToDataUrl(file)).replace(/^data:[^;]*;/, 'data:application/pdf;'); $('cfWrap').classList.add('hidden');
+    $('cfInfo').className = 'msg m-ok'; $('cfInfo').textContent = '✓ PDF: ' + file.name + ' (' + Math.round(file.size / 1024) + ' KB) – saved as <service no>.pdf';
+  } else {
+    try { F.consent = await toJpeg(file, 2200); $('cf').src = F.consent; $('cfWrap').classList.remove('hidden');
+      $('cfInfo').className = 'msg m-ok'; $('cfInfo').textContent = '✓ Photo – it becomes a PDF named <service no>.pdf'; }
+    catch (e) { alert(photoMsg(file)); }
+  }
+}
+function problems() {
+  const p = [], sn = $('sn').value.replace(/\D/g, ''), mob = $('mob').value.replace(/\D/g, '');
+  if ($('by').value.trim().length < 2) p.push('Enter your name (top of the first page).');
+  if (!SN_RE.test(sn) && !(F.site && F.site.known !== false)) p.push('Service number: 13 digits starting 59.');
+  if (F.site && F.site.ula) p.push('This house already has a ULA – no survey needed.');
+  if ($('dist').value.trim().length < 2) p.push('Enter the distribution.');
+  if ($('bname').value.trim().length < 3) p.push('Enter the beneficiary name.');
+  if (!F.gender) p.push('Choose the gender of the beneficiary.');
+  if (!/^[6-9]\d{9}$/.test(mob)) p.push('Working mobile: 10 digits starting 6, 7, 8 or 9.');
+  if (!F.gps) p.push('Location missing – tap "Get location".');
+  if (!F.photo) p.push('Take the photo of the house.');
+  if (!F.consent) p.push('Add the consent form.');
+  return p;
+}
+async function submit() {
+  const p = problems(); $('err').innerHTML = p.map(x => '<li>' + esc(x) + '</li>').join('');
+  if (p.length) { $('err').scrollIntoView({ block: 'center' }); return; }
+  const b = $('submit'); b.disabled = true; b.textContent = 'Saving…';
+  try {
+    store('supervisor', $('by').value.trim());
+    const payload = { cid: 'c' + Date.now().toString(36) + Math.random().toString(36).slice(2, 8), by: $('by').value, dist: $('dist').value, sn: $('sn').value, name: $('bname').value,
+      gender: F.gender, mobile: $('mob').value, lat: F.gps.lat, lng: F.gps.lng, acc: F.gps.acc, photo: F.photo, consent: F.consent };
+    let r = null, queued = false;
+    try { r = await run('submitSurvey', payload); }
+    catch (e) { if (!e.offline) throw e; await qPut({ cid: payload.cid, at: new Date().toISOString().slice(0, 16).replace('T', ' '), payload }); queued = true; qShow(); }
+    $('doneTxt').innerHTML = '<div class="mono">' + esc($('sn').value) + '</div><div>' + esc($('bname').value) + ' · ' + esc(F.gender) + ' · ' + esc($('dist').value.toUpperCase()) + '</div>' +
+      (queued ? '<div class="msg m-warn" style="margin-top:8px">No signal – saved on this phone. It is sent automatically when signal returns. Do not clear the browser data.</div>' :
+       r && r.resurvey ? '<div class="sub" style="margin-top:6px">Re-survey – the earlier one is replaced.</div>' : '');
+    const h = HOUSES.find(x => x[0] === $('sn').value); if (h) { h[4] = new Date().toISOString().slice(0, 16).replace('T', ' '); h[5] = $('by').value; }
+    show('pDone');
+  } catch (e) { $('err').innerHTML = '<li>' + esc(e.message || e) + '</li>'; }
+  b.disabled = false; b.textContent = 'Submit survey';
+}
+function nextHouse() { if (CUR) { drawHouses(); show('pHouses'); } else { show('pDist'); } }
+
+// ---------------------------------------------------------------- events
+$('by').value = store('supervisor') || '';
+$('dq').addEventListener('input', drawDists);
+$('hq').addEventListener('input', drawHouses);
+$('dList').addEventListener('click', e => { const b = e.target.closest('[data-d]'); if (b) openDist(b.dataset.d); });
+$('hList').addEventListener('click', e => { const b = e.target.closest('[data-sn]'); if (b) openForm(HOUSES.find(h => h[0] === b.dataset.sn)); });
+$('typeSn').onclick = () => { CUR = ''; openForm(null); };
+$('typeSn2').onclick = () => openForm(null);
+$('hBack').onclick = () => { CUR = ''; show('pDist'); loadDists(); };
+$('fBack').onclick = () => CUR ? show('pHouses') : show('pDist');
+$('gender').addEventListener('click', e => { const b = e.target.closest('[data-g]'); if (!b) return; F.gender = b.dataset.g; document.querySelectorAll('#gender button').forEach(x => x.classList.toggle('on', x === b)); });
+$('sn').addEventListener('input', snCheck);
+$('mob').addEventListener('input', () => { let d = $('mob').value.replace(/\D/g, ''); if (d.length > 10 && /^91/.test(d)) d = d.slice(2); else if (d.length > 10 && /^0/.test(d)) d = d.slice(1); $('mob').value = d.slice(0, 10); });
+$('gps').onclick = gps;
+$('phCam').onclick = () => { $('camIn').dataset.for = 'photo'; $('camIn').value = ''; $('camIn').click(); };
+$('phGal').onclick = () => { $('galIn').value = ''; $('galIn').click(); };
+$('cfCam').onclick = () => { $('camIn').dataset.for = 'consent'; $('camIn').value = ''; $('camIn').click(); };
+$('cfFile').onclick = () => { $('fileIn').value = ''; $('fileIn').click(); };
+$('camIn').onchange = e => { const f = e.target.files[0]; if ($('camIn').dataset.for === 'consent') onConsent(f); else onPhoto(f); };
+$('galIn').onchange = e => onPhoto(e.target.files[0]);
+$('fileIn').onchange = e => onConsent(e.target.files[0]);
+$('submit').onclick = submit; $('next').onclick = nextHouse;
+$('qSend').onclick = qFlush;
+window.addEventListener('online', qFlush);
+setInterval(qFlush, 60000);
+loadDists(); qShow(); qFlush();
+if ('serviceWorker' in navigator) navigator.serviceWorker.register('/solarvista/field/sw.js').catch(() => {});
+</script>
+</body>
+</html>

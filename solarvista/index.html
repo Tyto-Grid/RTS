@@ -1,0 +1,457 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Solar Vista – TytoGrid</title>
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="/solarvista/config.js"></script>
+<style>
+:root {
+  --bg: #f6f7f9; --panel: #ffffff; --ink: #1d2433; --muted: #5d6676; --line: #e1e5ec; --side: #142257; --side-ink: #e8ecf5;
+  --side-muted: #9aa6bf; --accent: #2563eb; --accent-soft: #e8efff; --ok: #157347; --ok-soft: #e3f4ea; --warn: #9a6200;
+  --warn-soft: #fff3d6; --bad: #b42318; --bad-soft: #fde8e6; --info-soft: #eef2f7; --grey: #f1f5f9; --grey-ink: #94a3b8;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0f141c; --panel: #171e29; --ink: #e6eaf2; --muted: #9aa4b6; --line: #2a3445; --side: #0b1018; --side-ink: #e6eaf2;
+    --side-muted: #7f8aa0; --accent: #6b9bff; --accent-soft: #1d2b47; --ok: #4cc38a; --ok-soft: #12301f; --warn: #f0b84a;
+    --warn-soft: #3a2c0c; --bad: #ff7b6e; --bad-soft: #3d1714; --info-soft: #1d2533; --grey: #121821; --grey-ink: #5e6a7e;
+  }
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; height: 100%; }
+body { background: var(--bg); color: var(--ink); font: 14px/1.45 system-ui, -apple-system, "Segoe UI", Roboto, "Noto Sans Telugu", sans-serif; }
+button, select, input { font: inherit; color: inherit; }
+#app { display: grid; grid-template-columns: 232px 1fr; min-height: 100vh; }
+aside { background: var(--side); color: var(--side-ink); padding: 16px 10px; position: sticky; top: 0; height: 100vh; overflow: auto; }
+.brand { padding: 4px 10px 14px; border-bottom: 1px solid rgba(255,255,255,.08); margin-bottom: 10px; }
+.brand b { display: block; font-size: 15px; } .brand span { color: var(--side-muted); font-size: 12px; }
+nav button { display: flex; width: 100%; align-items: center; gap: 10px; padding: 9px 10px; border: 0; background: none; border-radius: 8px; cursor: pointer; text-align: left; color: var(--side-ink); }
+nav button:hover { background: rgba(255,255,255,.06); } nav button.on { background: rgba(255,255,255,.12); font-weight: 600; }
+nav .ic { width: 20px; text-align: center; } nav .sep { height: 1px; background: rgba(255,255,255,.08); margin: 8px 6px; }
+nav .n { margin-left: auto; font-size: 12px; background: rgba(255,255,255,.12); border-radius: 10px; padding: 1px 8px; }
+.me { margin-top: 14px; padding: 10px; font-size: 12px; color: var(--side-muted); border-top: 1px solid rgba(255,255,255,.08); }
+main { min-width: 0; }
+header { position: sticky; top: 0; z-index: 5; background: var(--bg); border-bottom: 1px solid var(--line); padding: 10px 20px; display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+header h1 { font-size: 18px; margin: 0 12px 0 0; }
+header select, header input, .toolbar select { padding: 7px 9px; border: 1px solid var(--line); border-radius: 8px; background: var(--panel); min-width: 0; }
+header input { width: 200px; } .grow { flex: 1; }
+.btn { padding: 7px 12px; border: 1px solid var(--line); border-radius: 8px; background: var(--panel); cursor: pointer; white-space: nowrap; }
+.btn:hover { border-color: var(--accent); } .btn.pri { background: var(--accent); border-color: var(--accent); color: #fff; } .btn:disabled { opacity: .5; cursor: default; }
+.wrap { padding: 18px 20px 60px; } .muted { color: var(--muted); } .small { font-size: 12px; }
+h3.sec { font-size: 13px; color: var(--muted); text-transform: uppercase; letter-spacing: .5px; margin: 6px 0 8px; }
+.cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); gap: 10px; margin-bottom: 18px; }
+.card { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 12px 14px; cursor: pointer; text-align: left; }
+.card:hover { border-color: var(--accent); } .card .v { font-size: 26px; font-weight: 700; } .card .l { color: var(--muted); font-size: 12.5px; }
+.card .s { font-size: 12px; margin-top: 4px; } .card.p1 { border-left: 4px solid var(--ok); } .card.p2 { border-left: 4px solid var(--warn); } .card.p3 { border-left: 4px solid var(--accent); }
+.card.fu { border-left: 4px solid var(--bad); }
+.bar { height: 6px; background: var(--info-soft); border-radius: 3px; margin-top: 6px; overflow: hidden; } .bar i { display: block; height: 100%; background: var(--ok); }
+.box { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 14px; margin-bottom: 14px; } .box h3 { margin: 0 0 10px; font-size: 15px; }
+.note { background: var(--warn-soft); border-left: 4px solid var(--warn); border-radius: 6px; padding: 10px 12px; margin: 0 0 12px; }
+.note ol { margin: 4px 0 0; padding-left: 20px; } .note li { margin: 2px 0; }
+.tw { overflow-x: auto; background: var(--panel); border: 1px solid var(--line); border-radius: 10px; }
+table { border-collapse: collapse; width: 100%; }
+th, td { padding: 7px 10px; border-bottom: 1px solid var(--line); text-align: left; vertical-align: top; }
+th { font-size: 12px; color: var(--muted); font-weight: 600; background: var(--info-soft); position: sticky; top: 0; }
+td.num, th.num { text-align: right; } tbody tr.click { cursor: pointer; } tbody tr.click:hover { background: var(--accent-soft); }
+tr.svdone td { background: var(--grey); color: var(--grey-ink); } tr.svdone .ph { opacity: .55; }
+.mono { font-family: ui-monospace, "Cascadia Mono", Consolas, monospace; font-size: 13px; }
+.b { display: inline-block; padding: 1px 8px; border-radius: 10px; font-size: 12px; white-space: nowrap; background: var(--info-soft); color: var(--muted); margin: 1px 0; }
+.b.ok { background: var(--ok-soft); color: var(--ok); } .b.warn { background: var(--warn-soft); color: var(--warn); } .b.bad { background: var(--bad-soft); color: var(--bad); } .b.acc { background: var(--accent-soft); color: var(--accent); }
+.toolbar { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-bottom: 12px; } .toolbar h2 { margin: 0 auto 0 0; font-size: 17px; }
+.chips { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 12px; }
+.chip { border: 1px solid var(--line); background: var(--panel); border-radius: 16px; padding: 4px 11px; cursor: pointer; font-size: 13px; } .chip.on { background: var(--accent); border-color: var(--accent); color: #fff; }
+.ph { width: 90px; height: 68px; border: 1px solid var(--line); border-radius: 8px; background: var(--info-soft); display: flex; align-items: center; justify-content: center; font-size: 12px; color: var(--muted); cursor: pointer; overflow: hidden; }
+.ph img { width: 100%; height: 100%; object-fit: cover; }
+#zoom { position: fixed; inset: 0; background: rgba(0,0,0,.9); z-index: 40; display: none; align-items: center; justify-content: center; } #zoom.open { display: flex; } #zoom img { max-width: 96vw; max-height: 94vh; }
+#toast { position: fixed; bottom: 18px; left: 50%; transform: translateX(-50%); background: var(--ink); color: var(--bg); padding: 9px 16px; border-radius: 8px; display: none; z-index: 50; max-width: 90vw; }
+.drop { border: 2px dashed var(--line); border-radius: 10px; padding: 22px; text-align: center; background: var(--panel); }
+.empty { padding: 30px; text-align: center; color: var(--muted); } .loading { padding: 60px; text-align: center; color: var(--muted); }
+.flag { border-left: 3px solid var(--bad); padding: 4px 10px; margin: 6px 0; background: var(--bad-soft); border-radius: 0 6px 6px 0; }
+#login { position: fixed; inset: 0; background: var(--bg); z-index: 60; display: flex; align-items: center; justify-content: center; padding: 16px; }
+.lbox { width: 100%; max-width: 360px; background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 24px; } .lbrand { font-size: 20px; font-weight: 700; }
+.lbox input { width: 100%; padding: 10px; border: 1px solid var(--line); border-radius: 8px; background: var(--bg); margin-top: 4px; }
+@media (max-width: 860px) {
+  #app { grid-template-columns: 1fr; } aside { position: static; height: auto; padding: 8px; } .brand, .me { display: none; }
+  nav { display: flex; overflow-x: auto; gap: 4px; } nav button { width: auto; white-space: nowrap; padding: 7px 10px; } nav .sep { display: none; }
+  header { padding: 8px 12px; } header input { width: 100%; } .wrap { padding: 12px; }
+}
+
+/* TytoGrid brand */
+aside { border-right: 3px solid #F4A62A; }
+.brand { display: flex; gap: 10px; align-items: center; }
+.brand svg, .tyto svg { flex: 0 0 auto; border-radius: 8px; box-shadow: 0 0 0 1.5px rgba(255,255,255,.35); }
+nav button.on { box-shadow: inset 3px 0 0 #F4A62A; }
+.btn.pri { background: #1F3A93; border-color: #1F3A93; }
+.card { border-top: 3px solid transparent; } .card:hover { border-top-color: #F4A62A; }
+.tyto { display: flex; align-items: center; gap: 8px; margin-top: 14px; padding: 10px; font-size: 11.5px; color: var(--side-muted); text-decoration: none; border-top: 1px solid rgba(255,255,255,.08); }
+.tyto:hover { color: var(--side-ink); }
+.lbox { border-top: 4px solid #F4A62A; }
+footer.tg { text-align: center; font-size: 12px; color: var(--muted); padding: 18px 0 8px; }
+@media (max-width: 860px) { aside { border-right: 0; border-bottom: 3px solid #F4A62A; } .tyto { display: none; } }
+</style>
+</head>
+<body>
+<div id="app">
+  <aside>
+    <div class="brand"><svg width="34" height="34" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="TytoGrid"><defs><clipPath id="tgA"><circle cx="37" cy="37" r="16"/></clipPath></defs>
+<rect width="64" height="64" rx="15" fill="#142257"/><g fill="#34488F"><rect x="11" y="11" width="8" height="8" rx="1.8"/><rect x="22" y="11" width="8" height="8" rx="1.8"/><rect x="33" y="11" width="8" height="8" rx="1.8"/><rect x="44" y="11" width="8" height="8" rx="1.8"/><rect x="11" y="22" width="8" height="8" rx="1.8"/><rect x="22" y="22" width="8" height="8" rx="1.8"/><rect x="33" y="22" width="8" height="8" rx="1.8"/><rect x="44" y="22" width="8" height="8" rx="1.8"/><rect x="11" y="33" width="8" height="8" rx="1.8"/><rect x="22" y="33" width="8" height="8" rx="1.8"/><rect x="33" y="33" width="8" height="8" rx="1.8"/><rect x="44" y="33" width="8" height="8" rx="1.8"/><rect x="11" y="44" width="8" height="8" rx="1.8"/><rect x="22" y="44" width="8" height="8" rx="1.8"/><rect x="33" y="44" width="8" height="8" rx="1.8"/><rect x="44" y="44" width="8" height="8" rx="1.8"/></g>
+<g clip-path="url(#tgA)"><circle cx="37" cy="37" r="16" fill="#142257"/><g fill="#F4A62A" transform="translate(37 37) scale(1.6) translate(-37 -37)"><rect x="11" y="11" width="8" height="8" rx="1.8"/><rect x="22" y="11" width="8" height="8" rx="1.8"/><rect x="33" y="11" width="8" height="8" rx="1.8"/><rect x="44" y="11" width="8" height="8" rx="1.8"/><rect x="11" y="22" width="8" height="8" rx="1.8"/><rect x="22" y="22" width="8" height="8" rx="1.8"/><rect x="33" y="22" width="8" height="8" rx="1.8"/><rect x="44" y="22" width="8" height="8" rx="1.8"/><rect x="11" y="33" width="8" height="8" rx="1.8"/><rect x="22" y="33" width="8" height="8" rx="1.8"/><rect x="33" y="33" width="8" height="8" rx="1.8"/><rect x="44" y="33" width="8" height="8" rx="1.8"/><rect x="11" y="44" width="8" height="8" rx="1.8"/><rect x="22" y="44" width="8" height="8" rx="1.8"/><rect x="33" y="44" width="8" height="8" rx="1.8"/><rect x="44" y="44" width="8" height="8" rx="1.8"/></g></g>
+<circle cx="37" cy="37" r="16" fill="none" stroke="#FFFFFF" stroke-width="2.4"/></svg><div><b>Solar Vista</b><span id="clientName" style="display:block">TytoGrid</span></div></div>
+    <nav id="nav"></nav>
+    <div class="me" id="me"></div>
+    <a class="tyto" href="https://www.tytogrid.com" target="_blank" rel="noopener"><svg width="18" height="18" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="TytoGrid"><defs><clipPath id="tgB"><circle cx="37" cy="37" r="16"/></clipPath></defs>
+<rect width="64" height="64" rx="15" fill="#142257"/><g fill="#34488F"><rect x="11" y="11" width="8" height="8" rx="1.8"/><rect x="22" y="11" width="8" height="8" rx="1.8"/><rect x="33" y="11" width="8" height="8" rx="1.8"/><rect x="44" y="11" width="8" height="8" rx="1.8"/><rect x="11" y="22" width="8" height="8" rx="1.8"/><rect x="22" y="22" width="8" height="8" rx="1.8"/><rect x="33" y="22" width="8" height="8" rx="1.8"/><rect x="44" y="22" width="8" height="8" rx="1.8"/><rect x="11" y="33" width="8" height="8" rx="1.8"/><rect x="22" y="33" width="8" height="8" rx="1.8"/><rect x="33" y="33" width="8" height="8" rx="1.8"/><rect x="44" y="33" width="8" height="8" rx="1.8"/><rect x="11" y="44" width="8" height="8" rx="1.8"/><rect x="22" y="44" width="8" height="8" rx="1.8"/><rect x="33" y="44" width="8" height="8" rx="1.8"/><rect x="44" y="44" width="8" height="8" rx="1.8"/></g>
+<g clip-path="url(#tgB)"><circle cx="37" cy="37" r="16" fill="#142257"/><g fill="#F4A62A" transform="translate(37 37) scale(1.6) translate(-37 -37)"><rect x="11" y="11" width="8" height="8" rx="1.8"/><rect x="22" y="11" width="8" height="8" rx="1.8"/><rect x="33" y="11" width="8" height="8" rx="1.8"/><rect x="44" y="11" width="8" height="8" rx="1.8"/><rect x="11" y="22" width="8" height="8" rx="1.8"/><rect x="22" y="22" width="8" height="8" rx="1.8"/><rect x="33" y="22" width="8" height="8" rx="1.8"/><rect x="44" y="22" width="8" height="8" rx="1.8"/><rect x="11" y="33" width="8" height="8" rx="1.8"/><rect x="22" y="33" width="8" height="8" rx="1.8"/><rect x="33" y="33" width="8" height="8" rx="1.8"/><rect x="44" y="33" width="8" height="8" rx="1.8"/><rect x="11" y="44" width="8" height="8" rx="1.8"/><rect x="22" y="44" width="8" height="8" rx="1.8"/><rect x="33" y="44" width="8" height="8" rx="1.8"/><rect x="44" y="44" width="8" height="8" rx="1.8"/></g></g>
+<circle cx="37" cy="37" r="16" fill="none" stroke="#FFFFFF" stroke-width="2.4"/></svg><span>TytoGrid · Field data, made clear.</span></a>
+  </aside>
+  <main>
+    <header>
+      <h1 id="title">Dashboard</h1>
+      <select id="fSec"><option value="">All sections</option></select>
+      <select id="fVil"><option value="">All distributions</option></select>
+      <input id="q" type="search" placeholder="Service no. / name / ULA no.">
+      <span class="grow"></span>
+      <span class="small muted" id="fresh"></span>
+      <button class="btn" id="reload">↻ Reload</button>
+    </header>
+    <div class="wrap" id="page"><div class="loading">Loading…</div></div>
+    <footer class="tg">Solar Vista by TytoGrid</footer>
+  </main>
+</div>
+<div id="zoom"><img alt=""></div>
+<div id="toast"></div>
+<div id="login" style="display:none">
+  <div class="lbox">
+    <a href="/" style="display:flex;align-items:center;gap:8px;text-decoration:none;color:inherit;margin-bottom:14px"><img src="/assets/logo-mark.svg" alt="" width="32" height="32"><span style="display:flex;flex-direction:column;line-height:1.1"><b>TytoGrid</b><span class="small muted">Field data, made clear.</span></span></a>
+    <div class="lbrand">Solar Vista</div>
+    <div class="small muted" style="margin-bottom:16px">Sign in with your work email</div>
+    <div id="lStep1">
+      <label class="small muted">Your email</label>
+      <input id="lEmail" type="email" autocomplete="email" placeholder="name@company.com">
+      <button class="btn pri" id="lSend" style="width:100%;margin-top:10px">Send login code</button>
+    </div>
+    <div id="lStep2" style="display:none">
+      <div class="small" id="lMsg" style="margin-bottom:8px"></div>
+      <label class="small muted">6-digit code</label>
+      <input id="lCode" inputmode="numeric" maxlength="6" placeholder="••••••" style="letter-spacing:6px;font-size:20px;text-align:center">
+      <button class="btn pri" id="lVerify" style="width:100%;margin-top:10px">Log in</button>
+      <button class="btn" id="lBack" style="width:100%;margin-top:6px">Use another email</button>
+    </div>
+    <div class="small" id="lErr" style="color:var(--bad);margin-top:10px"></div>
+    <p class="small muted" style="margin-top:18px">Only registered users can log in. Ask your administrator to add your email.</p>
+  </div>
+</div>
+
+<script>
+let KEY = new URLSearchParams(location.search).get('key') || '';
+const TOK = 'sv_kuppam_session';
+const tokStore = { get() { try { return localStorage.getItem(TOK) || ''; } catch (e) { return ''; } }, set(v) { try { if (v) localStorage.setItem(TOK, v); else localStorage.removeItem(TOK); } catch (e) {} } };
+if (!KEY) KEY = tokStore.get();
+const $ = id => document.getElementById(id);
+const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const norm = s => String(s || '').toUpperCase().replace(/[^0-9A-Z]/g, '');
+// server calls go to the Apps Script back end (exec URL in /solarvista/config.js)
+const run = (fn, ...args) => fetch(window.SV_API, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify({ fn, args }) })
+  .catch(() => { throw new Error('No connection to the server – check the internet and try again.'); })
+  .then(r => { if (!r.ok) throw new Error('Server error ' + r.status); return r.json(); })
+  .then(j => { if (!j.ok) throw new Error(j.error || 'Server error'); return j.data; });
+const toast = (t, ms) => { const e = $('toast'); e.textContent = t; e.style.display = 'block'; clearTimeout(toast.t); toast.t = setTimeout(() => e.style.display = 'none', ms || 3500); };
+const dmy = s => { const m = /^(\d{4})-(\d{2})-(\d{2})(?: (\d{2}:\d{2}))?/.exec(String(s || '')); return m ? m[3] + '-' + m[2] + (m[4] ? ' ' + m[4] : '') : String(s || ''); };
+const ROLE_T = { owner: 'Administrator', manager: 'Manager', mis: 'MIS' };
+const PRIO = { P1: ['ok', 'P1 · consent only'], P2: ['warn', 'P2 · Excel + consent'], P3: ['acc', 'P3 · not installed'], ULA: ['', 'ULA created'],
+  CONSENT_ACC: ['bad', 'Consent accepted – no ULA'], CA_NV: ['bad', 'CA not verified'], OTHER: ['', 'Other'], NEW: ['warn', 'Not in any file'] };
+const GROUP = { 1: ['ok', 'Folder 1 · upload consent now'], 2: ['warn', 'Folder 2 · Excel first'], 3: ['bad', 'Folder 3 · check first'] };
+
+let D = null, S = [], ROLE = 'mis', PAGE = 'dash', LIST = null, CHIP = '';
+const can = { manage: () => ROLE === 'owner' || ROLE === 'manager', owner: () => ROLE === 'owner' };
+
+// sites: [sn, name, dbMobile, dist, section, installed, dcr, inCL, ca, consent, ula, ulaStatus, otp, insp, prio, problems]
+function build() {
+  S = (D.sites || []).map(r => ({ sn: r[0], name: r[1], mob: r[2], dist: r[3], sec: r[4], ins: r[5], dcr: !!r[6], cl: !!r[7], ca: r[8], cs: r[9], ula: r[10], us: r[11],
+    otp: !!r[12], insp: !!r[13], prio: r[14], prob: r[15], sv: (D.sv || {})[r[0]] || null }));
+  S.forEach(s => { s.text = '|' + norm(s.sn) + '|' + norm(s.name) + '|' + norm(s.ula) + '|'; });
+}
+function fill() {
+  const sel = (id, vals, cur, all) => { $(id).innerHTML = '<option value="">' + all + '</option>' + vals.map(v => '<option' + (v === cur ? ' selected' : '') + '>' + esc(v) + '</option>').join(''); };
+  const secs = [...new Set(S.map(s => s.sec).filter(Boolean))].sort();
+  const vils = [...new Set(S.filter(s => !$('fSec').value || s.sec === $('fSec').value).map(s => s.dist).filter(Boolean))].sort();
+  sel('fSec', secs, $('fSec').value, 'All sections'); sel('fVil', vils, vils.includes($('fVil').value) ? $('fVil').value : '', 'All distributions');
+}
+function scope() {
+  const a = $('fSec').value, b = $('fVil').value, q = norm($('q').value);
+  return S.filter(s => (!a || s.sec === a) && (!b || s.dist === b) && (!q || s.text.includes(q)));
+}
+
+// ---------------------------------------------------------------- lists behind the badges
+const LISTS = {
+  P1: { t: 'P1 – installed, consent only', f: s => s.prio === 'P1', chips: [['', 'All'], ['todo', 'Not surveyed'], ['sv', 'Surveyed']] },
+  P2: { t: 'P2 – installed, not in Consumer List (Excel + consent)', f: s => s.prio === 'P2', chips: [['', 'All'], ['todo', 'Not surveyed'], ['sv', 'Surveyed']] },
+  P3: { t: 'P3 – not installed, consent pending', f: s => s.prio === 'P3', chips: [['', 'All'], ['todo', 'Not surveyed'], ['sv', 'Surveyed']] },
+  ULA: { t: 'ULA application created', f: s => !!s.ula, chips: [] },
+  DCR: { t: 'DCR', f: s => !!s.ula || s.dcr, chips: [['done', 'DCR done'], ['pend', 'DCR pending (ULA, installed, no DCR)']], def: 'done',
+         c: { done: s => s.dcr, pend: s => s.ula && s.ins && !s.dcr } },
+  OTP: { t: 'Portal installation (consumer OTP)', f: s => !!s.ula || s.otp, chips: [['done', 'Installation (OTP) done'], ['pend', 'Pending (ULA, OTP not done)']], def: 'done',
+         c: { done: s => s.otp, pend: s => s.ula && !s.otp } },
+  INSP: { t: 'Portal inspection (department)', f: s => s.otp || s.insp, chips: [['done', 'Inspection done'], ['pend', 'Pending (OTP done, not inspected)']], def: 'done',
+          c: { done: s => s.insp, pend: s => s.otp && !s.insp } },
+  CONSENT_ACC: { t: 'Consent accepted – no ULA in our lists (MIS to check)', f: s => s.prio === 'CONSENT_ACC', chips: [] },
+  CA_NV: { t: 'CA not verified / not eligible (follow up with MNRE)', f: s => s.prio === 'CA_NV', chips: [] },
+  PROB: { t: 'Data problems in the files', f: s => !!s.prob, chips: [] },
+};
+const PAGES = [['dash', '▦', 'Dashboard'], ['list', '☰', 'Lists'], ['survey', '📝', 'Survey'], ['-'], ['files', '⬆', 'Daily files'], ['settings', '⚙', 'Settings', 'owner']];
+function nav() {
+  $('nav').innerHTML = PAGES.filter(p => !p[3] || can[p[3]]()).map(p => p[0] === '-' ? '<div class="sep"></div>' :
+    '<button data-page="' + p[0] + '" class="' + (PAGE === p[0] ? 'on' : '') + '"><span class="ic">' + p[1] + '</span>' + p[2] +
+    (p[0] === 'survey' ? '<span class="n">' + Object.keys(D.sv || {}).length + '</span>' : '') + '</button>').join('');
+}
+function render() {
+  if (PAGE === 'settings' && !can.owner()) PAGE = 'dash';
+  nav(); $('title').textContent = { dash: 'Dashboard', list: LIST ? LISTS[LIST].t : 'Lists', survey: 'Survey', files: 'Daily files', settings: 'Settings' }[PAGE];
+  ({ dash, list: listPage, survey: surveyPage, files: filesPage, settings: settingsPage })[PAGE]();
+}
+function card(key, v, l, s, cls, pct) {
+  return '<button class="card ' + (cls || '') + '" data-list="' + key + '"><div class="v">' + v.toLocaleString('en-IN') + '</div><div class="l">' + l + '</div>' +
+    (s ? '<div class="s muted">' + s + '</div>' : '') + (pct != null ? '<div class="bar"><i style="width:' + pct + '%"></i></div>' : '') + '</button>';
+}
+function dash() {
+  const A = scope(), n = f => A.filter(f).length, sv = f => A.filter(s => f(s) && s.sv).length;
+  const p = k => { const t = n(s => s.prio === k), d = sv(s => s.prio === k); return [t, d, t ? Math.round(d * 100 / t) : 0]; };
+  const P1 = p('P1'), P2 = p('P2'), P3 = p('P3'), ula = n(s => s.ula);
+  const m = D.meta || {};
+  $('page').innerHTML =
+    (m.at ? '' : '<div class="note">No daily files yet – open <b>Daily files</b> and upload the Installations report, the Consumer List and the MIS file.</div>') +
+    '<h3 class="sec">Consent forms to collect</h3><div class="cards">' +
+      card('P1', P1[0], 'P1 · installed, consent only', P1[1] + ' surveyed (' + P1[2] + '%) – fastest to ULA', 'p1', P1[2]) +
+      card('P2', P2[0], 'P2 · installed, not in Consumer List', P2[1] + ' surveyed – Excel + consent', 'p2', P2[2]) +
+      card('P3', P3[0], 'P3 · not installed', P3[1] + ' surveyed', 'p3', P3[2]) + '</div>' +
+    '<h3 class="sec">Portal</h3><div class="cards">' +
+      card('ULA', ula, 'ULA application created', '') +
+      card('DCR', n(s => s.dcr), 'DCR done', n(s => s.ula && s.ins && !s.dcr) + ' pending with ULA') +
+      card('OTP', n(s => s.otp), 'Portal installation (OTP)', n(s => s.ula && !s.otp) + ' pending with ULA') +
+      card('INSP', n(s => s.insp), 'Portal inspection', n(s => s.otp && !s.insp) + ' pending after OTP') + '</div>' +
+    '<h3 class="sec">MIS follow-up</h3><div class="cards">' +
+      card('CA_NV', n(s => s.prio === 'CA_NV'), 'CA not verified / not eligible', 'follow up with MNRE', 'fu') +
+      card('CONSENT_ACC', n(s => s.prio === 'CONSENT_ACC'), 'Consent accepted – no ULA', 'check on the portal', 'fu') +
+      card('PROB', n(s => s.prob), 'Data problems in the files', '8-digit numbers, duplicates, mobile mismatch', 'fu') + '</div>' +
+    distTable(A) +
+    '<p class="small muted">Click a badge to open its list. Data: daily files updated ' + esc(m.at || 'never') + (m.by ? ' by ' + esc(m.by) : '') + '.</p>';
+}
+function distTable(A) {
+  const g = {};
+  A.forEach(s => { const d = g[s.dist] || (g[s.dist] = { sec: s.sec, P1: 0, P1s: 0, P2: 0, P2s: 0, P3: 0, P3s: 0, ula: 0, dcr: 0, otp: 0, insp: 0 });
+    if (['P1', 'P2', 'P3'].includes(s.prio)) { d[s.prio]++; if (s.sv) d[s.prio + 's']++; }
+    if (s.ula) d.ula++; if (s.dcr) d.dcr++; if (s.otp) d.otp++; if (s.insp) d.insp++; });
+  const rows = Object.keys(g).sort((a, b) => (g[b].P1 - g[b].P1s) - (g[a].P1 - g[a].P1s) || a.localeCompare(b));
+  const c = (t, s) => t ? s + ' / ' + t : '–';
+  return '<div class="tw"><table><thead><tr><th>Distribution</th><th>Section</th><th class="num">P1 surveyed</th><th class="num">P2 surveyed</th><th class="num">P3 surveyed</th>' +
+    '<th class="num">ULA</th><th class="num">DCR</th><th class="num">OTP</th><th class="num">Inspection</th></tr></thead><tbody>' +
+    rows.map(d => { const x = g[d]; return '<tr class="click" data-vil="' + esc(d) + '"><td><b>' + esc(d) + '</b></td><td>' + esc(x.sec) + '</td><td class="num">' + c(x.P1, x.P1s) +
+      '</td><td class="num">' + c(x.P2, x.P2s) + '</td><td class="num">' + c(x.P3, x.P3s) + '</td><td class="num">' + x.ula + '</td><td class="num">' + x.dcr +
+      '</td><td class="num">' + x.otp + '</td><td class="num">' + x.insp + '</td></tr>'; }).join('') + '</tbody></table></div>';
+}
+function listRows() {
+  const L = LISTS[LIST || 'P1'], A = scope().filter(L.f);
+  if (L.c && CHIP) return A.filter(L.c[CHIP]);
+  if (CHIP === 'todo') return A.filter(s => !s.sv); if (CHIP === 'sv') return A.filter(s => s.sv);
+  return A;
+}
+function listPage() {
+  if (!LIST) LIST = 'P1';
+  const L = LISTS[LIST], R = listRows();
+  $('page').innerHTML = '<div class="chips">' + Object.keys(LISTS).map(k => '<button class="chip' + (k === LIST ? ' on' : '') + '" data-lst="' + k + '">' + esc(LISTS[k].t.split(' (')[0].split(' – ')[0]) + '</button>').join('') + '</div>' +
+    (L.chips.length ? '<div class="chips">' + L.chips.map(c => '<button class="chip' + (c[0] === CHIP ? ' on' : '') + '" data-chip="' + c[0] + '">' + esc(c[1]) + '</button>').join('') + '</div>' : '') +
+    '<div class="toolbar"><h2>' + R.length.toLocaleString('en-IN') + ' service numbers</h2><button class="btn" id="csv">⬇ This list (CSV)</button></div>' +
+    (R.length ? '<div class="tw"><table><thead><tr><th>Service no.</th><th>Name</th><th>Distribution</th><th>Stage</th><th>Installed</th><th>CA / consent</th><th>ULA</th>' +
+      '<th>DCR</th><th>OTP</th><th>Insp.</th><th>Surveyed</th></tr></thead><tbody>' + R.slice(0, 1500).map(s => '<tr><td class="mono">' + esc(s.sn) + '</td><td>' + esc(s.name) +
+        (s.prob ? '<div class="small" style="color:var(--bad)">' + esc(s.prob) + '</div>' : '') + '</td><td>' + esc(s.dist) + '</td><td><span class="b ' + PRIO[s.prio][0] + '">' + PRIO[s.prio][1] +
+        '</span></td><td>' + (s.ins === 'D' ? 'Done' : s.ins === 'P' ? 'In progress' : '–') + '</td><td>' + (s.cl ? ({ V: 'Verified', N: 'Not verified', X: 'Not eligible' }[s.ca] || '?') + ' · ' + (s.cs === 'A' ? 'Accepted' : 'Pending') : 'Not in list') +
+        '</td><td class="small">' + (s.ula ? '<span class="mono">' + esc(s.ula) + '</span><br>' + esc(s.us) : '–') + '</td><td>' + (s.dcr ? '✓' : '') + '</td><td>' + (s.otp ? '✓' : '') +
+        '</td><td>' + (s.insp ? '✓' : '') + '</td><td class="small">' + (s.sv ? esc(dmy(s.sv[0])) + '<br>' + esc(s.sv[1]) : '') + '</td></tr>').join('') +
+      '</tbody></table></div>' + (R.length > 1500 ? '<p class="small muted">First 1,500 shown – use the filters or the CSV for all.</p>' : '') : '<div class="empty">Nothing in this list for the current filter.</div>');
+}
+function csvDownload(rows, name) {
+  const head = ['Service No', 'Name', 'Distribution', 'Section', 'Stage', 'Installed', 'In Consumer List', 'CA status', 'Consent', 'ULA application', 'ULA status', 'DCR done', 'Portal installation (OTP)', 'Portal inspection', 'DB mobile', 'Surveyed on', 'Gender', 'Problems'];
+  const q = v => '"' + String(v == null ? '' : v).replace(/"/g, '""') + '"';
+  const lines = [head.map(q).join(',')].concat(rows.map(s => [s.sn, s.name, s.dist, s.sec, PRIO[s.prio][1], s.ins === 'D' ? 'Done' : s.ins === 'P' ? 'In progress' : '', s.cl ? 'Yes' : 'No',
+    s.ca, s.cs, s.ula, s.us, s.dcr ? 'Yes' : '', s.otp ? 'Yes' : '', s.insp ? 'Yes' : '', s.mob, s.sv ? s.sv[0] : '', s.sv ? s.sv[1] : '', s.prob].map((v, i) => (i === 0 || i === 14) && v ? q('="' + v + '"') : q(v)).join(',')));
+  const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob(['﻿' + lines.join('\r\n')], { type: 'text/csv' })); a.download = name; document.body.appendChild(a); a.click(); a.remove();
+}
+
+// ---------------------------------------------------------------- survey page
+let SVD = null, SVF = { vil: '', g: '', p: '' };
+async function surveyPage(reload) {
+  if (!SVD || reload) {
+    $('page').innerHTML = '<div class="loading">Loading surveys…</div>';
+    try { SVD = JSON.parse(await run('getSurveys', KEY)); } catch (e) { $('page').innerHTML = '<div class="empty">' + esc(e.message || e) + '</div>'; return; }
+  }
+  const vils = [...new Set(SVD.rows.map(r => r.dist))].sort(), rows = svRows(), fresh = rows.filter(r => !r.batch), bt = svBatchMap();
+  const opt = (id, vals, cur, all) => '<select id="' + id + '"><option value="">' + all + '</option>' + vals.map(v => '<option value="' + esc(v[0]) + '"' + (v[0] === cur ? ' selected' : '') + '>' + esc(v[1]) + '</option>').join('') + '</select>';
+  const gc = g => fresh.filter(r => r.group === g).length;
+  $('page').innerHTML =
+    '<div class="note"><b>How the download works (MIS):</b> <b>⬇ Download new</b> gives <b>one ZIP</b> of the surveys not downloaded yet. Inside:' +
+    '<ol><li><b>EXCEL_UPLOAD_ONLY_…xlsx</b> – only houses <b>NOT in the Consumer List</b>. Upload this Excel first. Houses already in the Consumer List are not in it – do not upload them again.</li>' +
+    '<li>Folder <b>1_UPLOAD_CONSENT_NOW</b> – CA Verified: upload these consent forms now.</li>' +
+    '<li>Folder <b>2_EXCEL_FIRST_then_consent</b> – upload these consent forms only after the Consumer List shows CA <b>Verified</b>.</li>' +
+    '<li>Folder <b>3_CHECK_FIRST</b> – reason given in READ_ME_FIRST.txt.</li></ol>Downloaded rows turn grey for everyone. <b>Download again</b> gives an earlier batch exactly as before.</div>' +
+    '<div class="toolbar"><h2>' + rows.length + ' surveyed house' + (rows.length === 1 ? '' : 's') + '</h2>' +
+    opt('svVil', vils.map(v => [v, v]), SVF.vil, 'All distributions') + opt('svG', [['Male', 'Male'], ['Female', 'Female'], ['Other', 'Other']], SVF.g, 'All genders') +
+    opt('svP', [['P1', 'P1 – consent only'], ['P2', 'P2 – Excel + consent'], ['P3', 'P3 – not installed'], ['X', 'Others']], SVF.p, 'All priorities') + '</div>' +
+    '<div class="toolbar"><button class="btn pri" id="svNew"' + (fresh.length ? '' : ' disabled') + '>⬇ Download new (' + fresh.length + ')</button>' +
+    '<span class="small muted">' + (fresh.length ? 'Excel ' + gc(2) + ' · folder 1: ' + gc(1) + ' · folder 2: ' + gc(2) + ' · folder 3: ' + gc(3) : '') + '</span><span class="grow"></span>' +
+    '<select id="svAgain"' + ((SVD.batches || []).length ? '' : ' disabled') + '><option value="">Download again…</option>' + (SVD.batches || []).map(b => '<option value="' + esc(b.id) + '">' + esc(svBatchLabel(b)) + ' (' + b.n + ')</option>').join('') + '</select>' +
+    '<button class="btn" id="svXls">⬇ Details (Excel)</button><button class="btn" id="svEE">⬇ Mobile changes for EE</button><button class="btn" id="svReload">↻</button></div>' +
+    (rows.length ? '<div class="tw"><table><thead><tr><th>Surveyed</th><th>Service no.</th><th>Beneficiary</th><th>Gender</th><th>Mobile (working / DB)</th><th>Distribution</th><th>Download folder</th><th>Location</th><th>Surveyor</th><th>House</th><th>Consent</th></tr></thead><tbody>' +
+      rows.map(r => '<tr class="' + (r.batch ? 'svdone' : '') + '"><td>' + esc(dmy(r.at)) +
+        (r.batch ? '<br><span class="b">⬇ ' + esc(bt[r.batch] ? svBatchLabel(bt[r.batch]) : 'downloaded') + '</span>' : '') +
+        (r.prev ? '<br><span class="b bad">Re-survey – earlier one went in ' + esc(bt[r.prev] ? svBatchLabel(bt[r.prev]).split(' · ')[0] : 'a batch') + '</span>' : '') +
+        (r.times > 1 ? '<br><span class="b acc">re-surveyed ×' + (r.times - 1) + '</span>' : '') + '</td><td class="mono">' + esc(r.sn) + '<br><span class="b ' + (PRIO[r.prio] || PRIO.NEW)[0] + '">' + (PRIO[r.prio] || PRIO.NEW)[1] + '</span></td><td>' + esc(r.name) +
+        '</td><td>' + esc(r.gender) + '</td><td class="mono">' + esc(r.mobile) + (r.dbmob && r.dbmob !== r.mobile ? '<br><span class="small" style="color:var(--warn)">DB ' + esc(r.dbmob) + '</span>' : '') +
+        '</td><td>' + esc(r.dist) + '</td><td><span class="b ' + GROUP[r.group][0] + '">' + GROUP[r.group][1] + '</span></td><td><a target="_blank" href="https://maps.google.com/?q=' + encodeURIComponent(r.lat + ',' + r.lng) + '">Map</a><div class="small muted">±' + esc(r.acc) + ' m</div></td><td>' + esc(r.by) +
+        '</td><td><div class="ph" data-photo="' + esc(r.photo) + '">tap</div></td><td><button class="btn" data-svpdf="' + esc(r.pdf) + '">⬇ PDF</button><div class="small muted">' + esc(r.from) + '</div></td></tr>').join('') +
+      '</tbody></table></div>' : '<div class="empty">No surveys for this filter.</div>');
+}
+function svRows() {
+  const q = norm($('q').value);
+  return (SVD ? SVD.rows : []).filter(r => (!SVF.vil || r.dist === SVF.vil) && (!SVF.g || r.gender === SVF.g) &&
+    (!SVF.p || (SVF.p === 'X' ? !['P1', 'P2', 'P3'].includes(r.prio) : r.prio === SVF.p)) && (!q || norm(r.sn + r.name + r.mobile + r.dist).includes(q)));
+}
+function svFilterLabel() { return [SVF.g, SVF.p === 'X' ? 'Others' : SVF.p, SVF.vil].filter(Boolean).join(' ') || 'All'; }
+function svBatchMap() { const m = {}; (SVD && SVD.batches || []).forEach(b => m[b.id] = b); return m; }
+function svBatchLabel(b) { const a = String(b.at); return a.slice(8, 10) + '-' + a.slice(5, 7) + ' ' + a.slice(11, 16) + (b.filter && b.filter !== 'All' ? ' · ' + b.filter : '') + (b.by ? ' · ' + b.by : ''); }
+function saveB64(o, type) {
+  const bin = atob(o.b64), u8 = new Uint8Array(bin.length); for (let i = 0; i < bin.length; i++) u8[i] = bin.charCodeAt(i);
+  const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([u8], { type: type || o.type || 'application/octet-stream' })); a.download = o.name;
+  document.body.appendChild(a); a.click(); a.remove();
+}
+async function svBatch(el, fn, args, isNew) {
+  el.disabled = true; const t = el.tagName === 'BUTTON' ? el.textContent : ''; if (t) el.textContent = 'Preparing…';
+  try {
+    const o = await run(fn, KEY, ...args); saveB64(o, 'application/zip');
+    toast(o.name + ' – Excel: ' + o.xl + ' houses (upload first) · folder 1: ' + o.g1 + ' upload now · folder 2: ' + o.g2 + ' after CA Verified' + (o.g3 ? ' · folder 3: ' + o.g3 + ' check' : '') +
+      (o.missing && o.missing.length ? ' · consent missing: ' + o.missing.join(', ') : '') + (isNew ? '. If the file did not save, use "Download again".' : ''), 12000);
+    if (isNew) return surveyPage(true);
+  } catch (e) { toast(e.message || e, 8000); }
+  el.disabled = false; if (t) el.textContent = t;
+}
+async function svFile(btn, fn) {
+  const rows = svRows(); if (!rows.length) return toast('Nothing to download.');
+  btn.disabled = true; const t = btn.textContent; btn.textContent = 'Preparing…';
+  try { const o = await run(fn, KEY, rows.map(r => r.id)); saveB64(o, 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'); toast(o.n + ' rows – ' + o.name, 6000); }
+  catch (e) { toast(e.message || e, 6000); }
+  btn.disabled = false; btn.textContent = t;
+}
+
+// ---------------------------------------------------------------- daily files
+function filesPage() {
+  const m = D.meta || {}, have = {}; (m.files || []).forEach(f => have[f.kind] = f);
+  const kinds = [['INST', 'Installations report (PMSG cloud)', 'who is installed, DCR, portal OTP'], ['CL', 'Consumer List (MNRE)', 'CA status and consent status'],
+    ['MIS', 'ULA Vendor My Applications List (MIS)', 'ULA numbers – APKUP only'], ['APP', 'My Applications List (portal) – optional', 'extra ULA numbers – APKUP only']];
+  $('page').innerHTML = '<div class="box"><h3>The daily files</h3><div class="tw"><table><thead><tr><th>File</th><th>Used for</th><th>Current file</th><th class="num">Rows</th><th>Uploaded</th></tr></thead><tbody>' +
+    kinds.map(k => { const f = have[k[0]]; return '<tr><td><b>' + k[1] + '</b></td><td class="small muted">' + k[2] + '</td><td class="small">' + (f ? esc(f.name) : '<span class="b bad">missing</span>') +
+      '</td><td class="num">' + (f ? f.rows.toLocaleString('en-IN') : '') + '</td><td class="small">' + (f ? esc(f.date) : '') + '</td></tr>'; }).join('') + '</tbody></table></div>' +
+    ((m.warnings || []).length ? (m.warnings || []).map(w => '<div class="flag">' + esc(w) + '</div>').join('') : '') +
+    (can.manage() ? '<div class="drop" style="margin-top:12px"><input type="file" id="upl" multiple accept=".xlsx,.xls,.csv"><p class="small muted">Choose one or more of the files above, as downloaded (file names do not matter – the columns are recognised). ' +
+      'The newest file of each kind is used; older ones go to "Old files".<br>Last update: ' + esc(m.at || 'never') + (m.by ? ' by ' + esc(m.by) : '') + '</p></div>'
+      : '<p class="small muted">Only the Manager uploads the daily files. Last update: ' + esc(m.at || 'never') + '</p>') + '</div>';
+}
+async function upload(files) {
+  if (!files.length) return;
+  const st = $('page').querySelector('.drop p'); let n = 0;
+  for (const f of files) {
+    st.textContent = 'Uploading ' + f.name + '…';
+    const url = await new Promise((ok, fail) => { const fr = new FileReader(); fr.onload = () => ok(fr.result); fr.onerror = fail; fr.readAsDataURL(f); });
+    try { await run('uploadReference', KEY, f.name, url); n++; } catch (e) { toast(e.message || e, 6000); }
+  }
+  st.textContent = 'Reading ' + n + ' file(s) and rebuilding the lists… (up to a minute)';
+  try { await run('updateReference', KEY); toast('Daily files updated'); SVD = null; await load(true); PAGE = 'files'; render(); }
+  catch (e) { toast(e.message || e, 8000); st.textContent = 'Failed: ' + (e.message || e); }
+}
+
+// ---------------------------------------------------------------- settings (administrator)
+function settingsPage() {
+  $('page').innerHTML = '<div class="box"><h3>Users (email login)</h3><div id="usersBox"><div class="loading">Loading…</div></div></div>';
+  run('listMailUsers', KEY).then(drawUsers).catch(e => { $('usersBox').innerHTML = '<div class="flag">' + esc(e.message || e) + '</div>'; });
+}
+function drawUsers(list) {
+  $('usersBox').innerHTML = '<div class="tw" style="margin-bottom:10px"><table><thead><tr><th>Email</th><th>Name</th><th>Role</th><th>Devices logged in</th><th></th></tr></thead><tbody>' +
+    list.map(u => '<tr><td>' + esc(u.email) + '</td><td>' + esc(u.name) + '</td><td>' + esc(ROLE_T[u.role] || u.role) + '</td><td>' + u.devices +
+      '</td><td><button class="btn" data-deluser="' + esc(u.email) + '">Remove</button></td></tr>').join('') + '</tbody></table></div>' +
+    '<div class="toolbar"><input id="uEmail" type="email" placeholder="Email" style="width:220px;padding:7px 9px;border:1px solid var(--line);border-radius:8px"><input id="uName" placeholder="Name" style="width:160px;padding:7px 9px;border:1px solid var(--line);border-radius:8px">' +
+    '<select id="uRole"><option value="manager">Manager</option><option value="mis">MIS</option><option value="owner">Administrator</option></select><button class="btn pri" id="uAdd">Add / update</button></div>' +
+    '<p class="small muted">Manager: everything except Settings, uploads the daily files. MIS: dashboard, lists, survey downloads. Removing a user logs out all their devices at once.</p>';
+}
+
+// ---------------------------------------------------------------- events
+document.addEventListener('click', async e => {
+  const t = e.target.closest('button, tr[data-vil], .ph, [data-list]'); if (!t) return;
+  if (t.dataset.page) { PAGE = t.dataset.page; if (PAGE === 'list') CHIP = LISTS[LIST || 'P1'].def || ''; return render(); }
+  if (t.dataset.list) { LIST = t.dataset.list; CHIP = LISTS[LIST].def || ''; PAGE = 'list'; return render(); }
+  if (t.dataset.lst) { LIST = t.dataset.lst; CHIP = LISTS[LIST].def || ''; return render(); }
+  if (t.dataset.chip !== undefined) { CHIP = t.dataset.chip; return render(); }
+  if (t.dataset.vil) { $('fVil').value = t.dataset.vil; return render(); }
+  if (t.id === 'csv') return csvDownload(listRows(), 'Kuppam_' + LIST + (CHIP ? '_' + CHIP : '') + '.csv');
+  if (t.id === 'reload') return load(true).then(() => { if (PAGE === 'survey') surveyPage(true); });
+  if (t.id === 'logout') return logoutNow();
+  if (t.id === 'svNew') { const ids = svRows().filter(r => !r.batch).map(r => r.id); if (!ids.length) return toast('Nothing new to download.'); return svBatch(t, 'surveyBatchNew', [ids, svFilterLabel()], true); }
+  if (t.id === 'svXls') return svFile(t, 'surveyDetails');
+  if (t.id === 'svEE') return svFile(t, 'mobileChanges');
+  if (t.id === 'svReload') return surveyPage(true);
+  if (t.dataset.svpdf) { t.disabled = true; try { saveB64(await run('getSurveyFile', KEY, t.dataset.svpdf)); } catch (er) { toast(er.message || er); } t.disabled = false; return; }
+  if (t.classList.contains('ph') && t.dataset.photo) {
+    if (t.querySelector('img')) { $('zoom').querySelector('img').src = t.querySelector('img').src; $('zoom').classList.add('open'); return; }
+    t.textContent = '…'; try { t.innerHTML = '<img src="' + (await run('getPhoto', KEY, t.dataset.photo)) + '">'; } catch (er) { t.textContent = 'error'; } return;
+  }
+  if (t.id === 'uAdd') { try { drawUsers(await run('saveMailUser', KEY, $('uEmail').value, $('uName').value, $('uRole').value)); toast('Saved'); } catch (er) { toast(er.message || er, 5000); } return; }
+  if (t.dataset.deluser) { if (!confirm('Remove ' + t.dataset.deluser + '? All their devices are logged out.')) return; try { drawUsers(await run('removeMailUser', KEY, t.dataset.deluser)); } catch (er) { toast(er.message || er); } return; }
+  if (t.id === 'lSend') return loginSend();
+  if (t.id === 'lVerify') return loginVerify();
+  if (t.id === 'lBack') return showLogin();
+});
+$('zoom').onclick = () => $('zoom').classList.remove('open');
+document.addEventListener('change', e => {
+  const id = e.target.id;
+  if (id === 'fSec') { fill(); render(); } else if (id === 'fVil') render();
+  else if (id === 'svVil' || id === 'svG' || id === 'svP') { SVF[{ svVil: 'vil', svG: 'g', svP: 'p' }[id]] = e.target.value; surveyPage(); }
+  else if (id === 'svAgain' && e.target.value) { const sel = e.target; svBatch(sel, 'surveyBatchAgain', [sel.value], false).then(() => { sel.value = ''; }); }
+  else if (id === 'upl') upload([...e.target.files]);
+});
+let qT = null; $('q').addEventListener('input', () => { clearTimeout(qT); qT = setTimeout(render, 250); });
+$('lEmail').addEventListener('keydown', e => { if (e.key === 'Enter') loginSend(); });
+$('lCode').addEventListener('keydown', e => { if (e.key === 'Enter') loginVerify(); });
+
+// ---------------------------------------------------------------- login & load
+function showLogin(msg) { $('login').style.display = 'flex'; $('lErr').textContent = msg || ''; $('lStep1').style.display = ''; $('lStep2').style.display = 'none'; setTimeout(() => $('lEmail').focus(), 50); }
+async function loginSend() {
+  $('lErr').textContent = ''; $('lSend').disabled = true;
+  try { $('lMsg').textContent = await run('loginStart', $('lEmail').value.trim()); $('lStep1').style.display = 'none'; $('lStep2').style.display = ''; $('lCode').value = ''; $('lCode').focus(); }
+  catch (e) { $('lErr').textContent = e.message || e; }
+  $('lSend').disabled = false;
+}
+async function loginVerify() {
+  $('lErr').textContent = ''; $('lVerify').disabled = true;
+  try { KEY = await run('loginVerify', $('lEmail').value.trim(), $('lCode').value); tokStore.set(KEY); $('login').style.display = 'none'; await load(); }
+  catch (e) { $('lErr').textContent = e.message || e; }
+  $('lVerify').disabled = false;
+}
+async function logoutNow() { try { await run('logout', KEY); } catch (e) {} tokStore.set(''); KEY = ''; D = null; SVD = null; PAGE = 'dash'; LIST = null; CHIP = ''; showLogin('Logged out.'); }
+async function load(keep) {
+  if (!KEY) { showLogin(); return; }
+  if (!keep) $('page').innerHTML = '<div class="loading">Loading…</div>';
+  try {
+    D = JSON.parse(await run('getAppData', KEY));
+    ROLE = (D.me || {}).role || 'mis';
+    $('me').innerHTML = esc((D.me || {}).name) + '<br>' + esc(ROLE_T[ROLE] || ROLE) + (/^s[0-9a-f]{32}$/.test(KEY) ? '<br><button class="btn" id="logout" style="margin-top:8px;padding:3px 10px;font-size:12px">Log out</button>' : '');
+    $('clientName').textContent = D.client || 'TytoGrid'; document.title = 'Solar Vista – ' + (D.client || 'TytoGrid');
+    $('fresh').textContent = 'Loaded ' + new Date().toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
+    build(); fill(); render();
+  } catch (e) {
+    if (/Not allowed/.test(e.message || e)) { tokStore.set(''); KEY = ''; showLogin('Your login has ended – log in again.'); return; }
+    $('page').innerHTML = '<div class="empty">Could not load: ' + esc(e.message || e) + '</div>';
+  }
+}
+load();
+</script>
+</body>
+</html>
