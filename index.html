@@ -4,221 +4,123 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>TytoGrid – Field data, made clear.</title>
-<meta name="description" content="TytoGrid builds back-office software for rooftop-solar EPC contractors: survey and consent collection, site QC, DCR serial checks and portal tracking.">
+<meta name="description" content="TytoGrid builds Solar Vista – back-office software for rooftop-solar EPC contractors, from survey and installation to QC, handover, billing and O&M.">
 <link rel="icon" href="/favicon.svg" type="image/svg+xml">
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Schibsted+Grotesk:wght@400;500;600;800&display=swap" rel="stylesheet">
 <style>
-:root {
-  --cell: #142257; --cell-2: #2B3F86; --busbar: #D5DBE8; --day: #F7F8FB; --sun: #F4A62A; --ink: #0E1630; --soft: #4A5677; --done: #1F8A5B; --line: #E3E7F0;
-}
+:root { --cell: #142257; --cell-2: #2B3F86; --day: #F7F8FB; --sun: #F4A62A; --ink: #0E1630; --soft: #4A5677; --line: #E3E7F0; }
 * { box-sizing: border-box; }
-html { scroll-behavior: smooth; }
-body { margin: 0; background: var(--day); color: var(--ink); font: 17px/1.6 "Schibsted Grotesk", system-ui, -apple-system, "Segoe UI", sans-serif; -webkit-font-smoothing: antialiased; }
+html, body { height: 100%; }
+body { margin: 0; background: var(--day); color: var(--ink); font: 16px/1.5 "Schibsted Grotesk", system-ui, -apple-system, "Segoe UI", sans-serif; -webkit-font-smoothing: antialiased; }
 a { color: inherit; }
 :focus-visible { outline: 3px solid var(--sun); outline-offset: 3px; border-radius: 4px; }
-.wrap { max-width: 1120px; margin: 0 auto; padding: 0 24px; }
+.page { min-height: 100vh; max-width: 1240px; margin: 0 auto; padding: 0 32px; display: flex; flex-direction: column; }
 
-/* nav */
-.nav { display: flex; align-items: center; gap: 28px; padding-top: 22px; padding-bottom: 22px; }
-.logo { display: flex; align-items: center; gap: 10px; text-decoration: none; font-weight: 800; font-size: 21px; letter-spacing: -.02em; }
-.logo img { width: 38px; height: 38px; }
-.logo .nm { display: flex; flex-direction: column; line-height: 1.05; }
-.logo .tg { font-size: 12.5px; font-weight: 500; letter-spacing: 0; color: var(--soft); margin-top: 3px; }
-.nav .links { display: flex; gap: 24px; margin-left: auto; font-size: 15px; }
+/* header */
+.nav { display: flex; align-items: center; gap: 26px; padding: clamp(14px, 2.6vh, 26px) 0; }
+.logo { display: flex; align-items: center; gap: 11px; text-decoration: none; }
+.logo img { width: 40px; height: 40px; }
+.logo b { display: block; font-weight: 800; font-size: 22px; letter-spacing: -.02em; line-height: 1.05; }
+.logo small { display: block; font-size: 12.5px; color: var(--soft); margin-top: 2px; }
+.nav .links { margin-left: auto; display: flex; gap: 22px; align-items: center; font-size: 15px; }
 .nav .links a { text-decoration: none; color: var(--soft); } .nav .links a:hover { color: var(--ink); }
-.btn { display: inline-block; text-decoration: none; font-weight: 600; font-size: 16px; padding: 12px 20px; border-radius: 10px; border: 1.5px solid var(--cell); }
+.btn { display: inline-block; text-decoration: none; font-weight: 600; font-size: 15.5px; padding: 11px 19px; border-radius: 10px; border: 1.5px solid var(--cell); white-space: nowrap; }
 .btn.solid { background: var(--cell); color: #fff; } .btn.solid:hover { background: #0c1640; }
-.btn.line { color: var(--cell); background: transparent; } .btn.line:hover { background: #fff; }
-.nav .btn { padding: 9px 16px; font-size: 15px; }
+.btn.line { color: var(--cell); } .btn.line:hover { background: #fff; }
+.btn.sun { background: var(--sun); border-color: var(--sun); color: var(--cell); } .btn.sun:hover { background: #ffb944; }
+.nav .btn { padding: 8px 15px; font-size: 14.5px; color: var(--cell) !important; }
 
-/* hero */
-.hero { display: grid; grid-template-columns: 1.1fr 1fr; gap: 56px; align-items: center; padding-top: 48px; padding-bottom: 88px; }
-h1 { font-size: clamp(38px, 5.2vw, 62px); line-height: 1.04; letter-spacing: -.035em; font-weight: 800; margin: 0 0 22px; max-width: 13ch; }
-.lead { font-size: 19px; color: var(--soft); max-width: 50ch; margin: 0 0 30px; }
+/* main */
+main { flex: 1; display: grid; grid-template-columns: 1fr 1.08fr; gap: clamp(28px, 4vw, 56px); align-items: center; padding-bottom: clamp(10px, 2vh, 20px); }
+h1 { font-size: clamp(34px, min(4.6vw, 7.2vh), 60px); line-height: 1.04; letter-spacing: -.035em; font-weight: 800; margin: 0 0 clamp(12px, 2vh, 20px); max-width: 14ch; }
+.lead { font-size: clamp(16px, 2.2vh, 18.5px); color: var(--soft); max-width: 48ch; margin: 0 0 clamp(16px, 3vh, 28px); }
 .cta { display: flex; flex-wrap: wrap; gap: 12px; }
+.cv { margin-top: clamp(18px, 4vh, 40px); padding: 14px 16px; border: 1.5px solid var(--line); background: #fff; border-radius: 14px; display: flex; gap: 14px; align-items: center; max-width: 520px; }
+.cv b { font-size: 16px; } .cv p { margin: 2px 0 0; font-size: 14px; color: var(--soft); line-height: 1.4; }
+.cv .tag { margin-left: auto; font-size: 12.5px; color: var(--soft); white-space: nowrap; }
+.cv .tag::before { content: ""; display: inline-block; width: 7px; height: 7px; border-radius: 50%; background: var(--sun); margin-right: 6px; vertical-align: 1px; }
 
-/* the panel: a service number's journey as solar cells lighting up */
-.panel { background: var(--cell); border-radius: 18px; padding: 22px; box-shadow: 0 30px 60px -30px rgba(20,34,87,.55); }
-.panel .head { display: flex; justify-content: space-between; align-items: baseline; color: #AEB8D6; font-size: 13px; margin: 0 4px 14px; }
-.panel .head b { color: #fff; font-weight: 600; font-size: 15px; letter-spacing: .04em; font-variant-numeric: tabular-nums; }
-.cells { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; }
-.c { position: relative; aspect-ratio: 1 / .82; background: var(--cell-2); border-radius: 6px; padding: 12px; color: #C7CFE6; display: flex; flex-direction: column; justify-content: flex-end; overflow: hidden; }
-.c::before, .c::after { content: ""; position: absolute; background: rgba(20,34,87,.45); }
-.c::before { left: 33%; top: 0; bottom: 0; width: 1.5px; } .c::after { left: 66%; top: 0; bottom: 0; width: 1.5px; }
-.c span { position: relative; z-index: 1; font-size: 14px; font-weight: 600; line-height: 1.2; }
-.c small { position: relative; z-index: 1; font-size: 12px; opacity: .8; }
-.c.done { background: #3A519B; color: #fff; }
-.c.done span::before { content: "✓ "; color: var(--sun); }
-.c.on { background: var(--sun); color: var(--cell); }
-.c.on small { opacity: .9; }
-.panel .foot { display: flex; justify-content: space-between; color: #AEB8D6; font-size: 13px; margin: 14px 4px 0; }
-.panel .foot .ok { color: #8FE0B5; }
-@media (prefers-reduced-motion: no-preference) {
-  .c { transition: background .45s ease, color .45s ease; }
-}
+/* Solar Vista panel: the project life cycle as solar cells */
+.panel { background: var(--cell); color: #fff; border-radius: 20px; padding: clamp(18px, 3vh, 28px); box-shadow: 0 30px 60px -30px rgba(20,34,87,.55); }
+.panel .top { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; margin-bottom: 4px; }
+.panel h2 { margin: 0; font-size: clamp(24px, 3.4vh, 30px); letter-spacing: -.02em; font-weight: 800; }
+.panel .sub { color: #C7CFE6; font-size: 14.5px; margin: 0 0 clamp(12px, 2.2vh, 18px); }
+.key { font-size: 12.5px; color: #AEB8D6; display: flex; gap: 12px; white-space: nowrap; }
+.key i { display: inline-block; width: 10px; height: 10px; border-radius: 2px; margin-right: 5px; vertical-align: -1px; }
+.cells { display: grid; grid-template-columns: repeat(4, 1fr); gap: 7px; }
+.c { position: relative; min-height: clamp(78px, 13vh, 118px); background: var(--cell-2); border-radius: 7px; padding: 11px 12px; display: flex; flex-direction: column; justify-content: flex-end; overflow: hidden; color: #DCE2F2; }
+.c::before, .c::after { content: ""; position: absolute; top: 0; bottom: 0; width: 1.5px; background: rgba(20,34,87,.4); }
+.c::before { left: 33%; } .c::after { left: 66%; }
+.c .n { position: absolute; top: 9px; left: 12px; font-size: 12px; font-weight: 600; opacity: .7; z-index: 1; }
+.c span { position: relative; z-index: 1; font-weight: 700; font-size: 15px; line-height: 1.2; }
+.c small { position: relative; z-index: 1; font-size: 12.5px; opacity: .85; line-height: 1.3; margin-top: 2px; }
+.c.next { background: transparent; border: 1.5px dashed #4A5FA6; color: #9FAAD0; }
+.c.next::before, .c.next::after { display: none; }
+.c.live.on { background: var(--sun); color: var(--cell); }
+.c.end { grid-column: span 1; }
+.panel .foot { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-top: clamp(14px, 2.6vh, 22px); flex-wrap: wrap; }
+.panel .foot p { margin: 0; font-size: 13.5px; color: #AEB8D6; }
+@media (prefers-reduced-motion: no-preference) { .c { transition: background .5s ease, color .5s ease; } }
 
-/* sections */
-section { padding: 80px 0; }
-h2 { font-size: clamp(28px, 3.4vw, 40px); letter-spacing: -.025em; line-height: 1.1; margin: 0 0 14px; font-weight: 800; }
-.intro { color: var(--soft); max-width: 58ch; margin: 0 0 40px; }
+footer { display: flex; justify-content: space-between; gap: 16px; padding: clamp(10px, 2vh, 18px) 0; border-top: 1px solid var(--line); font-size: 13.5px; color: var(--soft); }
+footer a { color: var(--cell); font-weight: 600; text-decoration: none; }
 
-/* products: one live, one in development – shown differently on purpose */
-.products { display: grid; grid-template-columns: 1.25fr 1fr; gap: 20px; align-items: stretch; }
-.prod { border-radius: 20px; padding: 36px; display: flex; flex-direction: column; }
-.prod h3 { font-size: 30px; letter-spacing: -.02em; margin: 0 0 6px; font-weight: 800; }
-.prod .what { font-size: 18px; margin: 0 0 22px; }
-.prod ul { margin: 0 0 30px; padding: 0; list-style: none; }
-.prod li { padding: 10px 0 10px 26px; position: relative; border-top: 1px solid; }
-.prod li::before { content: ""; position: absolute; left: 0; top: 18px; width: 10px; height: 10px; border-radius: 2px; }
-.prod .act { margin-top: auto; display: flex; align-items: center; gap: 16px; flex-wrap: wrap; }
-.sv { background: var(--cell); color: #fff; }
-.sv .what { color: #C7CFE6; } .sv li { border-color: rgba(255,255,255,.12); color: #E6EAF5; } .sv li::before { background: var(--sun); }
-.sv .btn { background: var(--sun); border-color: var(--sun); color: var(--cell); } .sv .btn:hover { background: #ffb944; }
-.cv { background: #fff; border: 1.5px solid var(--line); }
-.cv .what { color: var(--soft); } .cv li { border-color: var(--line); color: var(--ink); } .cv li::before { background: transparent; border: 1.5px solid var(--cell-2); }
-.status { font-size: 14px; color: var(--soft); }
-.status::before { content: ""; display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: var(--sun); margin-right: 8px; vertical-align: 1px; }
-.sv .status { color: #AEB8D6; } .sv .status::before { background: #8FE0B5; }
-
-/* how it works – a real sequence */
-.steps { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0; border-top: 2px solid var(--cell); }
-.step { padding: 26px 28px 0 0; }
-.step .n { font-weight: 800; font-size: 15px; color: var(--cell-2); }
-.step h3 { font-size: 21px; margin: 6px 0 8px; letter-spacing: -.01em; }
-.step p { margin: 0; color: var(--soft); font-size: 16px; }
-
-/* built on site */
-.site { display: grid; grid-template-columns: 1fr 1.3fr; gap: 56px; align-items: start; }
-.site p { margin: 0 0 16px; color: var(--soft); max-width: 60ch; }
-.site p.big { font-size: 22px; line-height: 1.45; color: var(--ink); letter-spacing: -.01em; }
-
-/* contact */
-.contact { background: #fff; border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); }
-.contact .wrap { display: flex; flex-wrap: wrap; gap: 24px; align-items: center; justify-content: space-between; }
-.contact h2 { margin: 0; }
-.contact a.mail { font-size: 22px; font-weight: 600; color: var(--cell); }
-footer { padding: 28px 0 40px; color: var(--soft); font-size: 14px; }
-footer .wrap { display: flex; flex-wrap: wrap; gap: 16px; justify-content: space-between; }
-
-@media (max-width: 900px) {
-  .hero, .products, .site { grid-template-columns: 1fr; }
-  .hero { padding-top: 24px; gap: 40px; }
-  .steps { grid-template-columns: 1fr; border-top: 0; }
-  .step { border-top: 2px solid var(--cell); padding: 20px 0 26px; }
+@media (max-width: 960px) {
+  main { grid-template-columns: 1fr; padding: 12px 0 28px; }
   .nav .links a:not(.btn) { display: none; }
-  .hero { padding-top: 24px; }
-  section { padding: 60px 0; }
-  .prod { padding: 26px; }
+  h1 { font-size: clamp(32px, 8vw, 44px); }
 }
-@media (max-width: 420px) { .wrap { padding: 0 16px; } .c { padding: 9px; } .c span { font-size: 12.5px; } .c small { display: none; } }
+@media (max-width: 520px) { .page { padding: 0 16px; } .cells { grid-template-columns: repeat(2, 1fr); } .cv { flex-wrap: wrap; } .cv .tag { margin-left: 0; } footer { flex-direction: column; gap: 4px; } }
 </style>
 </head>
 <body>
-<header class="wrap nav">
-  <a class="logo" href="/" aria-label="TytoGrid home"><img src="/assets/logo-mark.svg" alt=""><span class="nm">TytoGrid<span class="tg">Field data, made clear.</span></span></a>
-  <nav class="links" aria-label="Main">
-    <a href="#products">Products</a><a href="#how">How it works</a><a href="#contact">Contact</a>
-    <a class="btn line" href="/solarvista">Sign in</a>
-  </nav>
-</header>
+<div class="page">
+  <header class="nav">
+    <a class="logo" href="/" aria-label="TytoGrid home"><img src="/assets/logo-mark.svg" alt=""><span><b>TytoGrid</b><small>Field data, made clear.</small></span></a>
+    <nav class="links" aria-label="Main">
+      <a href="#solarvista">Solar Vista</a><a href="#contractvista">Contract Vista</a><a href="mailto:vrp@tytogrid.com">Contact</a>
+      <a class="btn line" href="/solarvista">Sign in</a>
+    </nav>
+  </header>
 
-<main>
-  <div class="wrap hero">
+  <main>
     <div>
-      <h1>Every rooftop, from survey to inspection, on one record.</h1>
-      <p class="lead">TytoGrid builds back-office software for rooftop-solar EPC contractors. Field teams capture proof on the phone; the office sees what is ready for the portal, and what is holding it up.</p>
+      <h1>From survey to O&amp;M, every rooftop on one record.</h1>
+      <p class="lead">TytoGrid builds back-office software for rooftop-solar EPC contractors. Field teams capture proof on the phone; the office sees what is done, what is stuck, and what is ready to bill.</p>
       <div class="cta"><a class="btn solid" href="/solarvista">Sign in to Solar Vista</a><a class="btn line" href="mailto:vrp@tytogrid.com">Write to us</a></div>
-    </div>
-    <figure class="panel" aria-label="Example: one service number moving through the PM Surya Ghar steps" style="margin:0">
-      <div class="head"><span>Service number</span><b>59117 03 000270</b></div>
-      <div class="cells" id="cells">
-        <div class="c"><span>Survey</span><small>GPS and house photo</small></div>
-        <div class="c"><span>Consent form</span><small>signed, 1 page</small></div>
-        <div class="c"><span>ULA application</span><small>MNRE portal</small></div>
-        <div class="c"><span>DCR</span><small>serials matched</small></div>
-        <div class="c"><span>Installation</span><small>consumer OTP</small></div>
-        <div class="c"><span>Inspection</span><small>by the department</small></div>
-      </div>
-      <div class="foot"><span id="stage">Survey pending</span><span class="ok" id="done"></span></div>
-    </figure>
-  </div>
-
-  <section id="products">
-    <div class="wrap">
-      <h2>Products</h2>
-      <p class="intro">Built for the PM Surya Ghar rooftop programme and the way EPC site offices actually work: many villages, many subcontractors, one portal.</p>
-      <div class="products">
-        <article class="prod sv">
-          <h3>Solar Vista</h3>
-          <p class="what">Field-to-portal tracking for rooftop-solar projects.</p>
-          <ul>
-            <li>Survey and consent collection on the phone – GPS, house photo and the signed form, even without signal</li>
-            <li>Site QC with photo evidence; AI flags what does not match the supervisor's answer</li>
-            <li>Panel and inverter serials checked against the DCR</li>
-            <li>Portal status for every service number: ULA, DCR, installation OTP, inspection</li>
-            <li>Ready-to-upload files for the MNRE portal, batch by batch</li>
-          </ul>
-          <div class="act"><a class="btn" href="/solarvista">Sign in to Solar Vista</a><span class="status">In use on live projects</span></div>
-        </article>
-        <article class="prod cv">
-          <h3>Contract Vista</h3>
-          <p class="what">Hindrances and notices, before they turn into disputes.</p>
-          <ul>
-            <li>Site teams record a hindrance with photos and dates in a minute</li>
-            <li>A draft notice is prepared for the project manager to review and send</li>
-            <li>Intimations left unanswered are escalated to management on time</li>
-          </ul>
-          <div class="act"><a class="btn line" href="mailto:vrp@tytogrid.com?subject=Contract%20Vista%20early%20access">Ask for early access</a><span class="status">In development</span></div>
-        </article>
+      <div class="cv" id="contractvista">
+        <div><b>Contract Vista</b><p>Hindrances recorded on site become draft notices for the PM, with unanswered ones escalated on time.</p></div>
+        <span class="tag">In development</span>
       </div>
     </div>
-  </section>
 
-  <section id="how" style="padding-top:20px">
-    <div class="wrap">
-      <h2>How it works</h2>
-      <p class="intro">Three places, one record per house.</p>
-      <div class="steps">
-        <div class="step"><div class="n">1</div><h3>On the rooftop</h3><p>Supervisors open a link on their phone – no app store, no password. Photos, serial labels, GPS and forms are captured at the house.</p></div>
-        <div class="step"><div class="n">2</div><h3>In the office</h3><p>The PM and MIS see each village at a glance: what is complete, what needs a re-visit, what is waiting for a document.</p></div>
-        <div class="step"><div class="n">3</div><h3>On the portal</h3><p>Files come out in the portal's own format, and the next day's portal reports show what moved.</p></div>
+    <section class="panel" id="solarvista" aria-label="Solar Vista modules">
+      <div class="top"><h2>Solar Vista</h2>
+        <div class="key"><span><i style="background:var(--sun)"></i>In use</span><span><i style="border:1.5px dashed #6D80C0"></i>Next</span></div></div>
+      <p class="sub">The whole project life cycle, one module at a time.</p>
+      <div class="cells">
+        <div class="c live"><em class="n">1</em><span>Survey</span><small>GPS, house photo, consent</small></div>
+        <div class="c next"><em class="n">2</em><span>Material issue</span><small>stores to site</small></div>
+        <div class="c next"><em class="n">3</em><span>Installation</span><small>daily progress</small></div>
+        <div class="c live"><em class="n">4</em><span>QC</span><small>photos, serials, AI checks</small></div>
+        <div class="c live"><em class="n">5</em><span>Handover</span><small>DCR-matched reports</small></div>
+        <div class="c live"><em class="n">6</em><span>Billing</span><small>milestones to invoice</small></div>
+        <div class="c next"><em class="n">7</em><span>O&amp;M</span><small>complaints, visits</small></div>
+        <div class="c live"><em class="n">✓</em><span>Portal status</span><small>ULA, DCR, OTP, inspection</small></div>
       </div>
-    </div>
-  </section>
+      <div class="foot"><p>Built for PM Surya Ghar rooftop projects.</p><a class="btn sun" href="/solarvista">Sign in</a></div>
+    </section>
+  </main>
 
-  <section>
-    <div class="wrap site">
-      <h2>Built on site, not in a lab.</h2>
-      <div>
-        <p class="big">TytoGrid was started by a project manager with thirty years on EPC sites – dams, hydro, Jal Jeevan Mission and rooftop solar.</p>
-        <p>Every screen answers a question a site office asks every day: which houses are done, which are stuck, and why.</p>
-      </div>
-    </div>
-  </section>
-
-  <section class="contact" id="contact">
-    <div class="wrap">
-      <h2>Talk to us</h2>
-      <a class="mail" href="mailto:vrp@tytogrid.com">vrp@tytogrid.com</a>
-    </div>
-  </section>
-</main>
-
-<footer><div class="wrap"><span>© 2026 TytoGrid LLP · Field data, made clear.</span><span><a href="/solarvista">Solar Vista sign in</a></span></div></footer>
-
+  <footer><span>© 2026 TytoGrid LLP · Started by a project manager with thirty years on EPC sites.</span><a href="mailto:vrp@tytogrid.com">vrp@tytogrid.com</a></footer>
+</div>
 <script>
-// one orchestrated moment: the six cells light up in order, as a house moves through the steps
+// one orchestrated moment: the modules in use light up in life-cycle order
 (function () {
-  const cells = [...document.querySelectorAll('#cells .c')], st = document.getElementById('stage'), dn = document.getElementById('done');
-  const names = ['Survey', 'Consent form', 'ULA application', 'DCR', 'Installation', 'Inspection'];
-  const finish = () => { cells.forEach((c, k) => { c.classList.toggle('done', k < cells.length - 1); c.classList.toggle('on', k === cells.length - 1); });
-    st.textContent = 'All steps complete'; dn.textContent = '✓ Ready for subsidy request'; };
-  if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return finish();
-  let i = 0;
-  setTimeout(function tick() {
-    if (i < cells.length) { if (i) { cells[i - 1].classList.remove('on'); cells[i - 1].classList.add('done'); } cells[i].classList.add('on'); st.textContent = names[i] + ' done'; i++; setTimeout(tick, 560); } else finish();
-  }, 700);
+  const live = [...document.querySelectorAll('.c.live')];
+  if (matchMedia('(prefers-reduced-motion: reduce)').matches) return live.forEach(c => c.classList.add('on'));
+  live.forEach((c, i) => setTimeout(() => c.classList.add('on'), 600 + i * 380));
 })();
 </script>
 </body>
