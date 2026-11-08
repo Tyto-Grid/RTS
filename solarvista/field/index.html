@@ -44,6 +44,11 @@ button:disabled{opacity:.5}
 .tag{display:inline-block;border-radius:6px;padding:1px 7px;font-size:11.5px;font-weight:700;white-space:nowrap}
 .t1{background:var(--p1-bg);color:var(--p1)}.t2{background:var(--p2-bg);color:var(--p2)}.t3{background:var(--p3-bg);color:var(--p3)}
 .tdone{background:var(--chip);color:var(--muted)}
+.t4{background:#f3e8ff;color:#6b21a8}.trv{background:var(--bad-bg);color:var(--bad)}
+.tabs{display:flex;gap:6px;margin:12px 0 4px}.tabs button{flex:1;padding:10px;font-weight:600}
+.tabs button.on{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+.count{display:flex;justify-content:space-between;align-items:center;font-size:14px;margin-top:8px}.count b{font-size:18px}
+.bar2{height:6px;background:var(--chip);border-radius:3px;overflow:hidden;margin-top:4px}.bar2 i{display:block;height:100%;background:var(--ok)}
 .grp{font-weight:700;font-size:13px;margin:14px 0 2px;color:var(--muted)}
 .msg{font-size:13.5px;margin-top:6px;padding:6px 9px;border-radius:8px}
 .m-ok{background:var(--ok-bg);color:var(--ok)}.m-warn{background:var(--warn-bg);color:var(--warn)}.m-bad{background:var(--bad-bg);color:var(--bad)}.m-info{background:var(--chip);color:var(--muted)}
@@ -81,7 +86,10 @@ button:disabled{opacity:.5}
 <g clip-path="url(#tgLensF)"><circle cx="37" cy="37" r="16" fill="#142257"/><g fill="#F4A62A" transform="translate(37 37) scale(1.6) translate(-37 -37)"><rect x="11" y="11" width="8" height="8" rx="1.8"/><rect x="22" y="11" width="8" height="8" rx="1.8"/><rect x="33" y="11" width="8" height="8" rx="1.8"/><rect x="44" y="11" width="8" height="8" rx="1.8"/><rect x="11" y="22" width="8" height="8" rx="1.8"/><rect x="22" y="22" width="8" height="8" rx="1.8"/><rect x="33" y="22" width="8" height="8" rx="1.8"/><rect x="44" y="22" width="8" height="8" rx="1.8"/><rect x="11" y="33" width="8" height="8" rx="1.8"/><rect x="22" y="33" width="8" height="8" rx="1.8"/><rect x="33" y="33" width="8" height="8" rx="1.8"/><rect x="44" y="33" width="8" height="8" rx="1.8"/><rect x="11" y="44" width="8" height="8" rx="1.8"/><rect x="22" y="44" width="8" height="8" rx="1.8"/><rect x="33" y="44" width="8" height="8" rx="1.8"/><rect x="44" y="44" width="8" height="8" rx="1.8"/></g></g>
 <circle cx="37" cy="37" r="16" fill="none" stroke="#FFFFFF" stroke-width="2.4"/></svg><div><div class="org">Kasu Infra Projects Pvt. Ltd.</div><h1>Survey · Kuppam</h1><div class="sub">Consent forms for ULA – installed houses first.</div></div></header>
   <div class="card"><h2>1 · Your name</h2><input id="by" autocomplete="name" placeholder="Supervisor name"></div>
-  <div class="card"><h2>2 · Distribution (village)</h2>
+  <div class="tabs hidden" id="tabs"><button data-tab="pri" class="on">Priority – consent</button><button data-tab="bal">Balance – survey</button></div>
+  <div class="card" id="todayCard"><div class="count"><span>Today</span><span><b id="todayN">0</b> / 30 visits</span></div><div class="bar2"><i id="todayBar" style="width:0"></i></div></div>
+  <div class="card hidden" id="balCard"><h2>Balance – feasibility survey</h2><div class="msg m-info">For houses not surveyed yet (roof, shade, feasible or not). This tab opens soon – collect consent forms in the Priority tab now.</div></div>
+  <div class="card" id="distCard"><h2>2 · Distribution (village)</h2>
     <input id="dq" placeholder="Type to search" autocomplete="off">
     <div class="msg m-info" id="dMsg">Loading…</div>
     <div class="list" id="dList"></div>
@@ -103,6 +111,12 @@ button:disabled{opacity:.5}
     <label for="sn">Service number *</label>
     <input id="sn" class="mono" inputmode="numeric" maxlength="13" placeholder="13 digits starting 59">
     <div id="snMsg"></div>
+    <label>Customer available? *</label>
+    <div class="seg" id="avail"><button data-a="Yes">Yes</button><button data-a="No">No</button></div>
+    <div id="naBox" class="hidden"><label>Why not available? *</label>
+      <div class="seg" id="naWhy" style="flex-wrap:wrap"><button data-w="House locked">House locked</button><button data-w="Gone out">Gone out</button><button data-w="Migrated">Migrated</button><button data-w="Refused to meet">Refused to meet</button></div>
+      <div class="msg m-info">Take the location and a photo of the house as proof of the visit. The house stays on your list as a revisit.</div></div>
+    <div id="metBox">
     <label for="dist">Distribution *</label>
     <input id="dist" autocomplete="off">
     <label for="bname">Beneficiary name * <span class="small">(name on the service connection)</span></label>
@@ -113,12 +127,14 @@ button:disabled{opacity:.5}
     <input id="dbmob" class="mono" readonly placeholder="not in the files">
     <label for="mob">Working mobile now * <span class="small">(ask the beneficiary)</span></label>
     <input id="mob" class="mono" inputmode="tel" placeholder="10 digits">
+    <div id="mobMsg"></div>
+    </div>
   </div>
   <div class="card"><h2>Location</h2><div id="loc" class="msg m-info">Not taken yet</div><button id="gps" style="margin-top:8px">📍 Get location</button></div>
   <div class="card"><h2>Photo of the house</h2>
     <div class="thumb hidden" id="phWrap"><img id="ph" alt="House"></div>
     <div class="btns"><button id="phCam">📷 Camera</button><button id="phGal">🖼 Gallery</button></div></div>
-  <div class="card"><h2>Consent form (signed, 1 page)</h2>
+  <div class="card" id="cfCard"><h2>Consent form (signed, 1 page)</h2>
     <div id="cfInfo" class="msg m-info">Photograph the signed form, or choose a PDF / JPEG file. No Aadhaar.</div>
     <div class="thumb hidden" id="cfWrap"><img id="cf" alt="Consent form"></div>
     <div class="btns"><button id="cfCam">📷 Camera</button><button id="cfFile">📎 File (PDF / JPEG)</button></div></div>
@@ -138,8 +154,8 @@ const $ = id => document.getElementById(id);
 const esc = s => String(s == null ? '' : s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 const norm = s => String(s || '').toUpperCase().replace(/[^0-9A-Z]/g, '');
 const SN_RE = /^59\d{11}$/;
-const PR = { 1: ['t1', 'P1 · consent only'], 2: ['t2', 'P2 · Excel + consent'], 3: ['t3', 'P3 · not installed'] };
-const PRT = { P1: 1, P2: 2, P3: 3 };
+const PR = { 1: ['t1', 'P1 · installed'], 2: ['t2', 'P2 · installed, Excel'], 3: ['t3', 'P3 · feasible'], 4: ['t4', 'P4 · feasible, Excel'] };
+const PRT = { P1: 1, P2: 2, P3: 3, P4: 4 };
 // server calls go to the Apps Script back end (exec URL in /solarvista/config.js). A network failure is marked e.offline.
 function run(fn, ...args) {
   return fetch(window.SV_API, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify({ fn, args }) })
@@ -172,7 +188,25 @@ function cache(k, v) { try { if (v === undefined) { const x = localStorage.getIt
 function store(k, v) { try { if (v === undefined) return localStorage.getItem(k); localStorage.setItem(k, v); } catch (e) { return null; } }
 function show(id) { ['pDist', 'pHouses', 'pForm', 'pDone'].forEach(p => $(p).classList.toggle('hidden', p !== id)); window.scrollTo(0, 0); }
 
-let DISTS = [], HOUSES = [], CUR = '', F = { gender: '', gps: null, photo: null, consent: null, site: null };
+let DISTS = [], HOUSES = [], CUR = '', F = { gender: '', gps: null, photo: null, consent: null, site: null, avail: '', naWhy: '' };
+const pad2 = n => String(n).padStart(2, '0');
+function phoneTime() { const d = new Date(); return d.getFullYear() + '-' + pad2(d.getMonth() + 1) + '-' + pad2(d.getDate()) + ' ' + pad2(d.getHours()) + ':' + pad2(d.getMinutes()); }
+function todayKey() { return 'today_' + norm($('by').value) + '_' + phoneTime().slice(0, 10); }
+function todayShow() { const n = Number(store(todayKey()) || 0); $('todayN').textContent = n; $('todayBar').style.width = Math.min(100, n * 100 / 30) + '%'; }
+function todayAdd() { store(todayKey(), String(Number(store(todayKey()) || 0) + 1)); todayShow(); }
+function setAvail(a) {
+  F.avail = a; document.querySelectorAll('#avail button').forEach(x => x.classList.toggle('on', x.dataset.a === a));
+  $('naBox').classList.toggle('hidden', a !== 'No'); $('metBox').classList.toggle('hidden', a === 'No'); $('cfCard').classList.toggle('hidden', a === 'No');
+  $('submit').textContent = a === 'No' ? 'Save visit (not available)' : 'Submit survey';
+}
+let mobT = null;
+function mobCheck() {
+  const m = $('mob').value; $('mobMsg').innerHTML = ''; if (!/^[6-9]\d{9}$/.test(m)) return;
+  clearTimeout(mobT); mobT = setTimeout(() => run('checkMobile', m, $('sn').value).then(r => {
+    if ($('mob').value !== m || !r || !r.others || !r.others.length) return;
+    $('mobMsg').innerHTML = '<div class="msg m-warn">This number is also used for ' + r.others.map(esc).join(', ') + '. Ask if the beneficiary has another number (own or family).</div>';
+  }).catch(() => {}), 400);
+}
 
 // ---------------------------------------------------------------- distributions
 async function loadDists() {
@@ -201,14 +235,14 @@ function drawHouses() {
   const q = norm($('hq').value), L = HOUSES.filter(h => !q || h[0].endsWith(q) || h[0].includes(q) || norm(h[1]).includes(q));
   const todo = HOUSES.filter(h => !h[4]).length;
   $('hSub').textContent = todo + ' to survey · ' + (HOUSES.length - todo) + ' surveyed';
-  const head = { 1: 'P1 – installed, consent only (fastest to ULA)', 2: 'P2 – installed, Excel + consent', 3: 'P3 – not installed yet' };
+  const head = { 1: 'P1 – installed, consent only (fastest to ULA)', 2: 'P2 – installed, Excel + consent', 3: 'P3 – feasible, consent only', 4: 'P4 – feasible, Excel + consent' };
   let html = '';
-  [1, 2, 3].forEach(p => {
+  [1, 2, 3, 4].forEach(p => {
     const g = L.filter(h => h[3] === p); if (!g.length) return;
     const open = g.filter(h => !h[4]), done = g.filter(h => h[4]);
     html += '<div class="grp">' + head[p] + ' · ' + open.length + '</div><div class="list">' + open.concat(done).slice(0, 300).map(h =>
       '<button class="row' + (h[4] ? ' done' : '') + '" data-sn="' + h[0] + '"><span class="l"><span class="mono">' + h[0] + '</span><div class="n">' + esc(h[1] || 'name not in the files') + '</div></span>' +
-      (h[4] ? '<span class="tag tdone">✓ ' + esc(h[4].slice(5, 10).split('-').reverse().join('-')) + '</span>' : '<span class="tag ' + PR[p][0] + '">P' + p + '</span>') + '</button>').join('') +
+      (h[4] ? '<span class="tag tdone">✓ ' + esc(h[4].slice(5, 10).split('-').reverse().join('-')) + '</span>' : h[6] ? '<span class="tag trv">Not met ×' + h[6] + '</span>' : '<span class="tag ' + PR[p][0] + '">P' + p + '</span>') + '</button>').join('') +
       (g.length > 300 ? '<div class="sub">… type digits to find the rest</div>' : '') + '</div>';
   });
   $('hList').innerHTML = html || '<div class="msg m-info">No house matches.</div>';
@@ -216,7 +250,9 @@ function drawHouses() {
 // ---------------------------------------------------------------- form
 function resetForm() {
   ['sn', 'bname', 'mob', 'dbmob'].forEach(id => $(id).value = '');
-  Object.assign(F, { gender: '', photo: null, consent: null, site: null, gps: null });
+  Object.assign(F, { gender: '', photo: null, consent: null, site: null, gps: null, avail: '', naWhy: '' });
+  document.querySelectorAll('#avail button, #naWhy button').forEach(b => b.classList.remove('on')); $('mobMsg').innerHTML = '';
+  $('naBox').classList.add('hidden'); $('metBox').classList.remove('hidden'); $('cfCard').classList.remove('hidden'); $('submit').textContent = 'Submit survey';
   document.querySelectorAll('#gender button').forEach(b => b.classList.remove('on'));
   $('phWrap').classList.add('hidden'); $('cfWrap').classList.add('hidden'); $('snMsg').innerHTML = ''; $('err').innerHTML = '';
   $('cfInfo').className = 'msg m-info'; $('cfInfo').textContent = 'Photograph the signed form, or choose a PDF / JPEG file. No Aadhaar.';
@@ -228,7 +264,8 @@ function openForm(h) {               // h = house row from the list, or null (ty
     $('sn').value = h[0]; $('sn').readOnly = true; $('bname').value = h[1] || ''; $('dbmob').value = h[2] || '';
     F.site = { prio: 'P' + h[3] };
     $('snMsg').innerHTML = '<div class="msg ' + (h[4] ? 'm-warn' : 'm-info') + '"><span class="tag ' + PR[h[3]][0] + '">' + PR[h[3]][1] + '</span>' +
-      (h[4] ? ' Already surveyed on ' + esc(h[4]) + ' by ' + esc(h[5]) + '. Submitting again replaces it.' : '') + '</div>';
+      (h[4] ? ' Already surveyed on ' + esc(h[4]) + ' by ' + esc(h[5]) + '. Submitting again replaces it.' : '') +
+      (h[6] ? ' Not met ' + h[6] + ' time' + (h[6] > 1 ? 's' : '') + ' (last ' + esc(h[7]) + ').' : '') + (h[8] ? ' The database mobile is shared with ' + h[8] + ' other house' + (h[8] > 1 ? 's' : '') + ' – get the beneficiary\'s own number.' : '') + '</div>';
   } else { $('sn').readOnly = false; setTimeout(() => $('sn').focus(), 50); }
   gps();
 }
@@ -271,6 +308,37 @@ async function toJpeg(file, maxSide) {
   c.width = Math.round(img.width * sc); c.height = Math.round(img.height * sc); c.getContext('2d').drawImage(img, 0, 0, c.width, c.height);
   const url = c.toDataURL('image/jpeg', 0.82); c.width = 0; c.height = 0; return url;
 }
+// consent form: black-and-white document, small file (target ~250 KB) – the portal copy is for reference
+const CF_KB = 250, kb = u => Math.round((u.length - u.indexOf(',') - 1) * 0.75 / 1024);
+function docJpeg(c) {
+  const x = c.getContext('2d'), d = x.getImageData(0, 0, c.width, c.height), a = d.data;
+  for (let i = 0; i < a.length; i += 4) { let v = 0.3 * a[i] + 0.59 * a[i + 1] + 0.11 * a[i + 2]; v = v > 200 ? 255 : v * 1.1; a[i] = a[i + 1] = a[i + 2] = v > 255 ? 255 : v; }
+  x.putImageData(d, 0, 0);
+  let q = 0.62, u = c.toDataURL('image/jpeg', q);
+  while (kb(u) > CF_KB && q > 0.3) { q -= 0.08; u = c.toDataURL('image/jpeg', q); }
+  if (kb(u) > CF_KB) { const t = document.createElement('canvas'); t.width = Math.round(c.width * 0.75); t.height = Math.round(c.height * 0.75); t.getContext('2d').drawImage(c, 0, 0, t.width, t.height); u = t.toDataURL('image/jpeg', 0.5); }
+  c.width = 0; c.height = 0; return u;
+}
+async function consentJpeg(file) {
+  const img = await bitmap(file), sc = Math.min(1, 1700 / Math.max(img.width, img.height)), c = document.createElement('canvas');
+  c.width = Math.round(img.width * sc); c.height = Math.round(img.height * sc); c.getContext('2d').drawImage(img, 0, 0, c.width, c.height);
+  return docJpeg(c);
+}
+function loadPdfJs() {
+  if (window.pdfjsLib) return Promise.resolve(window.pdfjsLib);
+  return new Promise((ok, fail) => { const s = document.createElement('script'); s.src = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js';
+    s.onload = () => { pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js'; ok(pdfjsLib); }; s.onerror = fail; document.head.appendChild(s); });
+}
+/** A scanned PDF that is too big: redraw its pages (up to 3) one below the other as one small black-and-white image. */
+async function shrinkPdf(file) {
+  const lib = await loadPdfJs(), doc = await lib.getDocument({ data: await file.arrayBuffer() }).promise, n = Math.min(doc.numPages, 3), parts = [];
+  for (let i = 1; i <= n; i++) { const pg = await doc.getPage(i), v0 = pg.getViewport({ scale: 1 }), v = pg.getViewport({ scale: 1400 / v0.width }), c = document.createElement('canvas');
+    c.width = Math.round(v.width); c.height = Math.round(v.height); const x = c.getContext('2d'); x.fillStyle = '#fff'; x.fillRect(0, 0, c.width, c.height);
+    await pg.render({ canvasContext: x, viewport: v }).promise; parts.push(c); }
+  const all = document.createElement('canvas'); all.width = 1400; all.height = parts.reduce((h, c) => h + c.height, 0);
+  const ax = all.getContext('2d'); let y = 0; parts.forEach(c => { ax.drawImage(c, 0, y); y += c.height; c.width = 0; });
+  return { url: docJpeg(all), pages: doc.numPages };
+}
 function photoMsg(file) {
   const t = String((file && file.type) || '') + ' ' + String((file && file.name) || '');
   if (file && file.size === 0) return 'That photo is only in the cloud (e.g. Google Photos). Open it once in the Gallery so it downloads, or use 📷 Camera.';
@@ -285,11 +353,19 @@ async function onConsent(file) {
   if (!file) return;
   if (file.type === 'application/pdf' || /\.pdf$/i.test(file.name)) {
     if (file.size > 10 * 1024 * 1024) { alert('PDF larger than 10 MB – photograph the form instead.'); return; }
-    F.consent = (await blobToDataUrl(file)).replace(/^data:[^;]*;/, 'data:application/pdf;'); $('cfWrap').classList.add('hidden');
-    $('cfInfo').className = 'msg m-ok'; $('cfInfo').textContent = '✓ PDF: ' + file.name + ' (' + Math.round(file.size / 1024) + ' KB) – saved as <service no>.pdf';
+    if (file.size <= 300 * 1024) {
+      F.consent = (await blobToDataUrl(file)).replace(/^data:[^;]*;/, 'data:application/pdf;'); $('cfWrap').classList.add('hidden');
+      $('cfInfo').className = 'msg m-ok'; $('cfInfo').textContent = '✓ PDF: ' + file.name + ' (' + Math.round(file.size / 1024) + ' KB) – saved as <service no>.pdf';
+      return;
+    }
+    $('cfInfo').className = 'msg m-info'; $('cfInfo').textContent = 'Making the PDF smaller (' + Math.round(file.size / 1024) + ' KB)…';
+    try { const r = await shrinkPdf(file); F.consent = r.url; $('cf').src = r.url; $('cfWrap').classList.remove('hidden');
+      $('cfInfo').className = 'msg m-ok'; $('cfInfo').textContent = '✓ PDF made smaller: ' + Math.round(file.size / 1024) + ' KB → ' + kb(r.url) + ' KB' + (r.pages > 3 ? ' (first 3 of ' + r.pages + ' pages)' : '') + ' – saved as <service no>.pdf'; }
+    catch (e) { F.consent = (await blobToDataUrl(file)).replace(/^data:[^;]*;/, 'data:application/pdf;'); $('cfWrap').classList.add('hidden');
+      $('cfInfo').className = 'msg m-warn'; $('cfInfo').textContent = 'PDF kept as it is (' + Math.round(file.size / 1024) + ' KB) – could not make it smaller without internet. A photo of the form gives a smaller file.'; }
   } else {
-    try { F.consent = await toJpeg(file, 2200); $('cf').src = F.consent; $('cfWrap').classList.remove('hidden');
-      $('cfInfo').className = 'msg m-ok'; $('cfInfo').textContent = '✓ Photo – it becomes a PDF named <service no>.pdf'; }
+    try { F.consent = await consentJpeg(file); $('cf').src = F.consent; $('cfWrap').classList.remove('hidden');
+      $('cfInfo').className = 'msg m-ok'; $('cfInfo').textContent = '✓ Photo (' + kb(F.consent) + ' KB, black and white) – it becomes a PDF named <service no>.pdf'; }
     catch (e) { alert(photoMsg(file)); }
   }
 }
@@ -298,13 +374,18 @@ function problems() {
   if ($('by').value.trim().length < 2) p.push('Enter your name (top of the first page).');
   if (!SN_RE.test(sn) && !(F.site && F.site.known !== false)) p.push('Service number: 13 digits starting 59.');
   if (F.site && F.site.ula) p.push('This house already has a ULA – no survey needed.');
-  if ($('dist').value.trim().length < 2) p.push('Enter the distribution.');
-  if ($('bname').value.trim().length < 3) p.push('Enter the beneficiary name.');
-  if (!F.gender) p.push('Choose the gender of the beneficiary.');
-  if (!/^[6-9]\d{9}$/.test(mob)) p.push('Working mobile: 10 digits starting 6, 7, 8 or 9.');
+  if (!F.avail) p.push('Customer available? Choose Yes or No.');
+  if (F.avail === 'No') {
+    if (!F.naWhy) p.push('Choose why the customer is not available.');
+  } else if (F.avail === 'Yes') {
+    if ($('dist').value.trim().length < 2) p.push('Enter the distribution.');
+    if ($('bname').value.trim().length < 3) p.push('Enter the beneficiary name.');
+    if (!F.gender) p.push('Choose the gender of the beneficiary.');
+    if (!/^[6-9]\d{9}$/.test(mob)) p.push('Working mobile: 10 digits starting 6, 7, 8 or 9.');
+    if (!F.consent) p.push('Add the consent form.');
+  }
   if (!F.gps) p.push('Location missing – tap "Get location".');
   if (!F.photo) p.push('Take the photo of the house.');
-  if (!F.consent) p.push('Add the consent form.');
   return p;
 }
 async function submit() {
@@ -314,14 +395,17 @@ async function submit() {
   try {
     store('supervisor', $('by').value.trim());
     const payload = { cid: 'c' + Date.now().toString(36) + Math.random().toString(36).slice(2, 8), by: $('by').value, dist: $('dist').value, sn: $('sn').value, name: $('bname').value,
-      gender: F.gender, mobile: $('mob').value, lat: F.gps.lat, lng: F.gps.lng, acc: F.gps.acc, photo: F.photo, consent: F.consent };
+      gender: F.gender, mobile: $('mob').value, lat: F.gps.lat, lng: F.gps.lng, acc: F.gps.acc, photo: F.photo, consent: F.avail === 'No' ? '' : F.consent,
+      avail: F.avail, naWhy: F.naWhy, pat: phoneTime() };
     let r = null, queued = false;
     try { r = await run('submitSurvey', payload); }
     catch (e) { if (!e.offline) throw e; await qPut({ cid: payload.cid, at: new Date().toISOString().slice(0, 16).replace('T', ' '), payload }); queued = true; qShow(); }
-    $('doneTxt').innerHTML = '<div class="mono">' + esc($('sn').value) + '</div><div>' + esc($('bname').value) + ' · ' + esc(F.gender) + ' · ' + esc($('dist').value.toUpperCase()) + '</div>' +
+    todayAdd();
+    $('doneTxt').innerHTML = '<div class="mono">' + esc($('sn').value) + '</div>' + (F.avail === 'No' ? '<div>Not available – ' + esc(F.naWhy) + '. Saved as a revisit.</div>' :
+      '<div>' + esc($('bname').value) + ' · ' + esc(F.gender) + ' · ' + esc($('dist').value.toUpperCase()) + '</div>') +
       (queued ? '<div class="msg m-warn" style="margin-top:8px">No signal – saved on this phone. It is sent automatically when signal returns. Do not clear the browser data.</div>' :
        r && r.resurvey ? '<div class="sub" style="margin-top:6px">Re-survey – the earlier one is replaced.</div>' : '');
-    const h = HOUSES.find(x => x[0] === $('sn').value); if (h) { h[4] = new Date().toISOString().slice(0, 16).replace('T', ' '); h[5] = $('by').value; }
+    const h = HOUSES.find(x => x[0] === $('sn').value); if (h) { if (F.avail === 'No') { h[6] = (h[6] || 0) + 1; h[7] = phoneTime(); } else { h[4] = phoneTime(); h[5] = $('by').value; } }
     show('pDone');
   } catch (e) { $('err').innerHTML = '<li>' + esc(e.message || e) + '</li>'; }
   b.disabled = false; b.textContent = 'Submit survey';
@@ -340,6 +424,14 @@ $('hBack').onclick = () => { CUR = ''; show('pDist'); loadDists(); };
 $('fBack').onclick = () => CUR ? show('pHouses') : show('pDist');
 $('gender').addEventListener('click', e => { const b = e.target.closest('[data-g]'); if (!b) return; F.gender = b.dataset.g; document.querySelectorAll('#gender button').forEach(x => x.classList.toggle('on', x === b)); });
 $('sn').addEventListener('input', snCheck);
+$('avail').addEventListener('click', e => { const b = e.target.closest('[data-a]'); if (b) setAvail(b.dataset.a); });
+$('naWhy').addEventListener('click', e => { const b = e.target.closest('[data-w]'); if (!b) return; F.naWhy = b.dataset.w; document.querySelectorAll('#naWhy button').forEach(x => x.classList.toggle('on', x === b)); });
+$('mob').addEventListener('input', mobCheck);
+$('by').addEventListener('change', todayShow);
+$('tabs').addEventListener('click', e => { const b = e.target.closest('[data-tab]'); if (!b) return; const pri = b.dataset.tab === 'pri';
+  document.querySelectorAll('#tabs button').forEach(x => x.classList.toggle('on', x === b));
+  ['todayCard', 'distCard'].forEach(id => $(id).classList.toggle('hidden', !pri)); $('balCard').classList.toggle('hidden', pri); });
+todayShow();
 $('mob').addEventListener('input', () => { let d = $('mob').value.replace(/\D/g, ''); if (d.length > 10 && /^91/.test(d)) d = d.slice(2); else if (d.length > 10 && /^0/.test(d)) d = d.slice(1); $('mob').value = d.slice(0, 10); });
 $('gps').onclick = gps;
 $('phCam').onclick = () => { $('camIn').dataset.for = 'photo'; $('camIn').value = ''; $('camIn').click(); };

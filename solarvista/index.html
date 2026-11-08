@@ -45,7 +45,16 @@ h3.sec { font-size: 13px; color: var(--muted); text-transform: uppercase; letter
 .card { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 12px 14px; cursor: pointer; text-align: left; }
 .card:hover { border-color: var(--accent); } .card .v { font-size: 26px; font-weight: 700; } .card .l { color: var(--muted); font-size: 12.5px; }
 .card .s { font-size: 12px; margin-top: 4px; } .card.p1 { border-left: 4px solid var(--ok); } .card.p2 { border-left: 4px solid var(--warn); } .card.p3 { border-left: 4px solid var(--accent); }
-.card.fu { border-left: 4px solid var(--bad); }
+.card.fu { border-left: 4px solid var(--bad); } .card.p4 { border-left: 4px solid var(--warn); } .card.bal { border-left: 4px solid var(--grey-ink); }
+.card.red { border-left: 4px solid var(--bad); background: var(--bad-soft); }
+.target { display: flex; flex-wrap: wrap; gap: 18px; align-items: center; background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 12px 14px; margin-bottom: 16px; }
+.target .big { font-size: 24px; font-weight: 700; } .target .grow { flex: 1; min-width: 200px; }
+.target .bar { height: 8px; background: var(--grey); border-radius: 6px; overflow: hidden; margin-top: 6px; } .target .bar i { display: block; height: 100%; background: var(--ok); }
+.bt { border: 1px solid var(--line); border-radius: 10px; padding: 10px 12px; margin: 0 0 8px; background: var(--panel); }
+.bt.red { border-color: var(--bad); background: var(--bad-soft); }
+.bt form { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-top: 8px; }
+nav .n.red { background: var(--bad); color: #fff; margin-left: 4px; }
+tr.below td { background: var(--warn-soft); } tr.leave td { color: var(--grey-ink); }
 .bar { height: 6px; background: var(--info-soft); border-radius: 3px; margin-top: 6px; overflow: hidden; } .bar i { display: block; height: 100%; background: var(--ok); }
 .box { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 14px; margin-bottom: 14px; } .box h3 { margin: 0 0 10px; font-size: 15px; }
 .note { background: var(--warn-soft); border-left: 4px solid var(--warn); border-radius: 6px; padding: 10px 12px; margin: 0 0 12px; }
@@ -159,18 +168,22 @@ const run = (fn, ...args) => fetch(window.SV_API, { method: 'POST', headers: { '
   .then(j => { if (!j.ok) throw new Error(j.error || 'Server error'); return j.data; });
 const toast = (t, ms) => { const e = $('toast'); e.textContent = t; e.style.display = 'block'; clearTimeout(toast.t); toast.t = setTimeout(() => e.style.display = 'none', ms || 3500); };
 const dmy = s => { const m = /^(\d{4})-(\d{2})-(\d{2})(?: (\d{2}:\d{2}))?/.exec(String(s || '')); return m ? m[3] + '-' + m[2] + (m[4] ? ' ' + m[4] : '') : String(s || ''); };
-const ROLE_T = { owner: 'Administrator', manager: 'Manager', mis: 'MIS' };
-const PRIO = { P1: ['ok', 'P1 · consent only'], P2: ['warn', 'P2 · Excel + consent'], P3: ['acc', 'P3 · not installed'], ULA: ['', 'ULA created'],
+const ROLE_T = { owner: 'Administrator', manager: 'Manager', mis: 'MIS', viewer: 'Viewer' };
+const PRIO = { P1: ['ok', 'P1 · consent only'], P2: ['warn', 'P2 · Excel + consent'], P3: ['acc', 'P3 · feasible, consent'], P4: ['warn', 'P4 · feasible, Excel + consent'],
+  SURVEY: ['', 'Balance · feasibility survey'], NOTFEAS: ['', 'Not feasible'], ULA: ['', 'ULA created'], CHECK: ['warn', 'Check · not in our list'], BAD: ['bad', 'Bad service number'],
   CONSENT_ACC: ['bad', 'Consent accepted – no ULA'], CA_NV: ['bad', 'CA not verified'], OTHER: ['', 'Other'], NEW: ['warn', 'Not in any file'] };
+const PR = k => PRIO[k] || PRIO.OTHER;
+const PGRP = ['P1', 'P2', 'P3', 'P4'];
 const GROUP = { 1: ['ok', 'Folder 1 · upload consent now'], 2: ['warn', 'Folder 2 · Excel first'], 3: ['bad', 'Folder 3 · check first'] };
 
 let D = null, S = [], ROLE = 'mis', PAGE = 'dash', LIST = null, CHIP = '';
-const can = { manage: () => ROLE === 'owner' || ROLE === 'manager', owner: () => ROLE === 'owner' };
+const can = { manage: () => ROLE === 'owner' || ROLE === 'manager', owner: () => ROLE === 'owner', work: () => ROLE !== 'viewer' };
 
-// sites: [sn, name, dbMobile, dist, section, installed, dcr, inCL, ca, consent, ula, ulaStatus, otp, insp, prio, problems]
+// sites: [sn, name, dbMobile, dist, section, installed, dcr, inCL, ca, consent, ula, ulaStatus, otp, insp, group, problems, sharedMobile, inMaster, surveyed, feasible, rejectedWhy]
 function build() {
   S = (D.sites || []).map(r => ({ sn: r[0], name: r[1], mob: r[2], dist: r[3], sec: r[4], ins: r[5], dcr: !!r[6], cl: !!r[7], ca: r[8], cs: r[9], ula: r[10], us: r[11],
-    otp: !!r[12], insp: !!r[13], prio: r[14], prob: r[15], sv: (D.sv || {})[r[0]] || null }));
+    otp: !!r[12], insp: !!r[13], prio: r[14], prob: r[15], shared: r[16] || 0, inM: !!r[17], msv: r[18] === 'Y', feas: r[19] === 'Y', rej: r[20] || '',
+    sv: (D.sv || {})[r[0]] || null, na: (D.na || {})[r[0]] || null }));
   S.forEach(s => { s.text = '|' + norm(s.sn) + '|' + norm(s.name) + '|' + norm(s.ula) + '|'; });
 }
 function fill() {
@@ -188,7 +201,14 @@ function scope() {
 const LISTS = {
   P1: { t: 'P1 – installed, consent only', f: s => s.prio === 'P1', chips: [['', 'All'], ['todo', 'Not surveyed'], ['sv', 'Surveyed']] },
   P2: { t: 'P2 – installed, not in Consumer List (Excel + consent)', f: s => s.prio === 'P2', chips: [['', 'All'], ['todo', 'Not surveyed'], ['sv', 'Surveyed']] },
-  P3: { t: 'P3 – not installed, consent pending', f: s => s.prio === 'P3', chips: [['', 'All'], ['todo', 'Not surveyed'], ['sv', 'Surveyed']] },
+  P3: { t: 'P3 – feasible, not installed, in Consumer List (consent)', f: s => s.prio === 'P3', chips: [['', 'All'], ['todo', 'Not surveyed'], ['sv', 'Surveyed']] },
+  P4: { t: 'P4 – feasible, not installed, not in Consumer List (Excel + consent)', f: s => s.prio === 'P4', chips: [['', 'All'], ['todo', 'Not surveyed'], ['sv', 'Surveyed']] },
+  SURVEY: { t: 'Balance – feasibility survey still to do', f: s => s.prio === 'SURVEY', chips: [] },
+  NOTFEAS: { t: 'Not feasible (PMSG survey)', f: s => s.prio === 'NOTFEAS', chips: [] },
+  REVISIT: { t: 'Customer not available – revisit', f: s => !!s.na && !s.sv, chips: [['', 'All'], ['n3', '3 visits or more']], c: { n3: s => s.na[0] >= 3 } },
+  REJ: { t: 'Rejected by the portal (Invalid Consumer Data)', f: s => !!s.rej, chips: [] },
+  MOB: { t: 'Mobile shared with another house (likely to be rejected)', f: s => s.shared > 0 && PGRP.includes(s.prio), chips: [] },
+  CHECK: { t: 'Check – in the MNRE list but not in our 33,552 list', f: s => s.prio === 'CHECK', chips: [] },
   ULA: { t: 'ULA application created', f: s => !!s.ula, chips: [] },
   DCR: { t: 'DCR', f: s => !!s.ula || s.dcr, chips: [['done', 'DCR done'], ['pend', 'DCR pending (ULA, installed, no DCR)']], def: 'done',
          c: { done: s => s.dcr, pend: s => s.ula && s.ins && !s.dcr } },
@@ -200,16 +220,16 @@ const LISTS = {
   CA_NV: { t: 'CA not verified / not eligible (follow up with MNRE)', f: s => s.prio === 'CA_NV', chips: [] },
   PROB: { t: 'Data problems in the files', f: s => !!s.prob, chips: [] },
 };
-const PAGES = [['dash', '▦', 'Dashboard'], ['list', '☰', 'Lists'], ['survey', '📝', 'Survey'], ['-'], ['files', '⬆', 'Daily files'], ['settings', '⚙', 'Settings', 'owner']];
+const PAGES = [['dash', '▦', 'Dashboard'], ['list', '☰', 'Lists'], ['survey', '📝', 'Survey'], ['sup', '👤', 'Supervisors'], ['-'], ['files', '⬆', 'Daily files'], ['settings', '⚙', 'Settings', 'owner']];
 function nav() {
   $('nav').innerHTML = PAGES.filter(p => !p[3] || can[p[3]]()).map(p => p[0] === '-' ? '<div class="sep"></div>' :
     '<button data-page="' + p[0] + '" class="' + (PAGE === p[0] ? 'on' : '') + '"><span class="ic">' + p[1] + '</span>' + p[2] +
-    (p[0] === 'survey' ? '<span class="n">' + Object.keys(D.sv || {}).length + '</span>' : '') + '</button>').join('');
+    (p[0] === 'survey' ? '<span class="n">' + Object.keys(D.sv || {}).length + '</span>' + ((D.bstat || {}).red ? '<span class="n red" title="batches needing action">' + D.bstat.red + '</span>' : '') : '') + '</button>').join('');
 }
 function render() {
   if (PAGE === 'settings' && !can.owner()) PAGE = 'dash';
-  nav(); $('title').textContent = { dash: 'Dashboard', list: LIST ? LISTS[LIST].t : 'Lists', survey: 'Survey', files: 'Daily files', settings: 'Settings' }[PAGE];
-  ({ dash, list: listPage, survey: surveyPage, files: filesPage, settings: settingsPage })[PAGE]();
+  nav(); $('title').textContent = { dash: 'Dashboard', list: LIST ? LISTS[LIST].t : 'Lists', survey: 'Survey', sup: 'Supervisors', files: 'Daily files', settings: 'Settings' }[PAGE];
+  ({ dash, list: listPage, survey: surveyPage, sup: supPage, files: filesPage, settings: settingsPage })[PAGE]();
 }
 function card(key, v, l, s, cls, pct) {
   return '<button class="card ' + (cls || '') + '" data-list="' + key + '"><div class="v">' + v.toLocaleString('en-IN') + '</div><div class="l">' + l + '</div>' +
@@ -218,14 +238,29 @@ function card(key, v, l, s, cls, pct) {
 function dash() {
   const A = scope(), n = f => A.filter(f).length, sv = f => A.filter(s => f(s) && s.sv).length;
   const p = k => { const t = n(s => s.prio === k), d = sv(s => s.prio === k); return [t, d, t ? Math.round(d * 100 / t) : 0]; };
-  const P1 = p('P1'), P2 = p('P2'), P3 = p('P3'), ula = n(s => s.ula);
-  const m = D.meta || {};
+  const P1 = p('P1'), P2 = p('P2'), P3 = p('P3'), P4 = p('P4'), ula = n(s => s.ula);
+  const m = D.meta || {}, T = D.target || 20378, inst = S.filter(s => s.ins === 'D').length, found = S.filter(s => s.ins || s.feas).length, bs = D.bstat || {};
+  const pc = v => Math.min(100, Math.round(v * 100 / T));
   $('page').innerHTML =
-    (m.at ? '' : '<div class="note">No daily files yet – open <b>Daily files</b> and upload the Installations report, the Consumer List and the MIS file.</div>') +
-    '<h3 class="sec">Consent forms to collect</h3><div class="cards">' +
+    (m.at ? '' : '<div class="note">No daily files yet – open <b>Daily files</b> and upload the Consumers list (PMSG cloud), the Installations report, the Consumer List and the MIS file.</div>') +
+    '<div class="target"><div><div class="small muted">Target</div><div class="big">' + T.toLocaleString('en-IN') + '</div><div class="small muted">feasible houses installed</div></div>' +
+      '<div class="grow"><b>' + inst.toLocaleString('en-IN') + '</b> installed (' + pc(inst) + '%)<div class="bar"><i style="width:' + pc(inst) + '%"></i></div></div>' +
+      '<div class="grow"><b>' + found.toLocaleString('en-IN') + '</b> feasible found so far (installed + feasible) – ' + (found >= T ? 'enough' : (T - found).toLocaleString('en-IN') + ' more to find in the Balance') +
+      '<div class="bar"><i style="width:' + pc(found) + '%;background:var(--accent)"></i></div></div></div>' +
+    '<h3 class="sec">Priority tab · consent forms to collect</h3><div class="cards">' +
       card('P1', P1[0], 'P1 · installed, consent only', P1[1] + ' surveyed (' + P1[2] + '%) – fastest to ULA', 'p1', P1[2]) +
       card('P2', P2[0], 'P2 · installed, not in Consumer List', P2[1] + ' surveyed – Excel + consent', 'p2', P2[2]) +
-      card('P3', P3[0], 'P3 · not installed', P3[1] + ' surveyed', 'p3', P3[2]) + '</div>' +
+      card('P3', P3[0], 'P3 · feasible, in Consumer List', P3[1] + ' surveyed – consent', 'p3', P3[2]) +
+      card('P4', P4[0], 'P4 · feasible, not in Consumer List', P4[1] + ' surveyed – Excel + consent', 'p4', P4[2]) +
+      card('REVISIT', n(s => s.na && !s.sv), 'Customer not available', n(s => s.na && !s.sv && s.na[0] >= 3) + ' visited 3 times or more', 'fu') + '</div>' +
+    '<h3 class="sec">After the survey · department Excel upload</h3><div class="cards">' +
+      '<button class="card ' + (bs.red ? 'red' : '') + '" data-page="survey"><div class="v">' + (bs.red || 0) + '</div><div class="l">Batches needing action</div><div class="s muted">' + (bs.awaiting || 0) + ' upload outcome not recorded</div></button>' +
+      card('REJ', n(s => s.rej), 'Rejected by the portal', 'from the Invalid Consumer Data files', n(s => s.rej) ? 'fu' : '') +
+      card('MOB', n(s => s.shared > 0 && PGRP.includes(s.prio)), 'Mobile shared with another house', 'likely to be rejected – get the working mobile', 'fu') + '</div>' +
+    '<h3 class="sec">Balance tab · feasibility survey</h3><div class="cards">' +
+      card('SURVEY', n(s => s.prio === 'SURVEY'), 'Balance – survey to do', 'feasibility not known yet', 'bal') +
+      card('NOTFEAS', n(s => s.prio === 'NOTFEAS'), 'Not feasible', 'from the PMSG survey', 'bal') +
+      card('CHECK', n(s => s.prio === 'CHECK'), 'Check – not in our list', 'MNRE list only · MIS to check (VSA login)', 'fu') + '</div>' +
     '<h3 class="sec">Portal</h3><div class="cards">' +
       card('ULA', ula, 'ULA application created', '') +
       card('DCR', n(s => s.dcr), 'DCR done', n(s => s.ula && s.ins && !s.dcr) + ' pending with ULA') +
@@ -234,21 +269,21 @@ function dash() {
     '<h3 class="sec">MIS follow-up</h3><div class="cards">' +
       card('CA_NV', n(s => s.prio === 'CA_NV'), 'CA not verified / not eligible', 'follow up with MNRE', 'fu') +
       card('CONSENT_ACC', n(s => s.prio === 'CONSENT_ACC'), 'Consent accepted – no ULA', 'check on the portal', 'fu') +
-      card('PROB', n(s => s.prob), 'Data problems in the files', '8-digit numbers, duplicates, mobile mismatch', 'fu') + '</div>' +
+      card('PROB', n(s => s.prob), 'Data problems in the files', 'bad numbers, duplicates, mobile mismatch', 'fu') + '</div>' +
     distTable(A) +
     '<p class="small muted">Click a badge to open its list. Data: daily files updated ' + esc(m.at || 'never') + (m.by ? ' by ' + esc(m.by) : '') + '.</p>';
 }
 function distTable(A) {
   const g = {};
-  A.forEach(s => { const d = g[s.dist] || (g[s.dist] = { sec: s.sec, P1: 0, P1s: 0, P2: 0, P2s: 0, P3: 0, P3s: 0, ula: 0, dcr: 0, otp: 0, insp: 0 });
-    if (['P1', 'P2', 'P3'].includes(s.prio)) { d[s.prio]++; if (s.sv) d[s.prio + 's']++; }
+  A.forEach(s => { const d = g[s.dist] || (g[s.dist] = { sec: s.sec, P1: 0, P1s: 0, P2: 0, P2s: 0, P3: 0, P3s: 0, P4: 0, P4s: 0, ula: 0, dcr: 0, otp: 0, insp: 0 });
+    if (PGRP.includes(s.prio)) { d[s.prio]++; if (s.sv) d[s.prio + 's']++; }
     if (s.ula) d.ula++; if (s.dcr) d.dcr++; if (s.otp) d.otp++; if (s.insp) d.insp++; });
-  const rows = Object.keys(g).sort((a, b) => (g[b].P1 - g[b].P1s) - (g[a].P1 - g[a].P1s) || a.localeCompare(b));
+  const rows = Object.keys(g).filter(d => { const x = g[d]; return x.P1 + x.P2 + x.P3 + x.P4 + x.ula; }).sort((a, b) => (g[b].P1 - g[b].P1s) - (g[a].P1 - g[a].P1s) || a.localeCompare(b));
   const c = (t, s) => t ? s + ' / ' + t : '–';
-  return '<div class="tw"><table><thead><tr><th>Distribution</th><th>Section</th><th class="num">P1 surveyed</th><th class="num">P2 surveyed</th><th class="num">P3 surveyed</th>' +
+  return '<div class="tw"><table><thead><tr><th>Distribution</th><th>Section</th><th class="num">P1 surveyed</th><th class="num">P2 surveyed</th><th class="num">P3 surveyed</th><th class="num">P4 surveyed</th>' +
     '<th class="num">ULA</th><th class="num">DCR</th><th class="num">OTP</th><th class="num">Inspection</th></tr></thead><tbody>' +
     rows.map(d => { const x = g[d]; return '<tr class="click" data-vil="' + esc(d) + '"><td><b>' + esc(d) + '</b></td><td>' + esc(x.sec) + '</td><td class="num">' + c(x.P1, x.P1s) +
-      '</td><td class="num">' + c(x.P2, x.P2s) + '</td><td class="num">' + c(x.P3, x.P3s) + '</td><td class="num">' + x.ula + '</td><td class="num">' + x.dcr +
+      '</td><td class="num">' + c(x.P2, x.P2s) + '</td><td class="num">' + c(x.P3, x.P3s) + '</td><td class="num">' + c(x.P4, x.P4s) + '</td><td class="num">' + x.ula + '</td><td class="num">' + x.dcr +
       '</td><td class="num">' + x.otp + '</td><td class="num">' + x.insp + '</td></tr>'; }).join('') + '</tbody></table></div>';
 }
 function listRows() {
@@ -262,20 +297,23 @@ function listPage() {
   const L = LISTS[LIST], R = listRows();
   $('page').innerHTML = '<div class="chips">' + Object.keys(LISTS).map(k => '<button class="chip' + (k === LIST ? ' on' : '') + '" data-lst="' + k + '">' + esc(LISTS[k].t.split(' (')[0].split(' – ')[0]) + '</button>').join('') + '</div>' +
     (L.chips.length ? '<div class="chips">' + L.chips.map(c => '<button class="chip' + (c[0] === CHIP ? ' on' : '') + '" data-chip="' + c[0] + '">' + esc(c[1]) + '</button>').join('') + '</div>' : '') +
-    '<div class="toolbar"><h2>' + R.length.toLocaleString('en-IN') + ' service numbers</h2><button class="btn" id="csv">⬇ This list (CSV)</button></div>' +
+    '<div class="toolbar"><h2>' + R.length.toLocaleString('en-IN') + ' service numbers</h2>' + (can.work() ? '<button class="btn" id="csv">⬇ This list (CSV)</button>' : '') + '</div>' +
     (R.length ? '<div class="tw"><table><thead><tr><th>Service no.</th><th>Name</th><th>Distribution</th><th>Stage</th><th>Installed</th><th>CA / consent</th><th>ULA</th>' +
       '<th>DCR</th><th>OTP</th><th>Insp.</th><th>Surveyed</th></tr></thead><tbody>' + R.slice(0, 1500).map(s => '<tr><td class="mono">' + esc(s.sn) + '</td><td>' + esc(s.name) +
-        (s.prob ? '<div class="small" style="color:var(--bad)">' + esc(s.prob) + '</div>' : '') + '</td><td>' + esc(s.dist) + '</td><td><span class="b ' + PRIO[s.prio][0] + '">' + PRIO[s.prio][1] +
+        (s.prob ? '<div class="small" style="color:var(--bad)">' + esc(s.prob) + '</div>' : '') + (s.rej ? '<div class="small" style="color:var(--bad)">Portal rejected: ' + esc(s.rej) + '</div>' : '') +
+        (s.shared ? '<div class="small" style="color:var(--warn)">DB mobile ' + esc(s.mob) + ' shared with ' + s.shared + ' other house(s)</div>' : '') +
+        (s.na && !s.sv ? '<div class="small muted">Not available ×' + s.na[0] + ' · last ' + esc(dmy(s.na[1])) + (s.na[2] ? ' · ' + esc(s.na[2]) : '') + '</div>' : '') +
+        '</td><td>' + esc(s.dist) + '</td><td><span class="b ' + PR(s.prio)[0] + '">' + PR(s.prio)[1] +
         '</span></td><td>' + (s.ins === 'D' ? 'Done' : s.ins === 'P' ? 'In progress' : '–') + '</td><td>' + (s.cl ? ({ V: 'Verified', N: 'Not verified', X: 'Not eligible' }[s.ca] || '?') + ' · ' + (s.cs === 'A' ? 'Accepted' : 'Pending') : 'Not in list') +
         '</td><td class="small">' + (s.ula ? '<span class="mono">' + esc(s.ula) + '</span><br>' + esc(s.us) : '–') + '</td><td>' + (s.dcr ? '✓' : '') + '</td><td>' + (s.otp ? '✓' : '') +
         '</td><td>' + (s.insp ? '✓' : '') + '</td><td class="small">' + (s.sv ? esc(dmy(s.sv[0])) + '<br>' + esc(s.sv[1]) : '') + '</td></tr>').join('') +
       '</tbody></table></div>' + (R.length > 1500 ? '<p class="small muted">First 1,500 shown – use the filters or the CSV for all.</p>' : '') : '<div class="empty">Nothing in this list for the current filter.</div>');
 }
 function csvDownload(rows, name) {
-  const head = ['Service No', 'Name', 'Distribution', 'Section', 'Stage', 'Installed', 'In Consumer List', 'CA status', 'Consent', 'ULA application', 'ULA status', 'DCR done', 'Portal installation (OTP)', 'Portal inspection', 'DB mobile', 'Surveyed on', 'Gender', 'Problems'];
+  const head = ['Service No', 'Name', 'Distribution', 'Section', 'Stage', 'Installed', 'In Consumer List', 'CA status', 'Consent', 'ULA application', 'ULA status', 'DCR done', 'Portal installation (OTP)', 'Portal inspection', 'DB mobile', 'Surveyed on', 'Gender', 'Problems', 'DB mobile shared with', 'Portal rejected', 'Not available visits', 'Last not available'];
   const q = v => '"' + String(v == null ? '' : v).replace(/"/g, '""') + '"';
-  const lines = [head.map(q).join(',')].concat(rows.map(s => [s.sn, s.name, s.dist, s.sec, PRIO[s.prio][1], s.ins === 'D' ? 'Done' : s.ins === 'P' ? 'In progress' : '', s.cl ? 'Yes' : 'No',
-    s.ca, s.cs, s.ula, s.us, s.dcr ? 'Yes' : '', s.otp ? 'Yes' : '', s.insp ? 'Yes' : '', s.mob, s.sv ? s.sv[0] : '', s.sv ? s.sv[1] : '', s.prob].map((v, i) => (i === 0 || i === 14) && v ? q('="' + v + '"') : q(v)).join(',')));
+  const lines = [head.map(q).join(',')].concat(rows.map(s => [s.sn, s.name, s.dist, s.sec, PR(s.prio)[1], s.ins === 'D' ? 'Done' : s.ins === 'P' ? 'In progress' : '', s.cl ? 'Yes' : 'No',
+    s.ca, s.cs, s.ula, s.us, s.dcr ? 'Yes' : '', s.otp ? 'Yes' : '', s.insp ? 'Yes' : '', s.mob, s.sv ? s.sv[0] : '', s.sv ? s.sv[1] : '', s.prob, s.shared || '', s.rej, s.na ? s.na[0] : '', s.na ? s.na[1] + (s.na[2] ? ' – ' + s.na[2] : '') : ''].map((v, i) => (i === 0 || i === 14) && v ? q('="' + v + '"') : q(v)).join(',')));
   const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob(['﻿' + lines.join('\r\n')], { type: 'text/csv' })); a.download = name; document.body.appendChild(a); a.click(); a.remove();
 }
 
@@ -289,33 +327,45 @@ async function surveyPage(reload) {
   const vils = [...new Set(SVD.rows.map(r => r.dist))].sort(), rows = svRows(), fresh = rows.filter(r => !r.batch), bt = svBatchMap();
   const opt = (id, vals, cur, all) => '<select id="' + id + '"><option value="">' + all + '</option>' + vals.map(v => '<option value="' + esc(v[0]) + '"' + (v[0] === cur ? ' selected' : '') + '>' + esc(v[1]) + '</option>').join('') + '</select>';
   const gc = g => fresh.filter(r => r.group === g).length;
+  const xb = (SVD.batches || []).filter(b => b.xl > 0), open = xb.filter(b => b.red || !b.outcome);
+  const bline = b => '<div class="bt' + (b.red ? ' red' : '') + '"><b>' + esc(svBatchLabel(b)) + '</b> · ' + b.xl + ' house' + (b.xl === 1 ? '' : 's') + ' for the department Excel upload' +
+    '<div class="small">' + (b.outcome ? 'Outcome: <b>' + esc(b.outcome) + '</b> (' + esc(b.oby) + ', ' + esc(dmy(b.oat)) + ') ' + (b.proof ? '<span class="ph" data-photo="' + esc(b.proof) + '" style="display:inline-block;width:auto;height:auto;padding:0 6px">photo</span>' : '')
+      : '<span style="color:var(--bad)"><b>Upload outcome not recorded</b>' + (b.age >= 1 ? ' – ' + b.age + ' day' + (b.age > 1 ? 's' : '') + ' old' : '') + '</span>') +
+    ' · now in Consumer List: <b>' + b.acc + '</b> · rejected: <b' + (b.rej ? ' style="color:var(--bad)"' : '') + '>' + b.rej + '</b> · not on the portal yet: <b>' + b.wait + '</b></div>' +
+    (b.rej ? '<div class="small" style="color:var(--bad)">Rejected houses: see Lists → Rejected by the portal. Get the correct mobile and download them again.</div>' : '') +
+    (b.wait && b.age >= 2 && b.outcome === 'All accepted' ? '<div class="small" style="color:var(--bad)">Recorded as all accepted, but ' + b.wait + ' are still not in the Consumer List – check with the department.</div>' : '') +
+    (!b.outcome && can.work() ? '<form data-bout="' + esc(b.id) + '"><select name="o"><option value="">Upload outcome…</option><option>All accepted</option><option>Some rejected</option></select>' +
+      '<label class="small">Photo of the portal summary <input type="file" name="p" accept="image/*"></label><button class="btn pri" type="submit">Save</button></form>' : '') + '</div>';
   $('page').innerHTML =
-    '<div class="note"><b>How the download works (MIS):</b> <b>⬇ Download new</b> gives <b>one ZIP</b> of the surveys not downloaded yet. Inside:' +
+    (xb.length ? '<div class="box" style="margin-bottom:14px"><h3>Department Excel uploads ' + (open.length ? '<span class="b bad">' + open.length + ' need action</span>' : '<span class="b ok">all done</span>') + '</h3>' +
+      '<p class="small muted">A batch stays red until its outcome is recorded with the photo, and until every house is in the Consumer List or listed as rejected.</p>' +
+      open.map(bline).join('') + (xb.length > open.length ? '<details><summary class="small">Done batches (' + (xb.length - open.length) + ')</summary>' + xb.filter(b => !(b.red || !b.outcome)).map(bline).join('') + '</details>' : '') + '</div>' : '') +
+    (!can.work() ? '' : '<div class="note"><b>How the download works (MIS):</b> <b>⬇ Download new</b> gives <b>one ZIP</b> of the surveys not downloaded yet. Inside:' +
     '<ol><li><b>EXCEL_UPLOAD_ONLY_…xlsx</b> – only houses <b>NOT in the Consumer List</b>. Upload this Excel first. Houses already in the Consumer List are not in it – do not upload them again.</li>' +
     '<li>Folder <b>1_UPLOAD_CONSENT_NOW</b> – CA Verified: upload these consent forms now.</li>' +
     '<li>Folder <b>2_EXCEL_FIRST_then_consent</b> – upload these consent forms only after the Consumer List shows CA <b>Verified</b>.</li>' +
-    '<li>Folder <b>3_CHECK_FIRST</b> – reason given in READ_ME_FIRST.txt.</li></ol>Downloaded rows turn grey for everyone. <b>Download again</b> gives an earlier batch exactly as before.</div>' +
+    '<li>Folder <b>3_CHECK_FIRST</b> – reason given in READ_ME_FIRST.txt.</li></ol>Downloaded rows turn grey for everyone. <b>Download again</b> gives an earlier batch exactly as before.</div>') +
     '<div class="toolbar"><h2>' + rows.length + ' surveyed house' + (rows.length === 1 ? '' : 's') + '</h2>' +
     opt('svVil', vils.map(v => [v, v]), SVF.vil, 'All distributions') + opt('svG', [['Male', 'Male'], ['Female', 'Female'], ['Other', 'Other']], SVF.g, 'All genders') +
-    opt('svP', [['P1', 'P1 – consent only'], ['P2', 'P2 – Excel + consent'], ['P3', 'P3 – not installed'], ['X', 'Others']], SVF.p, 'All priorities') + '</div>' +
-    '<div class="toolbar"><button class="btn pri" id="svNew"' + (fresh.length ? '' : ' disabled') + '>⬇ Download new (' + fresh.length + ')</button>' +
+    opt('svP', [['P1', 'P1 – consent only'], ['P2', 'P2 – Excel + consent'], ['P3', 'P3 – feasible, consent'], ['P4', 'P4 – feasible, Excel + consent'], ['X', 'Others']], SVF.p, 'All priorities') + '</div>' +
+    (!can.work() ? '' : '<div class="toolbar"><button class="btn pri" id="svNew"' + (fresh.length ? '' : ' disabled') + '>⬇ Download new (' + fresh.length + ')</button>' +
     '<span class="small muted">' + (fresh.length ? 'Excel ' + gc(2) + ' · folder 1: ' + gc(1) + ' · folder 2: ' + gc(2) + ' · folder 3: ' + gc(3) : '') + '</span><span class="grow"></span>' +
     '<select id="svAgain"' + ((SVD.batches || []).length ? '' : ' disabled') + '><option value="">Download again…</option>' + (SVD.batches || []).map(b => '<option value="' + esc(b.id) + '">' + esc(svBatchLabel(b)) + ' (' + b.n + ')</option>').join('') + '</select>' +
-    '<button class="btn" id="svXls">⬇ Details (Excel)</button><button class="btn" id="svEE">⬇ Mobile changes for EE</button><button class="btn" id="svReload">↻</button></div>' +
+    '<button class="btn" id="svXls">⬇ Details (Excel)</button><button class="btn" id="svEE">⬇ Mobile changes for EE</button><button class="btn" id="svReload">↻</button></div>') +
     (rows.length ? '<div class="tw"><table><thead><tr><th>Surveyed</th><th>Service no.</th><th>Beneficiary</th><th>Gender</th><th>Mobile (working / DB)</th><th>Distribution</th><th>Download folder</th><th>Location</th><th>Surveyor</th><th>House</th><th>Consent</th></tr></thead><tbody>' +
       rows.map(r => '<tr class="' + (r.batch ? 'svdone' : '') + '"><td>' + esc(dmy(r.at)) +
         (r.batch ? '<br><span class="b">⬇ ' + esc(bt[r.batch] ? svBatchLabel(bt[r.batch]) : 'downloaded') + '</span>' : '') +
         (r.prev ? '<br><span class="b bad">Re-survey – earlier one went in ' + esc(bt[r.prev] ? svBatchLabel(bt[r.prev]).split(' · ')[0] : 'a batch') + '</span>' : '') +
-        (r.times > 1 ? '<br><span class="b acc">re-surveyed ×' + (r.times - 1) + '</span>' : '') + '</td><td class="mono">' + esc(r.sn) + '<br><span class="b ' + (PRIO[r.prio] || PRIO.NEW)[0] + '">' + (PRIO[r.prio] || PRIO.NEW)[1] + '</span></td><td>' + esc(r.name) +
-        '</td><td>' + esc(r.gender) + '</td><td class="mono">' + esc(r.mobile) + (r.dbmob && r.dbmob !== r.mobile ? '<br><span class="small" style="color:var(--warn)">DB ' + esc(r.dbmob) + '</span>' : '') +
+        (r.times > 1 ? '<br><span class="b acc">re-surveyed ×' + (r.times - 1) + '</span>' : '') + '</td><td class="mono">' + esc(r.sn) + '<br><span class="b ' + (PRIO[r.prio] || PRIO.NEW)[0] + '">' + (PRIO[r.prio] || PRIO.NEW)[1] + '</span>' + (r.rej ? '<br><span class="b bad">Portal rejected: ' + esc(r.rej) + '</span>' : '') + '</td><td>' + esc(r.name) +
+        '</td><td>' + esc(r.gender) + '</td><td class="mono">' + esc(r.mobile) + (r.dbmob && r.dbmob !== r.mobile ? '<br><span class="small" style="color:var(--warn)">DB ' + esc(r.dbmob) + '</span>' : '') + (r.shared ? '<br><span class="small" style="color:var(--bad)">DB mobile shared ×' + r.shared + '</span>' : '') +
         '</td><td>' + esc(r.dist) + '</td><td><span class="b ' + GROUP[r.group][0] + '">' + GROUP[r.group][1] + '</span></td><td><a target="_blank" href="https://maps.google.com/?q=' + encodeURIComponent(r.lat + ',' + r.lng) + '">Map</a><div class="small muted">±' + esc(r.acc) + ' m</div></td><td>' + esc(r.by) +
-        '</td><td><div class="ph" data-photo="' + esc(r.photo) + '">tap</div></td><td><button class="btn" data-svpdf="' + esc(r.pdf) + '">⬇ PDF</button><div class="small muted">' + esc(r.from) + '</div></td></tr>').join('') +
+        '</td><td><div class="ph" data-photo="' + esc(r.photo) + '">tap</div></td><td>' + (can.work() ? '<button class="btn" data-svpdf="' + esc(r.pdf) + '">⬇ PDF</button>' : '') + '<div class="small muted">' + esc(r.from) + '</div></td></tr>').join('') +
       '</tbody></table></div>' : '<div class="empty">No surveys for this filter.</div>');
 }
 function svRows() {
   const q = norm($('q').value);
   return (SVD ? SVD.rows : []).filter(r => (!SVF.vil || r.dist === SVF.vil) && (!SVF.g || r.gender === SVF.g) &&
-    (!SVF.p || (SVF.p === 'X' ? !['P1', 'P2', 'P3'].includes(r.prio) : r.prio === SVF.p)) && (!q || norm(r.sn + r.name + r.mobile + r.dist).includes(q)));
+    (!SVF.p || (SVF.p === 'X' ? !PGRP.includes(r.prio) : r.prio === SVF.p)) && (!q || norm(r.sn + r.name + r.mobile + r.dist).includes(q)));
 }
 function svFilterLabel() { return [SVF.g, SVF.p === 'X' ? 'Others' : SVF.p, SVF.vil].filter(Boolean).join(' ') || 'All'; }
 function svBatchMap() { const m = {}; (SVD && SVD.batches || []).forEach(b => m[b.id] = b); return m; }
@@ -343,14 +393,50 @@ async function svFile(btn, fn) {
   btn.disabled = false; btn.textContent = t;
 }
 
+// ---------------------------------------------------------------- supervisors (Priority tab, 30 visits a day)
+let SUP = null, SUPN = '';
+async function supPage(reload) {
+  if (!SUP || reload) {
+    $('page').innerHTML = '<div class="loading">Loading…</div>';
+    try { SUP = JSON.parse(await run('getSupervisors', KEY, 14)); } catch (e) { $('page').innerHTML = '<div class="empty">' + esc(e.message || e) + '</div>'; return; }
+  }
+  const T = SUP.target, R = SUP.rows.filter(r => !SUPN || r.name === SUPN), names = [...new Set(SUP.rows.map(r => r.name))].sort();
+  const today = new Date(Date.now() + 5.5 * 36e5).toISOString().slice(0, 10), td = SUP.rows.filter(r => r.day === today);
+  const flags = ROLE !== 'viewer';
+  const remark = r => r.leave ? 'On leave' : [r.below ? 'Below ' + T : '', r.highNa ? 'Over half not available' : '', r.rushed ? r.rushed + ' rushed (<3 min)' : '', r.gps ? r.gps + ' same GPS' : '', r.photo ? r.photo + ' photo reused' : ''].filter(Boolean).join(' · ');
+  $('page').innerHTML = '<div class="note">Priority tab only. Target <b>' + T + ' visits a day</b> per supervisor – a "customer not available" visit counts (with GPS and photo). Under ' + T + ' gets a remark unless the Manager marks leave.' +
+    (flags ? ' Flags: <b>rushed</b> = less than 3 minutes after the previous visit · <b>same GPS</b> = same spot as another visit that day · <b>photo reused</b> = same photo used for another house.' : '') + '</div>' +
+    '<div class="cards">' + '<div class="card"><div class="v">' + td.length + '</div><div class="l">Supervisors working today</div></div>' +
+      '<div class="card"><div class="v">' + td.reduce((a, r) => a + r.visits, 0) + '</div><div class="l">Visits today</div></div>' +
+      '<div class="card ' + (td.filter(r => r.below).length ? 'fu' : '') + '"><div class="v">' + td.filter(r => r.below).length + '</div><div class="l">Below ' + T + ' today</div><div class="s muted">the day is not over yet</div></div></div>' +
+    '<div class="toolbar"><h2>Last 14 days</h2><select id="supN"><option value="">All supervisors</option>' + names.map(nm => '<option' + (nm === SUPN ? ' selected' : '') + '>' + esc(nm) + '</option>').join('') + '</select>' +
+      '<span class="grow"></span>' + (can.manage() ? '<button class="btn" id="supXls">⬇ Report (Excel, 31 days)</button>' : '') + '<button class="btn" id="supReload">↻</button></div>' +
+    (R.length ? '<div class="tw"><table><thead><tr><th>Date</th><th>Supervisor</th><th class="num">Visits</th><th class="num">Consent</th><th class="num">Not available</th>' +
+      (flags ? '<th class="num">Rushed</th><th class="num">Same GPS</th><th class="num">Photo reused</th>' : '') + '<th>Remark</th>' + (can.manage() ? '<th>Leave</th>' : '') + '</tr></thead><tbody>' +
+      R.map(r => '<tr class="' + (r.leave ? 'leave' : r.below ? 'below' : '') + '"><td>' + esc(dmy(r.day)) + '</td><td>' + esc(r.name) + '</td><td class="num"><b>' + r.visits + '</b> / ' + T + '</td><td class="num">' + r.consent +
+        '</td><td class="num">' + r.na + '</td>' + (flags ? '<td class="num">' + (r.rushed || '') + '</td><td class="num">' + (r.gps || '') + '</td><td class="num">' + (r.photo || '') + '</td>' : '') +
+        '<td class="small">' + esc(remark(r)) + '</td>' + (can.manage() ? '<td><button class="btn" data-leave="' + esc(r.name + '|' + r.day + '|' + (r.leave ? 0 : 1)) + '">' + (r.leave ? 'Undo leave' : 'Mark leave') + '</button></td>' : '') + '</tr>').join('') +
+      '</tbody></table></div>' : '<div class="empty">No Priority-tab visits in the last 14 days.</div>') +
+    '<p class="small muted">Names are as typed on the phone. If a supervisor types the name differently, it shows as two people – ask them to keep the same spelling.</p>';
+}
+function shrinkPhoto(file) {
+  return new Promise((ok, fail) => {
+    const img = new Image(); img.onload = () => { const k = Math.min(1, 1600 / Math.max(img.width, img.height)), c = document.createElement('canvas');
+      c.width = Math.round(img.width * k); c.height = Math.round(img.height * k); c.getContext('2d').drawImage(img, 0, 0, c.width, c.height); URL.revokeObjectURL(img.src); ok(c.toDataURL('image/jpeg', 0.8)); };
+    img.onerror = () => fail(new Error('Could not read the photo.')); img.src = URL.createObjectURL(file);
+  });
+}
+
 // ---------------------------------------------------------------- daily files
 function filesPage() {
   const m = D.meta || {}, have = {}; (m.files || []).forEach(f => have[f.kind] = f);
-  const kinds = [['INST', 'Installations report (PMSG cloud)', 'who is installed, DCR, portal OTP'], ['CL', 'Consumer List (MNRE)', 'CA status and consent status'],
+  const kinds = [['MASTER', 'Consumers list (PMSG cloud) – the 33,552', 'master list: feasibility, survey status'], ['INST', 'Installations report (PMSG cloud)', 'who is installed, DCR, portal OTP'], ['CL', 'Consumer List (MNRE)', 'CA status and consent status'],
     ['MIS', 'ULA Vendor My Applications List (MIS)', 'ULA numbers – APKUP only'], ['APP', 'My Applications List (portal) – optional', 'extra ULA numbers – APKUP only']];
   $('page').innerHTML = '<div class="box"><h3>The daily files</h3><div class="tw"><table><thead><tr><th>File</th><th>Used for</th><th>Current file</th><th class="num">Rows</th><th>Uploaded</th></tr></thead><tbody>' +
     kinds.map(k => { const f = have[k[0]]; return '<tr><td><b>' + k[1] + '</b></td><td class="small muted">' + k[2] + '</td><td class="small">' + (f ? esc(f.name) : '<span class="b bad">missing</span>') +
-      '</td><td class="num">' + (f ? f.rows.toLocaleString('en-IN') : '') + '</td><td class="small">' + (f ? esc(f.date) : '') + '</td></tr>'; }).join('') + '</tbody></table></div>' +
+      '</td><td class="num">' + (f ? f.rows.toLocaleString('en-IN') : '') + '</td><td class="small">' + (f ? esc(f.date) : '') + '</td></tr>'; }).join('') +
+    '<tr><td><b>Invalid Consumer Data (from the department)</b></td><td class="small muted">houses the portal rejected at the Excel upload – every file is kept</td><td class="small" colspan="3">' +
+      ((m.inv || []).length ? 'Last upload: ' + m.inv.map(esc).join(', ') : 'Upload it whenever the department gives one') + '</td></tr></tbody></table></div>' +
     ((m.warnings || []).length ? (m.warnings || []).map(w => '<div class="flag">' + esc(w) + '</div>').join('') : '') +
     (can.manage() ? '<div class="drop" style="margin-top:12px"><input type="file" id="upl" multiple accept=".xlsx,.xls,.csv"><p class="small muted">Choose one or more of the files above, as downloaded (file names do not matter – the columns are recognised). ' +
       'The newest file of each kind is used; older ones go to "Old files".<br>Last update: ' + esc(m.at || 'never') + (m.by ? ' by ' + esc(m.by) : '') + '</p></div>'
@@ -379,8 +465,8 @@ function drawUsers(list) {
     list.map(u => '<tr><td>' + esc(u.email) + '</td><td>' + esc(u.name) + '</td><td>' + esc(ROLE_T[u.role] || u.role) + '</td><td>' + u.devices +
       '</td><td><button class="btn" data-deluser="' + esc(u.email) + '">Remove</button></td></tr>').join('') + '</tbody></table></div>' +
     '<div class="toolbar"><input id="uEmail" type="email" placeholder="Email" style="width:220px;padding:7px 9px;border:1px solid var(--line);border-radius:8px"><input id="uName" placeholder="Name" style="width:160px;padding:7px 9px;border:1px solid var(--line);border-radius:8px">' +
-    '<select id="uRole"><option value="manager">Manager</option><option value="mis">MIS</option><option value="owner">Administrator</option></select><button class="btn pri" id="uAdd">Add / update</button></div>' +
-    '<p class="small muted">Manager: everything except Settings, uploads the daily files. MIS: dashboard, lists, survey downloads. Removing a user logs out all their devices at once.</p>';
+    '<select id="uRole"><option value="manager">Manager</option><option value="mis">MIS</option><option value="viewer">Viewer (management)</option><option value="owner">Administrator</option></select><button class="btn pri" id="uAdd">Add / update</button></div>' +
+    '<p class="small muted">Manager: everything except Settings, uploads the daily files. MIS: dashboard, lists, survey downloads. Viewer: looks at everything, downloads nothing. Removing a user logs out all their devices at once.</p>';
 }
 
 // ---------------------------------------------------------------- events
@@ -398,6 +484,9 @@ document.addEventListener('click', async e => {
   if (t.id === 'svXls') return svFile(t, 'surveyDetails');
   if (t.id === 'svEE') return svFile(t, 'mobileChanges');
   if (t.id === 'svReload') return surveyPage(true);
+  if (t.id === 'supReload') return supPage(true);
+  if (t.id === 'supXls') { t.disabled = true; try { saveB64(await run('supervisorReport', KEY, 31)); } catch (er) { toast(er.message || er, 6000); } t.disabled = false; return; }
+  if (t.dataset.leave) { const p = t.dataset.leave.split('|'); t.disabled = true; try { SUP = JSON.parse(await run('setLeave', KEY, p[0], p[1], p[2] === '1')); supPage(); } catch (er) { toast(er.message || er); t.disabled = false; } return; }
   if (t.dataset.svpdf) { t.disabled = true; try { saveB64(await run('getSurveyFile', KEY, t.dataset.svpdf)); } catch (er) { toast(er.message || er); } t.disabled = false; return; }
   if (t.classList.contains('ph') && t.dataset.photo) {
     if (t.querySelector('img')) { $('zoom').querySelector('img').src = t.querySelector('img').src; $('zoom').classList.add('open'); return; }
@@ -416,6 +505,15 @@ document.addEventListener('change', e => {
   else if (id === 'svVil' || id === 'svG' || id === 'svP') { SVF[{ svVil: 'vil', svG: 'g', svP: 'p' }[id]] = e.target.value; surveyPage(); }
   else if (id === 'svAgain' && e.target.value) { const sel = e.target; svBatch(sel, 'surveyBatchAgain', [sel.value], false).then(() => { sel.value = ''; }); }
   else if (id === 'upl') upload([...e.target.files]);
+  else if (id === 'supN') { SUPN = e.target.value; supPage(); }
+});
+document.addEventListener('submit', async e => {
+  const f = e.target.closest('form[data-bout]'); if (!f) return; e.preventDefault();
+  const o = f.o.value, file = f.p.files[0];
+  if (!o) return toast('Choose the upload outcome.'); if (!file) return toast('Add the photo of the portal\'s upload summary screen.');
+  const b = f.querySelector('button'); b.disabled = true; b.textContent = 'Saving…';
+  try { toast(await run('markBatchOutcome', KEY, f.dataset.bout, o, await shrinkPhoto(file)), 8000); D.bstat = null; await load(true); PAGE = 'survey'; surveyPage(true); }
+  catch (er) { toast(er.message || er, 6000); b.disabled = false; b.textContent = 'Save'; }
 });
 let qT = null; $('q').addEventListener('input', () => { clearTimeout(qT); qT = setTimeout(render, 250); });
 $('lEmail').addEventListener('keydown', e => { if (e.key === 'Enter') loginSend(); });
@@ -435,7 +533,7 @@ async function loginVerify() {
   catch (e) { $('lErr').textContent = e.message || e; }
   $('lVerify').disabled = false;
 }
-async function logoutNow() { try { await run('logout', KEY); } catch (e) {} tokStore.set(''); KEY = ''; D = null; SVD = null; PAGE = 'dash'; LIST = null; CHIP = ''; showLogin('Logged out.'); }
+async function logoutNow() { try { await run('logout', KEY); } catch (e) {} tokStore.set(''); KEY = ''; D = null; SVD = null; SUP = null; PAGE = 'dash'; LIST = null; CHIP = ''; showLogin('Logged out.'); }
 async function load(keep) {
   if (!KEY) { showLogin(); return; }
   if (!keep) $('page').innerHTML = '<div class="loading">Loading…</div>';
