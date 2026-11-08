@@ -250,7 +250,7 @@ function drawHouses() {
 // ---------------------------------------------------------------- form
 function resetForm() {
   ['sn', 'bname', 'mob', 'dbmob'].forEach(id => $(id).value = '');
-  Object.assign(F, { gender: '', photo: null, consent: null, site: null, gps: null, avail: '', naWhy: '' });
+  Object.assign(F, { gender: '', photo: null, consent: null, site: null, gps: null, avail: '', naWhy: '' }); CF_TRIES = 0;
   document.querySelectorAll('#avail button, #naWhy button').forEach(b => b.classList.remove('on')); $('mobMsg').innerHTML = '';
   $('naBox').classList.add('hidden'); $('metBox').classList.remove('hidden'); $('cfCard').classList.remove('hidden'); $('submit').textContent = 'Submit survey';
   document.querySelectorAll('#gender button').forEach(b => b.classList.remove('on'));
@@ -319,10 +319,27 @@ function docJpeg(c) {
   if (kb(u) > CF_KB) { const t = document.createElement('canvas'); t.width = Math.round(c.width * 0.75); t.height = Math.round(c.height * 0.75); t.getContext('2d').drawImage(c, 0, 0, t.width, t.height); u = t.toDataURL('image/jpeg', 0.5); }
   c.width = 0; c.height = 0; return u;
 }
+/** Is the consent form readable? Sharpness (edges of the writing), light, size. Checked on the phone, before saving. */
+const CF_SHARP = 50, CF_DARK = 70;
+function cfQuality(src) {
+  const k = Math.min(1, 1000 / Math.max(src.width, src.height)), w = Math.round(src.width * k), h = Math.round(src.height * k), c = document.createElement('canvas');
+  c.width = w; c.height = h; const x = c.getContext('2d'); x.drawImage(src, 0, 0, w, h); const a = x.getImageData(0, 0, w, h).data, g = new Float32Array(w * h);
+  let sum = 0; for (let i = 0; i < w * h; i++) { g[i] = 0.3 * a[i * 4] + 0.59 * a[i * 4 + 1] + 0.11 * a[i * 4 + 2]; sum += g[i]; }
+  const L = [];
+  for (let y = 2; y < h - 2; y += 2) for (let xx = 2; xx < w - 2; xx += 2) { const i = y * w + xx; L.push(Math.abs(4 * g[i] - g[i - 1] - g[i + 1] - g[i - w] - g[i + w])); }
+  L.sort((p, q) => p - q); c.width = 0;
+  const sharp = Math.round(L[Math.floor(L.length * 0.995)] || 0), bright = Math.round(sum / (w * h)), big = Math.max(src.width, src.height);
+  const why = big < 900 ? 'The photo is too small – use 📷 Camera, not a WhatsApp copy.' : bright < CF_DARK ? 'The photo is too dark – go to the light or switch on the flash.'
+    : sharp < CF_SHARP ? 'The photo is blurred – hold the phone steady, let it focus, fill the screen with the form.' : '';
+  return { ok: !why, why, sharp, bright };
+}
+let CF_TRIES = 0;
 async function consentJpeg(file) {
-  const img = await bitmap(file), sc = Math.min(1, 1700 / Math.max(img.width, img.height)), c = document.createElement('canvas');
+  const img = await bitmap(file), q = cfQuality(img);
+  if (!q.ok && ++CF_TRIES < 3) throw Object.assign(new Error(q.why), { quality: q });
+  const sc = Math.min(1, 1700 / Math.max(img.width, img.height)), c = document.createElement('canvas');
   c.width = Math.round(img.width * sc); c.height = Math.round(img.height * sc); c.getContext('2d').drawImage(img, 0, 0, c.width, c.height);
-  return docJpeg(c);
+  return { url: docJpeg(c), q };
 }
 function loadPdfJs() {
   if (window.pdfjsLib) return Promise.resolve(window.pdfjsLib);
@@ -337,7 +354,9 @@ async function shrinkPdf(file) {
     await pg.render({ canvasContext: x, viewport: v }).promise; parts.push(c); }
   const all = document.createElement('canvas'); all.width = 1400; all.height = parts.reduce((h, c) => h + c.height, 0);
   const ax = all.getContext('2d'); let y = 0; parts.forEach(c => { ax.drawImage(c, 0, y); y += c.height; c.width = 0; });
-  return { url: docJpeg(all), pages: doc.numPages };
+  const q = cfQuality(all);
+  if (!q.ok && ++CF_TRIES < 3) throw Object.assign(new Error(q.why.replace('The photo', 'The scanned PDF')), { quality: q });
+  return { url: docJpeg(all), pages: doc.numPages, q };
 }
 function photoMsg(file) {
   const t = String((file && file.type) || '') + ' ' + String((file && file.name) || '');
@@ -361,12 +380,17 @@ async function onConsent(file) {
     $('cfInfo').className = 'msg m-info'; $('cfInfo').textContent = 'Making the PDF smaller (' + Math.round(file.size / 1024) + ' KB)…';
     try { const r = await shrinkPdf(file); F.consent = r.url; $('cf').src = r.url; $('cfWrap').classList.remove('hidden');
       $('cfInfo').className = 'msg m-ok'; $('cfInfo').textContent = '✓ PDF made smaller: ' + Math.round(file.size / 1024) + ' KB → ' + kb(r.url) + ' KB' + (r.pages > 3 ? ' (first 3 of ' + r.pages + ' pages)' : '') + ' – saved as <service no>.pdf'; }
-    catch (e) { F.consent = (await blobToDataUrl(file)).replace(/^data:[^;]*;/, 'data:application/pdf;'); $('cfWrap').classList.add('hidden');
+    catch (e) { if (e.quality) { F.consent = null; $('cfWrap').classList.add('hidden'); $('cfInfo').className = 'msg m-bad'; $('cfInfo').textContent = '✗ ' + e.message + ' Scan again or photograph the form.'; return; }
+      F.consent = (await blobToDataUrl(file)).replace(/^data:[^;]*;/, 'data:application/pdf;'); $('cfWrap').classList.add('hidden');
       $('cfInfo').className = 'msg m-warn'; $('cfInfo').textContent = 'PDF kept as it is (' + Math.round(file.size / 1024) + ' KB) – could not make it smaller without internet. A photo of the form gives a smaller file.'; }
   } else {
-    try { F.consent = await consentJpeg(file); $('cf').src = F.consent; $('cfWrap').classList.remove('hidden');
-      $('cfInfo').className = 'msg m-ok'; $('cfInfo').textContent = '✓ Photo (' + kb(F.consent) + ' KB, black and white) – it becomes a PDF named <service no>.pdf'; }
-    catch (e) { alert(photoMsg(file)); }
+    try { const r = await consentJpeg(file); F.consent = r.url; $('cf').src = F.consent; $('cfWrap').classList.remove('hidden');
+      $('cfInfo').className = r.q.ok ? 'msg m-ok' : 'msg m-warn';
+      $('cfInfo').textContent = r.q.ok ? '✓ Photo clear (' + kb(F.consent) + ' KB, black and white) – it becomes a PDF named <service no>.pdf'
+        : '⚠ Still not clear after 3 tries – saved anyway. MIS may ask for a re-survey. (' + r.q.why + ')'; }
+    catch (e) { if (e.quality) { F.consent = null; $('cfWrap').classList.add('hidden'); $('cfInfo').className = 'msg m-bad';
+        $('cfInfo').textContent = '✗ ' + e.message + ' Take the photo again (try ' + (CF_TRIES + 1) + ' of 3).'; return; }
+      alert(photoMsg(file)); }
   }
 }
 function problems() {
