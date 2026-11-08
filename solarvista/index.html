@@ -54,7 +54,14 @@ h3.sec { font-size: 13px; color: var(--muted); text-transform: uppercase; letter
 .bt.red { border-color: var(--bad); background: var(--bad-soft); }
 .bt form { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-top: 8px; }
 nav .n.red { background: var(--bad); color: #fff; margin-left: 4px; }
-tr.below td { background: var(--warn-soft); } tr.leave td { color: var(--grey-ink); }
+tr.below td { background: var(--warn-soft); }
+.brief { background: var(--panel); border: 1px solid var(--line); border-left: 4px solid var(--side); border-radius: 10px; padding: 14px 18px; margin-bottom: 18px; }
+.brief h2 { margin: 0 0 2px; font-size: 18px; } .brief .when { font-size: 12px; color: var(--muted); margin-bottom: 8px; }
+.brief ul { margin: 0; padding-left: 18px; } .brief li { margin: 5px 0; line-height: 1.5; } .brief li.att { color: var(--bad); } .brief li.ok { color: var(--ok); }
+details.more > summary { cursor: pointer; font-weight: 600; margin: 6px 0 12px; color: var(--accent); }
+tr.band th { position: static; text-align: center; font-size: 11.5px; letter-spacing: .02em; text-transform: uppercase; border-bottom: 2px solid var(--line); }
+th.bl, td.bl { border-left: 2px solid var(--line); } td.tot, th.tot { font-weight: 700; background: var(--info-soft); }
+td .sub { display: block; font-size: 11px; color: var(--muted); font-weight: 400; } tfoot td { font-weight: 700; background: var(--info-soft); } tr.leave td { color: var(--grey-ink); }
 .bar { height: 6px; background: var(--info-soft); border-radius: 3px; margin-top: 6px; overflow: hidden; } .bar i { display: block; height: 100%; background: var(--ok); }
 .box { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 14px; margin-bottom: 14px; } .box h3 { margin: 0 0 10px; font-size: 15px; }
 .note { background: var(--warn-soft); border-left: 4px solid var(--warn); border-radius: 6px; padding: 10px 12px; margin: 0 0 12px; }
@@ -170,7 +177,7 @@ const toast = (t, ms) => { const e = $('toast'); e.textContent = t; e.style.disp
 const dmy = s => { const m = /^(\d{4})-(\d{2})-(\d{2})(?: (\d{2}:\d{2}))?/.exec(String(s || '')); return m ? m[3] + '-' + m[2] + (m[4] ? ' ' + m[4] : '') : String(s || ''); };
 const ROLE_T = { owner: 'Administrator', manager: 'Manager', mis: 'MIS', viewer: 'Viewer' };
 const PRIO = { P1: ['ok', 'P1 · consent only'], P2: ['warn', 'P2 · Excel + consent'], P3: ['acc', 'P3 · feasible, consent'], P4: ['warn', 'P4 · feasible, Excel + consent'],
-  SURVEY: ['', 'Balance · feasibility survey'], NOTFEAS: ['', 'Not feasible'], ULA: ['', 'ULA created'], CHECK: ['warn', 'Check · not in our list'], BAD: ['bad', 'Bad service number'],
+  SURVEY: ['', 'Balance · feasibility survey'], NOTFEAS: ['', 'Not feasible'], ULA: ['', 'ULA created'], CHECK: ['warn', 'MNRE list only – not in PMSG cloud'], BAD: ['bad', 'Bad service number'],
   CONSENT_ACC: ['bad', 'Consent accepted – no ULA'], CA_NV: ['bad', 'CA not verified'], OTHER: ['', 'Other'], NEW: ['warn', 'Not in any file'] };
 const PR = k => PRIO[k] || PRIO.OTHER;
 const PGRP = ['P1', 'P2', 'P3', 'P4'];
@@ -208,7 +215,9 @@ const LISTS = {
   REVISIT: { t: 'Customer not available – revisit', f: s => !!s.na && !s.sv, chips: [['', 'All'], ['n3', '3 visits or more']], c: { n3: s => s.na[0] >= 3 } },
   REJ: { t: 'Rejected by the portal (Invalid Consumer Data)', f: s => !!s.rej, chips: [] },
   MOB: { t: 'Mobile shared with another house (likely to be rejected)', f: s => s.shared > 0 && PGRP.includes(s.prio), chips: [] },
-  CHECK: { t: 'Check – in the MNRE list but not in our 33,552 list', f: s => s.prio === 'CHECK', chips: [] },
+  CHECK: { t: 'In our MNRE list, not in PMSG cloud', f: s => s.prio === 'CHECK', def: 'v',
+    chips: [['v', 'CA Verified'], ['nv', 'CA not verified / not eligible'], ['acc', 'Consent accepted'], ['pend', 'Consent pending'], ['all', 'All']],
+    c: { v: s => s.ca === 'V', nv: s => s.ca !== 'V', acc: s => s.cs === 'A', pend: s => s.cs !== 'A', all: s => true } },
   ULA: { t: 'ULA application created', f: s => !!s.ula, chips: [] },
   DCR: { t: 'DCR', f: s => !!s.ula || s.dcr, chips: [['done', 'DCR done'], ['pend', 'DCR pending (ULA, installed, no DCR)']], def: 'done',
          c: { done: s => s.dcr, pend: s => s.ula && s.ins && !s.dcr } },
@@ -241,7 +250,8 @@ function dash() {
   const P1 = p('P1'), P2 = p('P2'), P3 = p('P3'), P4 = p('P4'), ula = n(s => s.ula);
   const m = D.meta || {}, T = D.target || 20378, inst = S.filter(s => s.ins === 'D').length, found = S.filter(s => s.ins || s.feas).length, bs = D.bstat || {};
   const pc = v => Math.min(100, Math.round(v * 100 / T));
-  $('page').innerHTML =
+  const mgmt = ROLE === 'viewer' || ROLE === 'owner';
+  $('page').innerHTML = (mgmt && m.at ? brief(T, inst, found) : '') +
     (m.at ? '' : '<div class="note">No daily files yet – open <b>Daily files</b> and upload the Consumers list (PMSG cloud), the Installations report, the Consumer List and the MIS file.</div>') +
     '<div class="target"><div><div class="small muted">Target</div><div class="big">' + T.toLocaleString('en-IN') + '</div><div class="small muted">feasible houses installed</div></div>' +
       '<div class="grow"><b>' + inst.toLocaleString('en-IN') + '</b> installed (' + pc(inst) + '%)<div class="bar"><i style="width:' + pc(inst) + '%"></i></div></div>' +
@@ -260,7 +270,7 @@ function dash() {
     '<h3 class="sec">Balance tab · feasibility survey</h3><div class="cards">' +
       card('SURVEY', n(s => s.prio === 'SURVEY'), 'Balance – survey to do', 'feasibility not known yet', 'bal') +
       card('NOTFEAS', n(s => s.prio === 'NOTFEAS'), 'Not feasible', 'from the PMSG survey', 'bal') +
-      card('CHECK', n(s => s.prio === 'CHECK'), 'Check – not in our list', 'MNRE list only · MIS to check (VSA login)', 'fu') + '</div>' +
+      card('CHECK', n(s => s.prio === 'CHECK'), 'In our MNRE list, not in PMSG cloud', n(s => s.prio === 'CHECK').toLocaleString('en-IN') + ' houses · to be added to PMSG cloud', 'fu') + '</div>' +
     '<h3 class="sec">Portal</h3><div class="cards">' +
       card('ULA', ula, 'ULA application created', '') +
       card('DCR', n(s => s.dcr), 'DCR done', n(s => s.ula && s.ins && !s.dcr) + ' pending with ULA') +
@@ -270,21 +280,62 @@ function dash() {
       card('CA_NV', n(s => s.prio === 'CA_NV'), 'CA not verified / not eligible', 'follow up with MNRE', 'fu') +
       card('CONSENT_ACC', n(s => s.prio === 'CONSENT_ACC'), 'Consent accepted – no ULA', 'check on the portal', 'fu') +
       card('PROB', n(s => s.prob), 'Data problems in the files', 'bad numbers, duplicates, mobile mismatch', 'fu') + '</div>' +
-    distTable(A) +
+    (ROLE === 'viewer' ? '<details class="more"><summary>Details by distribution</summary>' + distTable(A) + '</details>' : distTable(A)) +
     '<p class="small muted">Click a badge to open its list. Data: daily files updated ' + esc(m.at || 'never') + (m.by ? ' by ' + esc(m.by) : '') + '.</p>';
 }
+// ---------------------------------------------------------------- management summary (plain sentences, written from the day's files)
+let BRIEF_SUP = null;
+function brief(T, inst, found) {
+  const N = v => Number(v || 0).toLocaleString('en-IN'), pc = (a, b) => b ? Math.round(a * 100 / b) + '%' : '0%', n = f => S.filter(f).length;
+  const site = String(D.client || '').split(' – ').pop() || 'Project', m = D.meta || {}, bs = D.bstat || {};
+  const ist = new Date(Date.now() + 5.5 * 36e5), day = d => d.toISOString().slice(0, 10), wk = day(new Date(ist - 6 * 864e5)), yd = day(new Date(ist - 864e5));
+  const bal = n(s => s.prio === 'SURVEY'), need = Math.max(0, T - found), ula = n(s => s.ula);
+  const svWeek = Object.keys(D.sv || {}).filter(sn => String(D.sv[sn][0]).slice(0, 10) >= wk), bySn = {}; S.forEach(s => bySn[s.sn] = s);
+  const wkBy = {}; svWeek.forEach(sn => { const k = bySn[sn] ? bySn[sn].prio : 'other'; wkBy[k] = (wkBy[k] || 0) + 1; });
+  const rej = n(s => s.rej), chk = n(s => s.prio === 'CHECK'), left = PGRP.reduce((a, k) => a + n(s => s.prio === k && !s.sv), 0);
+  const L = [];
+  L.push('Target <b>' + N(T) + '</b> houses. <b>' + N(inst) + ' installed (' + pc(inst, T) + ').</b> ' + N(found) + ' feasible houses found so far' +
+    (need ? ' – about <b>' + N(Math.ceil(need / 100) * 100) + ' more</b> to be found among the ' + N(bal) + ' houses not yet surveyed.' : ' – enough to reach the target.'));
+  L.push('Portal: <b>ULA created ' + N(ula) + '</b> · DCR ' + N(n(s => s.dcr)) + ' · Portal installation (OTP) ' + N(n(s => s.otp)) + ' · Inspection ' + N(n(s => s.insp)) + '.');
+  L.push('Consent forms collected in the last 7 days: <b>' + N(svWeek.length) + '</b>' + (svWeek.length ? ' (' + PGRP.filter(k => wkBy[k]).map(k => k + ' ' + N(wkBy[k])).join(' · ') + ')' : '') +
+    '. Still to collect: ' + N(left) + '.');
+  const sup = BRIEF_SUP && BRIEF_SUP.rows.filter(r => r.day === yd);
+  L.push(sup ? (sup.length ? 'Supervisors yesterday: <b>' + sup.filter(r => !r.leave).length + ' worked</b>, ' + sup.filter(r => !r.leave && !r.below).length + ' met the target of ' + BRIEF_SUP.target +
+      (sup.filter(r => r.leave).length ? ', ' + sup.filter(r => r.leave).length + ' on leave' : '') + ' · ' + N(sup.reduce((a, r) => a + r.visits, 0)) + ' house visits.' : 'Supervisors yesterday: no visits recorded.')
+    : 'Supervisors yesterday: <span class="muted">loading…</span>');
+  const att = [];
+  if (bs.red) att.push(bs.red + ' department upload batch' + (bs.red > 1 ? 'es' : '') + ' waiting for action');
+  if (rej) att.push(N(rej) + ' house' + (rej > 1 ? 's' : '') + ' rejected by the portal (correct mobile needed)');
+  if (chk) att.push(N(chk) + ' houses in our MNRE list not in PMSG cloud (with RESCO)');
+  const html = '<div class="brief" id="brief"><h2>' + esc(site) + ' – ' + ist.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric', timeZone: 'UTC' }) + '</h2>' +
+    '<div class="when">From the files updated ' + esc(m.at || '') + '</div><ul>' + L.map(x => '<li>' + x + '</li>').join('') +
+    (att.length ? '<li class="att"><b>Needs attention:</b> ' + att.join(' · ') + '.</li>' : '<li class="ok"><b>Nothing waiting for action.</b></li>') + '</ul></div>';
+  if (!BRIEF_SUP) run('getSupervisors', KEY, 3).then(j => { BRIEF_SUP = JSON.parse(j); const b = $('brief'); if (b && PAGE === 'dash') b.outerHTML = brief(T, inst, found); })
+    .catch(() => { BRIEF_SUP = { target: D.dayTarget || 30, rows: [] }; });
+  return html;
+}
 function distTable(A) {
-  const g = {};
-  A.forEach(s => { const d = g[s.dist] || (g[s.dist] = { sec: s.sec, P1: 0, P1s: 0, P2: 0, P2s: 0, P3: 0, P3s: 0, P4: 0, P4s: 0, ula: 0, dcr: 0, otp: 0, insp: 0 });
-    if (PGRP.includes(s.prio)) { d[s.prio]++; if (s.sv) d[s.prio + 's']++; }
-    if (s.ula) d.ula++; if (s.dcr) d.dcr++; if (s.otp) d.otp++; if (s.insp) d.insp++; });
-  const rows = Object.keys(g).filter(d => { const x = g[d]; return x.P1 + x.P2 + x.P3 + x.P4 + x.ula; }).sort((a, b) => (g[b].P1 - g[b].P1s) - (g[a].P1 - g[a].P1s) || a.localeCompare(b));
-  const c = (t, s) => t ? s + ' / ' + t : '–';
-  return '<div class="tw"><table><thead><tr><th>Distribution</th><th>Section</th><th class="num">P1 surveyed</th><th class="num">P2 surveyed</th><th class="num">P3 surveyed</th><th class="num">P4 surveyed</th>' +
-    '<th class="num">ULA</th><th class="num">DCR</th><th class="num">OTP</th><th class="num">Inspection</th></tr></thead><tbody>' +
-    rows.map(d => { const x = g[d]; return '<tr class="click" data-vil="' + esc(d) + '"><td><b>' + esc(d) + '</b></td><td>' + esc(x.sec) + '</td><td class="num">' + c(x.P1, x.P1s) +
-      '</td><td class="num">' + c(x.P2, x.P2s) + '</td><td class="num">' + c(x.P3, x.P3s) + '</td><td class="num">' + c(x.P4, x.P4s) + '</td><td class="num">' + x.ula + '</td><td class="num">' + x.dcr +
-      '</td><td class="num">' + x.otp + '</td><td class="num">' + x.insp + '</td></tr>'; }).join('') + '</tbody></table></div>';
+  // Band 1 groups are separate – they add up to Total. Band 2 counts progress inside them – it does not add.
+  const g = {}, Z = () => ({ sec: '', P1: 0, P1s: 0, P2: 0, P2s: 0, P3: 0, P3s: 0, P4: 0, P4s: 0, ULA: 0, SURVEY: 0, NOTFEAS: 0, other: 0, tot: 0, ins: 0, dcr: 0, otp: 0, insp: 0, chk: 0 }), all = Z();
+  A.forEach(s => { const d = g[s.dist] || (g[s.dist] = Z()); if (!d.sec) d.sec = s.sec;
+    [d, all].forEach(x => {
+      if (s.prio === 'CHECK') { x.chk++; return; }
+      x.tot++; if (PGRP.includes(s.prio)) { x[s.prio]++; if (s.sv) x[s.prio + 's']++; } else if (['ULA', 'SURVEY', 'NOTFEAS'].includes(s.prio)) x[s.prio]++; else x.other++;
+      if (s.ins) x.ins++; if (s.dcr) x.dcr++; if (s.otp) x.otp++; if (s.insp) x.insp++; }); });
+  const rows = Object.keys(g).filter(d => g[d].tot || g[d].chk).sort((a, b) => (!g[a].tot) - (!g[b].tot) || (g[b].P1 - g[b].P1s) - (g[a].P1 - g[a].P1s) || a.localeCompare(b));
+  const f = v => v ? v.toLocaleString('en-IN') : '–';
+  const p = (x, k) => x[k] ? '<b>' + f(x[k] - x[k + 's']) + '</b>' + (x[k + 's'] ? '<span class="sub">' + x[k + 's'] + ' surveyed</span>' : '') : '–';
+  const cells = x => '<td class="num tot bl">' + f(x.tot) + '</td><td class="num">' + p(x, 'P1') + '</td><td class="num">' + p(x, 'P2') + '</td><td class="num">' + f(x.ULA) +
+    '</td><td class="num">' + p(x, 'P3') + '</td><td class="num">' + p(x, 'P4') + '</td><td class="num">' + f(x.SURVEY) + '</td><td class="num">' + f(x.NOTFEAS) + '</td><td class="num">' + f(x.other) +
+    '</td><td class="num bl">' + f(x.ins) + '</td><td class="num">' + f(x.dcr) + '</td><td class="num">' + f(x.otp) + '</td><td class="num">' + f(x.insp) + '</td><td class="num bl">' + f(x.chk) + '</td>';
+  return '<h3 class="sec">By distribution</h3><p class="small muted">Left block: every house of the PMSG cloud list is in exactly one column – they add up to <b>Total</b>. P1–P4 show the houses still to survey (surveyed ones below). ' +
+    'Right block: progress – Installed, DCR, OTP and Inspection overlap the left block and do <b>not</b> add to Total. The last column is outside Total.</p>' +
+    '<div class="tw"><table><thead><tr class="band"><th colspan="2"></th><th colspan="9" class="bl">Where every house is · adds up to Total</th><th colspan="4" class="bl">Progress · does not add</th><th class="bl">Outside Total</th></tr>' +
+    '<tr><th>Distribution</th><th>Section</th><th class="num tot bl">Total</th><th class="num">P1 consent</th><th class="num">P2 Excel + consent</th><th class="num">ULA done</th><th class="num">P3 consent</th><th class="num">P4 Excel + consent</th>' +
+    '<th class="num">Balance</th><th class="num">Not feasible</th><th class="num">Other</th><th class="num bl">Installed</th><th class="num">DCR</th><th class="num">OTP</th><th class="num">Inspection</th><th class="num bl">MNRE only</th></tr></thead><tbody>' +
+    rows.map(d => '<tr class="click" data-vil="' + esc(d) + '"><td><b>' + esc(d) + '</b></td><td>' + esc(g[d].sec) + '</td>' + cells(g[d]) + '</tr>').join('') +
+    '</tbody><tfoot><tr><td>All</td><td></td>' + cells(all) + '</tr></tfoot></table></div>' +
+    '<p class="small muted">Other = CA not verified, consent accepted without ULA, bad service numbers. MNRE only = in our MNRE list, not in PMSG cloud.</p>';
 }
 function listRows() {
   const L = LISTS[LIST || 'P1'], A = scope().filter(L.f);
@@ -298,7 +349,13 @@ function listPage() {
   $('page').innerHTML = '<div class="chips">' + Object.keys(LISTS).map(k => '<button class="chip' + (k === LIST ? ' on' : '') + '" data-lst="' + k + '">' + esc(LISTS[k].t.split(' (')[0].split(' – ')[0]) + '</button>').join('') + '</div>' +
     (L.chips.length ? '<div class="chips">' + L.chips.map(c => '<button class="chip' + (c[0] === CHIP ? ' on' : '') + '" data-chip="' + c[0] + '">' + esc(c[1]) + '</button>').join('') + '</div>' : '') +
     '<div class="toolbar"><h2>' + R.length.toLocaleString('en-IN') + ' service numbers</h2>' + (can.work() ? '<button class="btn" id="csv">⬇ This list (CSV)</button>' : '') + '</div>' +
-    (R.length ? '<div class="tw"><table><thead><tr><th>Service no.</th><th>Name</th><th>Distribution</th><th>Stage</th><th>Installed</th><th>CA / consent</th><th>ULA</th>' +
+    (LIST === 'CHECK' ? '<div class="note">These houses are in the <b>MNRE Consumer List of our VSA login</b> but <b>not in PMSG cloud</b> (the 33,552). ' +
+      'The MNRE file has no consumer name, and the distribution is known only where another house shares the number code. <b>To be added to PMSG cloud – confirm with RESCO before any field visit.</b></div>' +
+      (R.length ? '<div class="tw"><table><thead><tr><th>Service no.</th><th>Mobile (MNRE)</th><th>Distribution</th><th>Section</th><th>CA status</th><th>Consent status</th><th>ULA</th></tr></thead><tbody>' +
+        R.slice(0, 2500).map(s => '<tr><td class="mono">' + esc(s.sn) + '</td><td class="mono">' + esc(s.mob) + '</td><td>' + esc(s.dist) + '</td><td>' + esc(s.sec) + '</td><td>' +
+          ({ V: 'Verified & eligible', N: '<span style="color:var(--bad)">Not verified</span>', X: '<span style="color:var(--bad)">Verified & not eligible</span>' }[s.ca] || esc(s.ca)) + '</td><td>' +
+          (s.cs === 'A' ? 'Accepted' : 'Pending') + '</td><td>' + (s.ula ? esc(s.ula) : '–') + '</td></tr>').join('') + '</tbody></table></div>' : '<div class="empty">Nothing in this list for the current filter.</div>') :
+    R.length ? '<div class="tw"><table><thead><tr><th>Service no.</th><th>Name</th><th>Distribution</th><th>Stage</th><th>Installed</th><th>CA / consent</th><th>ULA</th>' +
       '<th>DCR</th><th>OTP</th><th>Insp.</th><th>Surveyed</th></tr></thead><tbody>' + R.slice(0, 1500).map(s => '<tr><td class="mono">' + esc(s.sn) + '</td><td>' + esc(s.name) +
         (s.prob ? '<div class="small" style="color:var(--bad)">' + esc(s.prob) + '</div>' : '') + (s.rej ? '<div class="small" style="color:var(--bad)">Portal rejected: ' + esc(s.rej) + '</div>' : '') +
         (s.shared ? '<div class="small" style="color:var(--warn)">DB mobile ' + esc(s.mob) + ' shared with ' + s.shared + ' other house(s)</div>' : '') +
@@ -533,7 +590,7 @@ async function loginVerify() {
   catch (e) { $('lErr').textContent = e.message || e; }
   $('lVerify').disabled = false;
 }
-async function logoutNow() { try { await run('logout', KEY); } catch (e) {} tokStore.set(''); KEY = ''; D = null; SVD = null; SUP = null; PAGE = 'dash'; LIST = null; CHIP = ''; showLogin('Logged out.'); }
+async function logoutNow() { try { await run('logout', KEY); } catch (e) {} tokStore.set(''); KEY = ''; D = null; SVD = null; SUP = null; BRIEF_SUP = null; PAGE = 'dash'; LIST = null; CHIP = ''; showLogin('Logged out.'); }
 async function load(keep) {
   if (!KEY) { showLogin(); return; }
   if (!keep) $('page').innerHTML = '<div class="loading">Loading…</div>';
