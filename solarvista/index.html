@@ -57,7 +57,9 @@ nav .n.red { background: var(--bad); color: #fff; margin-left: 4px; }
 tr.below td { background: var(--warn-soft); }
 .brief { background: var(--panel); border: 1px solid var(--line); border-left: 4px solid var(--side); border-radius: 10px; padding: 14px 18px; margin-bottom: 18px; }
 .brief h2 { margin: 0 0 2px; font-size: 18px; } .brief .when { font-size: 12px; color: var(--muted); margin-bottom: 8px; }
-.brief ul { margin: 0; padding-left: 18px; } .brief li { margin: 5px 0; line-height: 1.5; } .brief li.att { color: var(--bad); } .brief li.ok { color: var(--ok); }
+.brief ul { margin: 0; padding-left: 18px; } .brief li { margin: 5px 0; line-height: 1.5; } .brief li.att { color: var(--bad); }
+table.money td, table.money th { padding: 8px 10px; } table.money td.rs { font-weight: 700; text-align: right; white-space: nowrap; } table.money tr.click:hover td { background: var(--info-soft); cursor: pointer; }
+table.money tfoot td { font-weight: 700; background: var(--info-soft); } .money-wrap { margin-bottom: 18px; } .red-t { color: var(--bad); } .brief li.ok { color: var(--ok); }
 details.more > summary { cursor: pointer; font-weight: 600; margin: 6px 0 12px; color: var(--accent); }
 .flink { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; background: var(--panel); border: 1px solid var(--line); border-left: 4px solid var(--ok); border-radius: 10px; padding: 10px 14px; margin-bottom: 14px; }
 .flink a.btn { text-decoration: none; } .flink code { font-size: 15px; font-weight: 700; color: var(--accent); } .flink .grow { flex: 1; min-width: 160px; }
@@ -179,7 +181,7 @@ const toast = (t, ms) => { const e = $('toast'); e.textContent = t; e.style.disp
 const dmy = s => { const m = /^(\d{4})-(\d{2})-(\d{2})(?: (\d{2}:\d{2}))?/.exec(String(s || '')); return m ? m[3] + '-' + m[2] + (m[4] ? ' ' + m[4] : '') : String(s || ''); };
 const ROLE_T = { owner: 'Administrator', manager: 'Manager', mis: 'MIS', viewer: 'Viewer' };
 const PRIO = { P1: ['ok', 'P1 · consent only'], P2: ['warn', 'P2 · Excel + consent'], P3: ['acc', 'P3 · feasible, consent'], P4: ['warn', 'P4 · feasible, Excel + consent'],
-  SURVEY: ['', 'Balance · feasibility survey'], NOTFEAS: ['', 'Not feasible'], ULA: ['', 'ULA created'], CHECK: ['warn', 'MNRE list only – not in PMSG cloud'], BAD: ['bad', 'Bad service number'],
+  SURVEY: ['', 'Balance · feasibility survey'], NOTFEAS: ['', 'Not feasible'], ULA: ['', 'ULA created'], CHECK: ['', 'Not in PMSG cloud – kept aside'], BAD: ['bad', 'Bad service number'],
   CONSENT_ACC: ['bad', 'Consent accepted – no ULA'], CA_NV: ['bad', 'CA not verified'], OTHER: ['', 'Other'], NEW: ['warn', 'Not in any file'] };
 const PR = k => PRIO[k] || PRIO.OTHER;
 const PGRP = ['P1', 'P2', 'P3', 'P4'];
@@ -188,10 +190,12 @@ const GROUP = { 1: ['ok', 'Folder 1 · upload consent now'], 2: ['warn', 'Folder
 let D = null, S = [], ROLE = 'mis', PAGE = 'dash', LIST = null, CHIP = '';
 const can = { manage: () => ROLE === 'owner' || ROLE === 'manager', owner: () => ROLE === 'owner', work: () => ROLE !== 'viewer' };
 
-// sites: [sn, name, dbMobile, dist, section, installed, dcr, inCL, ca, consent, ula, ulaStatus, otp, insp, group, problems, sharedMobile, inMaster, surveyed, feasible, rejectedWhy]
+// sites: [sn, name, dbMobile, dist, section, installed, dcr, inCL, ca, consent, ula, ulaStatus, otp, insp, group, problems, sharedMobile, inMaster, surveyed, feasible, rejectedWhy, inspDate, redeemDate, verifiedDate, disbursedDate, subsidyAmount]
 function build() {
-  S = (D.sites || []).map(r => ({ sn: r[0], name: r[1], mob: r[2], dist: r[3], sec: r[4], ins: r[5], dcr: !!r[6], cl: !!r[7], ca: r[8], cs: r[9], ula: r[10], us: r[11],
-    otp: !!r[12], insp: !!r[13], prio: r[14], prob: r[15], shared: r[16] || 0, inM: !!r[17], msv: r[18] === 'Y', feas: r[19] === 'Y', rej: r[20] || '',
+  // only our houses: the PMSG cloud list. Houses only in the department's list (or with bad numbers) are not ours – left out completely
+  const ours = (D.sites || []).some(r => r[17]);
+  S = (D.sites || []).filter(r => ours ? r[17] : !['CHECK', 'BAD'].includes(r[14])).map(r => ({ sn: r[0], name: r[1], mob: r[2], dist: r[3], sec: r[4], ins: r[5], dcr: !!r[6], cl: !!r[7], ca: r[8], cs: r[9], ula: r[10], us: r[11],
+    otp: !!r[12], insp: !!r[13], prio: r[14], prob: r[15], shared: r[16] || 0, inM: !!r[17], msv: r[18] === 'Y', feas: r[19] === 'Y', rej: r[20] || '', idt: r[21] || '', rdt: r[22] || '', vdt: r[23] || '', ddt: r[24] || '', amt: Number(r[25]) || 0,
     sv: (D.sv || {})[r[0]] || null, na: (D.na || {})[r[0]] || null }));
   S.forEach(s => { s.text = '|' + norm(s.sn) + '|' + norm(s.name) + '|' + norm(s.ula) + '|'; });
 }
@@ -214,10 +218,21 @@ const LISTS = {
   P4: { t: 'P4 – feasible, not installed, not in Consumer List (Excel + consent)', f: s => s.prio === 'P4', chips: [['', 'All'], ['todo', 'Not surveyed'], ['sv', 'Surveyed']] },
   SURVEY: { t: 'Balance – feasibility survey still to do', f: s => s.prio === 'SURVEY', chips: [] },
   NOTFEAS: { t: 'Not feasible (PMSG survey)', f: s => s.prio === 'NOTFEAS', chips: [] },
+  M_DCR: { t: 'Installed with ULA – DCR pending', f: s => s.ins && s.ula && !s.dcr, chips: [] },
+  M_OTP: { t: 'DCR done – portal installation (OTP) pending', f: s => s.ins && s.dcr && !s.otp, chips: [] },
+  M_INSP: { t: 'OTP done – inspection pending', f: s => s.ins && s.otp && !s.insp, chips: [] },
+  M_DONE: { t: 'Inspection done – subsidy not yet redeemed', f: s => s.ins && moneyStage(s) === 'done', chips: [['', 'All'], ['late', 'Over 30 days since inspection']], c: { late: s => daysSince(s.idt) > 30 } },
+  M_RED: { t: 'Subsidy redeemed – waiting for disbursal', f: s => s.ins && moneyStage(s) === 'red', chips: [] },
+  M_PAID: { t: 'Subsidy received', f: s => s.ins && moneyStage(s) === 'paid', chips: [] },
+  M_OTH: { t: 'Installed – other (check)', f: s => s.ins && moneyStage(s) === 'oth', chips: [] },
+  PCHK: { t: 'On the portal – needs checking', f: s => s.cl && !['P1', 'P3', 'ULA'].includes(s.prio), chips: [] },
+  SV_OFF: { t: 'Not on the portal – feasibility not known', f: s => !s.cl && s.prio === 'SURVEY', chips: [] },
+  NF_OFF: { t: 'Not on the portal – not feasible', f: s => !s.cl && s.prio === 'NOTFEAS', chips: [] },
+  OTH_OFF: { t: 'Not on the portal – other', f: s => !s.cl && !['P2', 'P4', 'SURVEY', 'NOTFEAS'].includes(s.prio), chips: [] },
   REVISIT: { t: 'Customer not available – revisit', f: s => !!s.na && !s.sv, chips: [['', 'All'], ['n3', '3 visits or more']], c: { n3: s => s.na[0] >= 3 } },
   REJ: { t: 'Rejected by the portal (Invalid Consumer Data)', f: s => !!s.rej, chips: [] },
   MOB: { t: 'Mobile shared with another house (likely to be rejected)', f: s => s.shared > 0 && PGRP.includes(s.prio), chips: [] },
-  CHECK: { t: 'In our MNRE list, not in PMSG cloud', f: s => s.prio === 'CHECK', def: 'v',
+  CHECK: { t: 'Not in PMSG cloud – kept aside', f: s => s.prio === 'CHECK', def: 'v',
     chips: [['v', 'CA Verified'], ['nv', 'CA not verified / not eligible'], ['acc', 'Consent accepted'], ['pend', 'Consent pending'], ['all', 'All']],
     c: { v: s => s.ca === 'V', nv: s => s.ca !== 'V', acc: s => s.cs === 'A', pend: s => s.cs !== 'A', all: s => true } },
   ULA: { t: 'ULA application created', f: s => !!s.ula, chips: [] },
@@ -242,6 +257,41 @@ function render() {
   nav(); $('title').textContent = { dash: 'Dashboard', list: LIST ? LISTS[LIST].t : 'Lists', survey: 'Survey', sup: 'Supervisors', files: 'Daily files', settings: 'Settings' }[PAGE];
   ({ dash, list: listPage, survey: surveyPage, sup: supPage, files: filesPage, settings: settingsPage })[PAGE]();
 }
+// ---------------------------------------------------------------- subsidy money waiting on installed houses
+const SUBSIDY = () => (D && D.subsidy) || 60000;
+const amtOf = s => s.amt || SUBSIDY();
+const daysSince = d => d ? Math.floor((Date.now() - new Date(d + 'T00:00:00+05:30')) / 864e5) : -1;
+const crore = v => '₹' + (v / 1e7).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' Cr';
+function moneyStage(s) {
+  if (!s.ins) return '';
+  if (s.ddt) return 'paid'; if (s.rdt || s.vdt) return 'red'; if (s.insp) return 'done'; if (s.otp) return 'insp'; if (s.dcr) return 'otp'; if (s.ula) return 'dcr';
+  if (s.prio === 'P2') return 'p2'; if (s.prio === 'P1') return 'p1'; return 'oth';
+}
+function moneyTable(A) {
+  const c = {}, v = {}; A.forEach(s => { const k = moneyStage(s); if (k) { c[k] = (c[k] || 0) + 1; v[k] = (v[k] || 0) + amtOf(s); } });
+  const insp = A.filter(s => s.ins && ['done', 'red'].includes(moneyStage(s)));
+  const late = insp.filter(s => daysSince(s.idt) > 30), soon = insp.filter(s => daysSince(s.idt) >= 0 && daysSince(s.idt) <= 30);
+  const sum = L => L.reduce((a, s) => a + amtOf(s), 0);
+  const R = [['p2', 'P2', 'Installed · <b>not on the MNRE portal</b>', 'Survey → Department Excel (3 columns) + consent form'],
+    ['p1', 'P1', 'Installed · on the portal · <b>consent pending</b>', 'Collect and upload the consent form – ULA the same day'],
+    ['dcr', 'M_DCR', 'ULA created · <b>DCR pending</b>', 'Prepare and submit the DCR'],
+    ['otp', 'M_OTP', 'DCR done · <b>portal installation (OTP) pending</b>', 'Consumer OTP on the working mobile'],
+    ['insp', 'M_INSP', 'OTP done · <b>inspection pending</b>', 'Follow up the department inspection'],
+    ['done', 'M_DONE', 'Inspection done · <b>subsidy not yet redeemed</b>', 'Money normally 18–30 days after inspection' + (late.length ? ' · <b style="color:var(--bad)">' + late.length + ' over 30 days</b>' : '')],
+    ['red', 'M_RED', 'Subsidy redeemed / verified · <b>waiting for disbursal</b>', 'Follow up the release'],
+    ['oth', 'M_OTH', 'Installed · other', 'CA not verified, consent accepted without ULA – MIS to check']].filter(r => c[r[0]]);  // 'paid' is not waiting – shown in the note above
+  const tot = R.reduce((a, r) => a + c[r[0]], 0), tv = R.reduce((a, r) => a + v[r[0]], 0), rs = SUBSIDY();
+  return '<h3 class="sec" style="color:var(--bad)">Subsidy waiting on installed houses · ' + crore(tv) + ' (' + tot.toLocaleString('en-IN') + ' houses × ₹' + rs.toLocaleString('en-IN') + ')</h3>' +
+    (insp.length ? '<div class="note ok" style="margin-bottom:10px"><b>Coming in:</b> ' + crore(sum(insp)) + ' on ' + insp.length + ' inspected houses – money normally 18–30 days after inspection. ' +
+      (soon.length ? 'Due within 30 days of inspection: ' + crore(sum(soon)) + ' (' + soon.length + '). ' : '') +
+      (late.length ? '<b style="color:var(--bad)">Over 30 days and still not received: ' + crore(sum(late)) + ' (' + late.length + ' houses) – follow up.</b>' : '') +
+      (c.paid ? ' Received so far: ' + crore(v.paid) + ' (' + c.paid + ' houses).' : '') + '</div>' : '') +
+    '<div class="tw money-wrap"><table class="money"><thead><tr><th>Where the house is stuck</th><th class="num">Houses</th><th class="num">Subsidy waiting</th><th>What releases it</th></tr></thead><tbody>' +
+    R.map(r => '<tr class="click" data-list="' + r[1] + '"><td>' + r[2] + '</td><td class="num">' + c[r[0]].toLocaleString('en-IN') + '</td><td class="rs">' + crore(v[r[0]]) + '</td><td class="small">' + r[3] + '</td></tr>').join('') +
+    '</tbody><tfoot><tr><td>All installed houses</td><td class="num">' + tot.toLocaleString('en-IN') + '</td><td class="rs">' + crore(tv) + '</td><td class="small">Click a row to see the houses.</td></tr></tfoot></table>' +
+    '<p class="small muted" style="margin:6px 2px 0">Installed = done ' + A.filter(s => s.ins === 'D').length.toLocaleString('en-IN') + ' + in progress ' + A.filter(s => s.ins && s.ins !== 'D').length.toLocaleString('en-IN') +
+    ' (Installations report). Subsidy ₹' + rs.toLocaleString('en-IN') + ' per house as per the agreement.</p></div>';
+}
 function card(key, v, l, s, cls, pct) {
   return '<button class="card ' + (cls || '') + '" data-list="' + key + '"><div class="v">' + v.toLocaleString('en-IN') + '</div><div class="l">' + l + '</div>' +
     (s ? '<div class="s muted">' + s + '</div>' : '') + (pct != null ? '<div class="bar"><i style="width:' + pct + '%"></i></div>' : '') + '</button>';
@@ -249,7 +299,8 @@ function card(key, v, l, s, cls, pct) {
 function dash() {
   const A = scope(), n = f => A.filter(f).length, sv = f => A.filter(s => f(s) && s.sv).length;
   const p = k => { const t = n(s => s.prio === k), d = sv(s => s.prio === k); return [t, d, t ? Math.round(d * 100 / t) : 0]; };
-  const P1 = p('P1'), P2 = p('P2'), P3 = p('P3'), P4 = p('P4'), ula = n(s => s.ula);
+  const P1 = p('P1'), P2 = p('P2'), P3 = p('P3'), P4 = p('P4'), ula = n(s => s.ula), N = v => Number(v || 0).toLocaleString('en-IN');
+  const onP = n(s => s.cl), offP = A.length - onP, chk = n(s => s.cl && !['P1', 'P3', 'ULA'].includes(s.prio)), oth = n(s => !s.cl && !['P2', 'P4', 'SURVEY', 'NOTFEAS'].includes(s.prio));
   const m = D.meta || {}, T = D.target || 20378, inst = S.filter(s => s.ins === 'D').length, found = S.filter(s => s.ins || s.feas).length, bs = D.bstat || {};
   const pc = v => Math.min(100, Math.round(v * 100 / T));
   const mgmt = ROLE === 'viewer' || ROLE === 'owner';
@@ -259,29 +310,29 @@ function dash() {
       '<div class="grow"><b>' + inst.toLocaleString('en-IN') + '</b> installed (' + pc(inst) + '%)<div class="bar"><i style="width:' + pc(inst) + '%"></i></div></div>' +
       '<div class="grow"><b>' + found.toLocaleString('en-IN') + '</b> feasible found so far (installed + feasible) – ' + (found >= T ? 'enough' : (T - found).toLocaleString('en-IN') + ' more to find in the Balance') +
       '<div class="bar"><i style="width:' + pc(found) + '%;background:var(--accent)"></i></div></div></div>' +
-    '<h3 class="sec">Priority tab · consent forms to collect</h3><div class="cards">' +
-      card('P1', P1[0], 'P1 · installed, consent only', P1[1] + ' surveyed (' + P1[2] + '%) – fastest to ULA', 'p1', P1[2]) +
-      card('P2', P2[0], 'P2 · installed, not in Consumer List', P2[1] + ' surveyed – Excel + consent', 'p2', P2[2]) +
-      card('P3', P3[0], 'P3 · feasible, in Consumer List', P3[1] + ' surveyed – consent', 'p3', P3[2]) +
-      card('P4', P4[0], 'P4 · feasible, not in Consumer List', P4[1] + ' surveyed – Excel + consent', 'p4', P4[2]) +
-      card('REVISIT', n(s => s.na && !s.sv), 'Customer not available', n(s => s.na && !s.sv && s.na[0] >= 3) + ' visited 3 times or more', 'fu') + '</div>' +
-    '<h3 class="sec">After the survey · department Excel upload</h3><div class="cards">' +
-      '<button class="card ' + (bs.red ? 'red' : '') + '" data-page="survey"><div class="v">' + (bs.red || 0) + '</div><div class="l">Batches needing action</div><div class="s muted">' + (bs.awaiting || 0) + ' upload outcome not recorded</div></button>' +
-      card('REJ', n(s => s.rej), 'Rejected by the portal', 'from the Invalid Consumer Data files', n(s => s.rej) ? 'fu' : '') +
-      card('MOB', n(s => s.shared > 0 && PGRP.includes(s.prio)), 'Mobile shared with another house', 'likely to be rejected – get the working mobile', 'fu') + '</div>' +
-    '<h3 class="sec">Balance tab · feasibility survey</h3><div class="cards">' +
-      card('SURVEY', n(s => s.prio === 'SURVEY'), 'Balance – survey to do', 'feasibility not known yet', 'bal') +
-      card('NOTFEAS', n(s => s.prio === 'NOTFEAS'), 'Not feasible', 'from the PMSG survey', 'bal') +
-      card('CHECK', n(s => s.prio === 'CHECK'), 'In our MNRE list, not in PMSG cloud', n(s => s.prio === 'CHECK').toLocaleString('en-IN') + ' houses · to be added to PMSG cloud', 'fu') + '</div>' +
-    '<h3 class="sec">Portal</h3><div class="cards">' +
-      card('ULA', ula, 'ULA application created', '') +
-      card('DCR', n(s => s.dcr), 'DCR done', n(s => s.ula && s.ins && !s.dcr) + ' pending with ULA') +
-      card('OTP', n(s => s.otp), 'Portal installation (OTP)', n(s => s.ula && !s.otp) + ' pending with ULA') +
-      card('INSP', n(s => s.insp), 'Portal inspection', n(s => s.otp && !s.insp) + ' pending after OTP') + '</div>' +
-    '<h3 class="sec">MIS follow-up</h3><div class="cards">' +
-      card('CA_NV', n(s => s.prio === 'CA_NV'), 'CA not verified / not eligible', 'follow up with MNRE', 'fu') +
-      card('CONSENT_ACC', n(s => s.prio === 'CONSENT_ACC'), 'Consent accepted – no ULA', 'check on the portal', 'fu') +
-      card('PROB', n(s => s.prob), 'Data problems in the files', 'bad numbers, duplicates, mobile mismatch', 'fu') + '</div>' +
+    moneyTable(A) +
+    '<h3 class="sec">On the MNRE portal (department\'s list) · ' + N(onP) + ' of our ' + N(A.length) + ' houses</h3><div class="cards">' +
+      card('P1', P1[0], '<b>Installed · consent pending</b>', 'Collect the consent form now – ULA the same day · ' + P1[1] + ' surveyed', 'p1', P1[2]) +
+      card('P3', P3[0], '<b>Not installed, feasible · consent pending</b>', 'Collect the consent form now · ' + P3[1] + ' surveyed', 'p3', P3[2]) +
+      card('ULA', ula, '<b>ULA created</b>', 'In the DCR → OTP → inspection track') +
+      card('PCHK', chk, '<b>Needs checking</b>', 'CA not verified / not eligible, consent accepted without ULA, not feasible or feasibility not known', chk ? 'fu' : '') + '</div>' +
+    '<h3 class="sec" style="color:var(--bad)">Not yet on the MNRE portal · ' + N(offP) + ' houses · survey them; for the installed and feasible ones, give the Department the Excel (3 columns) and the consent forms</h3><div class="cards">' +
+      card('P2', P2[0], '<b>Installed · not on the portal</b>', 'Survey (consent form + working mobile) → Excel (3 columns) + consent form to the Department · ' + P2[1] + ' surveyed · ' + N(n(s => s.prio === 'P2' && s.shared > 0)) + ' shared mobile', 'p2', P2[2]) +
+      card('P4', P4[0], '<b>Feasible, not installed · not on the portal</b>', 'Survey → Excel (3 columns) + consent form to the Department · ' + P4[1] + ' surveyed', 'p4', P4[2]) +
+      card('SV_OFF', n(s => !s.cl && s.prio === 'SURVEY'), '<b>Feasibility not known</b>', 'PMSG cloud feasibility survey still to be done', 'bal') +
+      card('NF_OFF', n(s => !s.cl && s.prio === 'NOTFEAS'), '<b>Not feasible</b>', 'No action', 'bal') +
+      (oth ? card('OTH_OFF', oth, '<b>Other</b>', 'bad numbers, ULA not on the list', 'fu') : '') + '</div>' +
+    '<h3 class="sec">Field work</h3><div class="cards">' +
+      card('REVISIT', n(s => s.na && !s.sv), '<b>Customer not available</b>', 'Revisit · ' + n(s => s.na && !s.sv && s.na[0] >= 3) + ' visited 3 times or more', 'fu') +
+      card('MOB', n(s => s.shared > 0 && PGRP.includes(s.prio)), '<b>Database mobile shared with another house</b>', 'Likely to be rejected – get the working mobile', 'fu') + '</div>' +
+    '<h3 class="sec">After the survey · Department Excel upload</h3><div class="cards">' +
+      '<button class="card ' + (bs.red ? 'red' : '') + '" data-page="survey"><div class="v">' + (bs.red || 0) + '</div><div class="l"><b>Upload batches needing action</b></div><div class="s muted">' + (bs.awaiting || 0) + ' upload outcome not recorded</div></button>' +
+      card('REJ', n(s => s.rej), '<b>Rejected by the portal</b>', 'Get the correct mobile and upload again', n(s => s.rej) ? 'fu' : '') + '</div>' +
+    '<h3 class="sec">Portal progress (houses with ULA)</h3><div class="cards">' +
+      card('DCR', n(s => s.dcr), '<b>DCR done</b>', n(s => s.ula && s.ins && !s.dcr) + ' installed with ULA, DCR pending') +
+      card('OTP', n(s => s.otp), '<b>Portal installation (OTP) done</b>', n(s => s.ula && !s.otp) + ' with ULA, OTP pending') +
+      card('INSP', n(s => s.insp), '<b>Portal inspection done</b>', n(s => s.otp && !s.insp) + ' pending after OTP') + '</div>' +
+    (n(s => s.prob) ? '<h3 class="sec">Office clean-up</h3><div class="cards">' + card('PROB', n(s => s.prob), '<b>Data problems in the files</b>', 'bad numbers, duplicates, mobile mismatch', 'fu') + '</div>' : '') +
     (ROLE === 'viewer' ? '<details class="more"><summary>Details by distribution</summary>' + distTable(A) + '</details>' : distTable(A)) +
     '<p class="small muted">Click a badge to open its list. Data: daily files updated ' + esc(m.at || 'never') + (m.by ? ' by ' + esc(m.by) : '') + '.</p>';
 }
@@ -294,8 +345,20 @@ function brief(T, inst, found) {
   const bal = n(s => s.prio === 'SURVEY'), need = Math.max(0, T - found), ula = n(s => s.ula);
   const svWeek = Object.keys(D.sv || {}).filter(sn => String(D.sv[sn][0]).slice(0, 10) >= wk), bySn = {}; S.forEach(s => bySn[s.sn] = s);
   const wkBy = {}; svWeek.forEach(sn => { const k = bySn[sn] ? bySn[sn].prio : 'other'; wkBy[k] = (wkBy[k] || 0) + 1; });
-  const rej = n(s => s.rej), chk = n(s => s.prio === 'CHECK'), left = PGRP.reduce((a, k) => a + n(s => s.prio === k && !s.sv), 0);
-  const L = [];
+  const rej = n(s => s.rej), left = PGRP.reduce((a, k) => a + n(s => s.prio === k && !s.sv), 0);
+  const L = [], onP = n(s => s.cl), offP = S.length - onP;
+  L.push('<b>On the MNRE portal: ' + N(onP) + ' of our ' + N(S.length) + ' houses.</b> ' + N(n(s => s.prio === 'P1')) + ' installed and ' + N(n(s => s.prio === 'P3')) +
+    ' feasible need <b>only the consent form</b> (ULA the same day) · ULA already created ' + N(ula) + ' · ' + N(n(s => s.cl && !['P1', 'P3', 'ULA'].includes(s.prio))) + ' need checking.');
+  L.push('<b class="red-t">Not yet on the portal: ' + N(offP) + ' houses – survey them; for the installed and feasible ones, give the Department the Excel (3 columns) and the consent forms.</b> Installed ' + N(n(s => s.prio === 'P2')) +
+    ' · feasible ' + N(n(s => s.prio === 'P4')) + ' · feasibility not known ' + N(n(s => !s.cl && s.prio === 'SURVEY')) +
+    ' · not feasible ' + N(n(s => !s.cl && s.prio === 'NOTFEAS')) + '.');
+  { const mc = {}, mv = {}; S.forEach(s => { const k = moneyStage(s); if (k) { mc[k] = (mc[k] || 0) + 1; mv[k] = (mv[k] || 0) + amtOf(s); } });
+    const W = ['p2', 'p1', 'dcr', 'otp', 'insp', 'done', 'red', 'oth'], it = W.reduce((a, k) => a + (mc[k] || 0), 0), iv = W.reduce((a, k) => a + (mv[k] || 0), 0), rs = SUBSIDY();
+    const late = S.filter(s => s.ins && ['done', 'red'].includes(moneyStage(s)) && daysSince(s.idt) > 30);
+    L.push('<b class="red-t">Subsidy waiting on ' + N(it) + ' installed houses: ' + crore(iv) + '</b> (₹' + N(rs) + ' each) – not on the portal ' + crore(mv.p2 || 0) +
+      ' · consent pending ' + crore(mv.p1 || 0) + ' · DCR pending ' + crore(mv.dcr || 0) + ' · OTP pending ' + crore(mv.otp || 0) +
+      ' · inspection pending ' + crore(mv.insp || 0) + ' · inspected, money due (18–30 days) ' + crore((mv.done || 0) + (mv.red || 0)) +
+      (late.length ? ' · <b>' + late.length + ' inspected over 30 days ago and still not received</b>' : '') + (mc.paid ? '. Received so far ' + crore(mv.paid) : '') + '.'); }
   L.push('Target <b>' + N(T) + '</b> houses. <b>' + N(inst) + ' installed (' + pc(inst, T) + ').</b> ' + N(found) + ' feasible houses found so far' +
     (need ? ' – about <b>' + N(Math.ceil(need / 100) * 100) + ' more</b> to be found among the ' + N(bal) + ' houses not yet surveyed.' : ' – enough to reach the target.'));
   L.push('Portal: <b>ULA created ' + N(ula) + '</b> · DCR ' + N(n(s => s.dcr)) + ' · Portal installation (OTP) ' + N(n(s => s.otp)) + ' · Inspection ' + N(n(s => s.insp)) + '.');
@@ -308,7 +371,6 @@ function brief(T, inst, found) {
   const att = [];
   if (bs.red) att.push(bs.red + ' department upload batch' + (bs.red > 1 ? 'es' : '') + ' waiting for action');
   if (rej) att.push(N(rej) + ' house' + (rej > 1 ? 's' : '') + ' rejected by the portal (correct mobile needed)');
-  if (chk) att.push(N(chk) + ' houses in our MNRE list not in PMSG cloud (with RESCO)');
   const html = '<div class="brief" id="brief"><h2>' + esc(site) + ' – ' + ist.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric', timeZone: 'UTC' }) + '</h2>' +
     '<div class="when">From the files updated ' + esc(m.at || '') + '</div><ul>' + L.map(x => '<li>' + x + '</li>').join('') +
     (att.length ? '<li class="att"><b>Needs attention:</b> ' + att.join(' · ') + '.</li>' : '<li class="ok"><b>Nothing waiting for action.</b></li>') + '</ul></div>';
@@ -324,20 +386,20 @@ function distTable(A) {
       if (s.prio === 'CHECK') { x.chk++; return; }
       x.tot++; if (PGRP.includes(s.prio)) { x[s.prio]++; if (s.sv) x[s.prio + 's']++; } else if (['ULA', 'SURVEY', 'NOTFEAS'].includes(s.prio)) x[s.prio]++; else x.other++;
       if (s.ins) x.ins++; if (s.dcr) x.dcr++; if (s.otp) x.otp++; if (s.insp) x.insp++; }); });
-  const rows = Object.keys(g).filter(d => g[d].tot || g[d].chk).sort((a, b) => (!g[a].tot) - (!g[b].tot) || (g[b].P1 - g[b].P1s) - (g[a].P1 - g[a].P1s) || a.localeCompare(b));
+  const rows = Object.keys(g).filter(d => g[d].tot).sort((a, b) => (!g[a].tot) - (!g[b].tot) || (g[b].P1 - g[b].P1s) - (g[a].P1 - g[a].P1s) || a.localeCompare(b));
   const f = v => v ? v.toLocaleString('en-IN') : '–';
   const p = (x, k) => x[k] ? '<b>' + f(x[k] - x[k + 's']) + '</b>' + (x[k + 's'] ? '<span class="sub">' + x[k + 's'] + ' surveyed</span>' : '') : '–';
   const cells = x => '<td class="num tot bl">' + f(x.tot) + '</td><td class="num">' + p(x, 'P1') + '</td><td class="num">' + p(x, 'P2') + '</td><td class="num">' + f(x.ULA) +
     '</td><td class="num">' + p(x, 'P3') + '</td><td class="num">' + p(x, 'P4') + '</td><td class="num">' + f(x.SURVEY) + '</td><td class="num">' + f(x.NOTFEAS) + '</td><td class="num">' + f(x.other) +
-    '</td><td class="num bl">' + f(x.ins) + '</td><td class="num">' + f(x.dcr) + '</td><td class="num">' + f(x.otp) + '</td><td class="num">' + f(x.insp) + '</td><td class="num bl">' + f(x.chk) + '</td>';
+    '</td><td class="num bl">' + f(x.ins) + '</td><td class="num">' + f(x.dcr) + '</td><td class="num">' + f(x.otp) + '</td><td class="num">' + f(x.insp) + '</td>';
   return '<h3 class="sec">By distribution</h3><p class="small muted">Left block: every house of the PMSG cloud list is in exactly one column – they add up to <b>Total</b>. P1–P4 show the houses still to survey (surveyed ones below). ' +
-    'Right block: progress – Installed, DCR, OTP and Inspection overlap the left block and do <b>not</b> add to Total. The last column is outside Total.</p>' +
-    '<div class="tw"><table><thead><tr class="band"><th colspan="2"></th><th colspan="9" class="bl">Where every house is · adds up to Total</th><th colspan="4" class="bl">Progress · does not add</th><th class="bl">Outside Total</th></tr>' +
+    'Right block: progress – Installed, DCR, OTP and Inspection overlap the left block and do <b>not</b> add to Total.</p>' +
+    '<div class="tw"><table><thead><tr class="band"><th colspan="2"></th><th colspan="9" class="bl">Where every house is · adds up to Total</th><th colspan="4" class="bl">Progress · does not add</th></tr>' +
     '<tr><th>Distribution</th><th>Section</th><th class="num tot bl">Total</th><th class="num">P1 consent</th><th class="num">P2 Excel + consent</th><th class="num">ULA done</th><th class="num">P3 consent</th><th class="num">P4 Excel + consent</th>' +
-    '<th class="num">Balance</th><th class="num">Not feasible</th><th class="num">Other</th><th class="num bl">Installed</th><th class="num">DCR</th><th class="num">OTP</th><th class="num">Inspection</th><th class="num bl">MNRE only</th></tr></thead><tbody>' +
+    '<th class="num">Balance</th><th class="num">Not feasible</th><th class="num">Other</th><th class="num bl">Installed</th><th class="num">DCR</th><th class="num">OTP</th><th class="num">Inspection</th></tr></thead><tbody>' +
     rows.map(d => '<tr class="click" data-vil="' + esc(d) + '"><td><b>' + esc(d) + '</b></td><td>' + esc(g[d].sec) + '</td>' + cells(g[d]) + '</tr>').join('') +
     '</tbody><tfoot><tr><td>All</td><td></td>' + cells(all) + '</tr></tfoot></table></div>' +
-    '<p class="small muted">Other = CA not verified, consent accepted without ULA, bad service numbers. MNRE only = in our MNRE list, not in PMSG cloud.</p>';
+    '<p class="small muted">Other = CA not verified, consent accepted without ULA, bad service numbers.</p>';
 }
 function listRows() {
   const L = LISTS[LIST || 'P1'], A = scope().filter(L.f);
@@ -351,8 +413,8 @@ function listPage() {
   $('page').innerHTML = '<div class="chips">' + Object.keys(LISTS).map(k => '<button class="chip' + (k === LIST ? ' on' : '') + '" data-lst="' + k + '">' + esc(LISTS[k].t.split(' (')[0].split(' – ')[0]) + '</button>').join('') + '</div>' +
     (L.chips.length ? '<div class="chips">' + L.chips.map(c => '<button class="chip' + (c[0] === CHIP ? ' on' : '') + '" data-chip="' + c[0] + '">' + esc(c[1]) + '</button>').join('') + '</div>' : '') +
     '<div class="toolbar"><h2>' + R.length.toLocaleString('en-IN') + ' service numbers</h2>' + (can.work() ? '<button class="btn" id="csv">⬇ This list (CSV)</button>' : '') + '</div>' +
-    (LIST === 'CHECK' ? '<div class="note">These houses are in the <b>MNRE Consumer List of our VSA login</b> but <b>not in PMSG cloud</b> (the 33,552). ' +
-      'The MNRE file has no consumer name, and the distribution is known only where another house shares the number code. <b>To be added to PMSG cloud – confirm with RESCO before any field visit.</b></div>' +
+    (LIST === 'CHECK' ? '<div class="note">These houses are in the <b>department\'s Consumer List</b> (APSPDCL implementation agency) but <b>not in our PMSG cloud list</b> of 33,552. ' +
+      'They may belong to another vendor. <b>Kept aside – not counted in any total, not shown to supervisors.</b> The file has no consumer name, and the distribution is known only where another house shares the number code.</div>' +
       (R.length ? '<div class="tw"><table><thead><tr><th>Service no.</th><th>Mobile (MNRE)</th><th>Distribution</th><th>Section</th><th>CA status</th><th>Consent status</th><th>ULA</th></tr></thead><tbody>' +
         R.slice(0, 2500).map(s => '<tr><td class="mono">' + esc(s.sn) + '</td><td class="mono">' + esc(s.mob) + '</td><td>' + esc(s.dist) + '</td><td>' + esc(s.sec) + '</td><td>' +
           ({ V: 'Verified & eligible', N: '<span style="color:var(--bad)">Not verified</span>', X: '<span style="color:var(--bad)">Verified & not eligible</span>' }[s.ca] || esc(s.ca)) + '</td><td>' +
