@@ -59,6 +59,8 @@ tr.below td { background: var(--warn-soft); }
 .brief h2 { margin: 0 0 2px; font-size: 18px; } .brief .when { font-size: 12px; color: var(--muted); margin-bottom: 8px; }
 .brief ul { margin: 0; padding-left: 18px; } .brief li { margin: 5px 0; line-height: 1.5; } .brief li.att { color: var(--bad); } .brief li.ok { color: var(--ok); }
 details.more > summary { cursor: pointer; font-weight: 600; margin: 6px 0 12px; color: var(--accent); }
+.flink { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; background: var(--panel); border: 1px solid var(--line); border-left: 4px solid var(--ok); border-radius: 10px; padding: 10px 14px; margin-bottom: 14px; }
+.flink code { font-size: 15px; font-weight: 700; color: var(--accent); } .flink .grow { flex: 1; min-width: 160px; }
 tr.band th { position: static; text-align: center; font-size: 11.5px; letter-spacing: .02em; text-transform: uppercase; border-bottom: 2px solid var(--line); }
 th.bl, td.bl { border-left: 2px solid var(--line); } td.tot, th.tot { font-weight: 700; background: var(--info-soft); }
 td .sub { display: block; font-size: 11px; color: var(--muted); font-weight: 400; } tfoot td { font-weight: 700; background: var(--info-soft); } tr.leave td { color: var(--grey-ink); }
@@ -394,7 +396,7 @@ async function surveyPage(reload) {
     (!b.outcome && can.work() ? '<form data-bout="' + esc(b.id) + '"><select name="o"><option value="">Upload outcome…</option><option>All accepted</option><option>Some rejected</option></select>' +
       '<label class="small">Photo of the portal summary <input type="file" name="p" accept="image/*"></label><button class="btn pri" type="submit">Save</button></form>' : '') + '</div>';
   $('page').innerHTML =
-    (xb.length ? '<div class="box" style="margin-bottom:14px"><h3>Department Excel uploads ' + (open.length ? '<span class="b bad">' + open.length + ' need action</span>' : '<span class="b ok">all done</span>') + '</h3>' +
+    fieldLinkBox() + (xb.length ? '<div class="box" style="margin-bottom:14px"><h3>Department Excel uploads ' + (open.length ? '<span class="b bad">' + open.length + ' need action</span>' : '<span class="b ok">all done</span>') + '</h3>' +
       '<p class="small muted">A batch stays red until its outcome is recorded with the photo, and until every house is in the Consumer List or listed as rejected.</p>' +
       open.map(bline).join('') + (xb.length > open.length ? '<details><summary class="small">Done batches (' + (xb.length - open.length) + ')</summary>' + xb.filter(b => !(b.red || !b.outcome)).map(bline).join('') + '</details>' : '') + '</div>' : '') +
     (!can.work() ? '' : '<div class="note"><b>How the download works (MIS):</b> <b>⬇ Download new</b> gives <b>one ZIP</b> of the surveys not downloaded yet. Inside:' +
@@ -450,6 +452,15 @@ async function svFile(btn, fn) {
   btn.disabled = false; btn.textContent = t;
 }
 
+// ---------------------------------------------------------------- supervisors' phone link (Manager / MIS send it on WhatsApp)
+const FIELD_LINK = window.SV_FIELD_LINK || 'https://tytogrid.com/kuppam';
+function fieldLinkBox() {
+  if (!can.work()) return '';
+  return '<div class="flink"><div class="grow"><div class="small muted">Supervisors\' phone link – no login. Send it to every supervisor.</div><code>' + esc(FIELD_LINK.replace(/^https?:\/\//, '')) + '</code></div>' +
+    '<button class="btn" id="flCopy">⧉ Copy</button><a class="btn pri" target="_blank" rel="noopener" href="https://wa.me/?text=' +
+    encodeURIComponent('Kuppam survey – open this link on your phone in Chrome, type your name and start:\n' + FIELD_LINK) + '">WhatsApp</a></div>';
+}
+
 // ---------------------------------------------------------------- supervisors (Priority tab, 30 visits a day)
 let SUP = null, SUPN = '';
 async function supPage(reload) {
@@ -460,8 +471,8 @@ async function supPage(reload) {
   const T = SUP.target, R = SUP.rows.filter(r => !SUPN || r.name === SUPN), names = [...new Set(SUP.rows.map(r => r.name))].sort();
   const today = new Date(Date.now() + 5.5 * 36e5).toISOString().slice(0, 10), td = SUP.rows.filter(r => r.day === today);
   const flags = ROLE !== 'viewer';
-  const remark = r => r.leave ? 'On leave' : [r.below ? 'Below ' + T : '', r.highNa ? 'Over half not available' : '', r.rushed ? r.rushed + ' rushed (<3 min)' : '', r.gps ? r.gps + ' same GPS' : '', r.photo ? r.photo + ' photo reused' : ''].filter(Boolean).join(' · ');
-  $('page').innerHTML = '<div class="note">Priority tab only. Target <b>' + T + ' visits a day</b> per supervisor – a "customer not available" visit counts (with GPS and photo). Under ' + T + ' gets a remark unless the Manager marks leave.' +
+  const remark = r => r.leave ? 'On leave' : [r.below ? 'Below ' + T : '', r.highNa ? 'Over half not available' : '', !flags ? '' : r.rushed ? r.rushed + ' rushed (<3 min)' : '', flags && r.gps ? r.gps + ' same GPS' : '', flags && r.photo ? r.photo + ' photo reused' : ''].filter(Boolean).join(' · ');
+  $('page').innerHTML = fieldLinkBox() + '<div class="note">Priority tab only. Target <b>' + T + ' visits a day</b> per supervisor – a "customer not available" visit counts (with GPS and photo). Under ' + T + ' gets a remark unless the Manager marks leave.' +
     (flags ? ' Flags: <b>rushed</b> = less than 3 minutes after the previous visit · <b>same GPS</b> = same spot as another visit that day · <b>photo reused</b> = same photo used for another house.' : '') + '</div>' +
     '<div class="cards">' + '<div class="card"><div class="v">' + td.length + '</div><div class="l">Supervisors working today</div></div>' +
       '<div class="card"><div class="v">' + td.reduce((a, r) => a + r.visits, 0) + '</div><div class="l">Visits today</div></div>' +
@@ -542,6 +553,7 @@ document.addEventListener('click', async e => {
   if (t.id === 'svEE') return svFile(t, 'mobileChanges');
   if (t.id === 'svReload') return surveyPage(true);
   if (t.id === 'supReload') return supPage(true);
+  if (t.id === 'flCopy') { try { await navigator.clipboard.writeText(FIELD_LINK); toast('Link copied – paste it in WhatsApp.'); } catch (er) { prompt('Copy this link:', FIELD_LINK); } return; }
   if (t.id === 'supXls') { t.disabled = true; try { saveB64(await run('supervisorReport', KEY, 31)); } catch (er) { toast(er.message || er, 6000); } t.disabled = false; return; }
   if (t.dataset.leave) { const p = t.dataset.leave.split('|'); t.disabled = true; try { SUP = JSON.parse(await run('setLeave', KEY, p[0], p[1], p[2] === '1')); supPage(); } catch (er) { toast(er.message || er); t.disabled = false; } return; }
   if (t.dataset.svpdf) { t.disabled = true; try { saveB64(await run('getSurveyFile', KEY, t.dataset.svpdf)); } catch (er) { toast(er.message || er); } t.disabled = false; return; }
