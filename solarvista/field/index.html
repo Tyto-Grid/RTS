@@ -374,19 +374,19 @@ async function onConsent(file) {
     if (file.size > 10 * 1024 * 1024) { alert('PDF larger than 10 MB – photograph the form instead.'); return; }
     if (file.size <= 300 * 1024) {
       F.consent = (await blobToDataUrl(file)).replace(/^data:[^;]*;/, 'data:application/pdf;'); $('cfWrap').classList.add('hidden');
-      $('cfInfo').className = 'msg m-ok'; $('cfInfo').textContent = '✓ PDF: ' + file.name + ' (' + Math.round(file.size / 1024) + ' KB) – saved as <service no>.pdf';
+      $('cfInfo').className = 'msg m-ok'; $('cfInfo').textContent = '✓ PDF: ' + file.name + ' (' + Math.round(file.size / 1024) + ' KB) – saved as <service no>M.pdf / F.pdf';
       return;
     }
     $('cfInfo').className = 'msg m-info'; $('cfInfo').textContent = 'Making the PDF smaller (' + Math.round(file.size / 1024) + ' KB)…';
     try { const r = await shrinkPdf(file); F.consent = r.url; $('cf').src = r.url; $('cfWrap').classList.remove('hidden');
-      $('cfInfo').className = 'msg m-ok'; $('cfInfo').textContent = '✓ PDF made smaller: ' + Math.round(file.size / 1024) + ' KB → ' + kb(r.url) + ' KB' + (r.pages > 3 ? ' (first 3 of ' + r.pages + ' pages)' : '') + ' – saved as <service no>.pdf'; }
+      $('cfInfo').className = 'msg m-ok'; $('cfInfo').textContent = '✓ PDF made smaller: ' + Math.round(file.size / 1024) + ' KB → ' + kb(r.url) + ' KB' + (r.pages > 3 ? ' (first 3 of ' + r.pages + ' pages)' : '') + ' – saved as <service no>M.pdf / F.pdf'; }
     catch (e) { if (e.quality) { F.consent = null; $('cfWrap').classList.add('hidden'); $('cfInfo').className = 'msg m-bad'; $('cfInfo').textContent = '✗ ' + e.message + ' Scan again or photograph the form.'; return; }
       F.consent = (await blobToDataUrl(file)).replace(/^data:[^;]*;/, 'data:application/pdf;'); $('cfWrap').classList.add('hidden');
       $('cfInfo').className = 'msg m-warn'; $('cfInfo').textContent = 'PDF kept as it is (' + Math.round(file.size / 1024) + ' KB) – could not make it smaller without internet. A photo of the form gives a smaller file.'; }
   } else {
     try { const r = await consentJpeg(file); F.consent = r.url; $('cf').src = F.consent; $('cfWrap').classList.remove('hidden');
       $('cfInfo').className = r.q.ok ? 'msg m-ok' : 'msg m-warn';
-      $('cfInfo').textContent = r.q.ok ? '✓ Photo clear (' + kb(F.consent) + ' KB, black and white) – it becomes a PDF named <service no>.pdf'
+      $('cfInfo').textContent = r.q.ok ? '✓ Photo clear (' + kb(F.consent) + ' KB, black and white) – it becomes a PDF named <service no>M.pdf / F.pdf'
         : '⚠ Still not clear after 3 tries – saved anyway. MIS may ask for a re-survey. (' + r.q.why + ')'; }
     catch (e) { if (e.quality) { F.consent = null; $('cfWrap').classList.add('hidden'); $('cfInfo').className = 'msg m-bad';
         $('cfInfo').textContent = '✗ ' + e.message + ' Take the photo again (try ' + (CF_TRIES + 1) + ' of 3).'; return; }
