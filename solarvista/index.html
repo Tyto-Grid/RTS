@@ -363,7 +363,8 @@ function brief(T, inst, found) {
       ' · inspection pending ' + crore(mv.insp || 0) + ' · inspected, money due (18–30 days) ' + crore((mv.done || 0) + (mv.red || 0)) +
       (late.length ? ' · <b>' + late.length + ' inspected over 30 days ago and still not received</b>' : '') + (mc.paid ? '. Received so far ' + crore(mv.paid) : '') + '.'); }
   L.push('Target <b>' + N(T) + '</b> houses. <b>' + N(inst) + ' installed (' + pc(inst, T) + ').</b> ' + N(found) + ' feasible houses found so far' +
-    (need ? ' – about <b>' + N(Math.ceil(need / 100) * 100) + ' more</b> to be found among the ' + N(bal) + ' houses not yet surveyed.' : ' – enough to reach the target.'));
+    (need ? ' – about <b>' + N(Math.ceil(need / 100) * 100) + ' more</b> to be found among the ' + N(bal) + ' houses whose feasibility is not known' +
+      (n(s => s.prio === 'SURVEY' && s.cl) ? ' (' + N(n(s => s.prio === 'SURVEY' && !s.cl)) + ' not on the portal + ' + N(n(s => s.prio === 'SURVEY' && s.cl)) + ' already on it)' : '') + '.' : ' – enough to reach the target.'));
   L.push('Portal: <b>ULA created ' + N(ula) + '</b> · DCR ' + N(n(s => s.dcr)) + ' · Portal installation (OTP) ' + N(n(s => s.otp)) + ' · Inspection ' + N(n(s => s.insp)) + '.');
   L.push('Consent forms collected in the last 7 days: <b>' + N(svWeek.length) + '</b>' + (svWeek.length ? ' (' + PGRP.filter(k => wkBy[k]).map(k => k + ' ' + N(wkBy[k])).join(' · ') + ')' : '') +
     '. Still to collect: ' + N(left) + '.');
