@@ -403,7 +403,15 @@ async function surveyPage(reload) {
     '<ol><li><b>EXCEL_UPLOAD_ONLY_…xlsx</b> – only houses <b>NOT in the Consumer List</b>. Upload this Excel first. Houses already in the Consumer List are not in it – do not upload them again.</li>' +
     '<li>Folder <b>1_UPLOAD_CONSENT_NOW</b> – CA Verified: upload these consent forms now.</li>' +
     '<li>Folder <b>2_EXCEL_FIRST_then_consent</b> – upload these consent forms only after the Consumer List shows CA <b>Verified</b>.</li>' +
-    '<li>Folder <b>3_CHECK_FIRST</b> – reason given in READ_ME_FIRST.txt.</li></ol>Downloaded rows turn grey for everyone. <b>Download again</b> gives an earlier batch exactly as before.</div>') +
+    '<li>Folder <b>3_CHECK_FIRST</b> – reason given in READ_ME_FIRST.txt.</li></ol>Downloaded rows turn grey for everyone. <b>Download again</b> gives an earlier batch exactly as before.' +
+    '<br><b>Details for Kasu</b> – full record for Kasu. <b>For Department</b> – Excel in the department\'s format (Updated Mobile filled only when the mobile changed).' +
+    '<div lang="te" style="border-top:1px dashed #d6b15e;margin-top:10px;padding-top:8px"><b>డౌన్‌లోడ్ ఎలా పనిచేస్తుంది (MIS):</b> <b>⬇ Download new</b> నొక్కితే, ఇంకా డౌన్‌లోడ్ చేయని సర్వేలన్నీ <b>ఒకే ZIP</b> ఫైల్‌గా వస్తాయి. అందులో:' +
+    '<ol><li><b>EXCEL_UPLOAD_ONLY_…xlsx</b> – <b>Consumer List లో లేని</b> ఇళ్లు మాత్రమే. ముందుగా ఈ Excel ను డిపార్ట్‌మెంట్ ద్వారా అప్‌లోడ్ చేయించండి. Consumer List లో ఇప్పటికే ఉన్న ఇళ్లు ఇందులో ఉండవు – వాటిని మళ్లీ అప్‌లోడ్ చేయవద్దు.</li>' +
+    '<li>ఫోల్డర్ <b>1_UPLOAD_CONSENT_NOW</b> – CA Verified: ఈ consent ఫారాలను ఇప్పుడే పోర్టల్‌లో అప్‌లోడ్ చేయండి.</li>' +
+    '<li>ఫోల్డర్ <b>2_EXCEL_FIRST_then_consent</b> – Consumer List లో CA <b>Verified</b> అని వచ్చిన తర్వాతే ఈ consent ఫారాలను అప్‌లోడ్ చేయండి.</li>' +
+    '<li>ఫోల్డర్ <b>3_CHECK_FIRST</b> – కారణం READ_ME_FIRST.txt లో ఉంటుంది. అప్‌లోడ్ చేసే ముందు చూడండి.</li></ol>' +
+    'డౌన్‌లోడ్ చేసిన వరుసలు అందరికీ బూడిద రంగులోకి మారతాయి. <b>Download again</b> ఇదివరకటి బ్యాచ్‌ను యథాతథంగా మళ్లీ ఇస్తుంది.<br>' +
+    '<b>Details for Kasu</b> – కాసు కోసం పూర్తి వివరాలు. <b>For Department</b> – డిపార్ట్‌మెంట్ ఫార్మాట్‌లో Excel (మొబైల్ మారితేనే Updated Mobile నింపబడుతుంది).</div></div>') +
     '<div class="toolbar"><h2>' + rows.length + ' surveyed house' + (rows.length === 1 ? '' : 's') + '</h2>' +
     opt('svVil', vils.map(v => [v, v]), SVF.vil, 'All distributions') + opt('svG', [['Male', 'Male'], ['Female', 'Female'], ['Other', 'Other']], SVF.g, 'All genders') +
     opt('svP', [['P1', 'P1 – consent only'], ['P2', 'P2 – Excel + consent'], ['P3', 'P3 – feasible, consent'], ['P4', 'P4 – feasible, Excel + consent'], ['X', 'Others']], SVF.p, 'All priorities') + '</div>' +
