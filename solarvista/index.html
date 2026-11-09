@@ -60,7 +60,7 @@ tr.below td { background: var(--warn-soft); }
 .brief ul { margin: 0; padding-left: 18px; } .brief li { margin: 5px 0; line-height: 1.5; } .brief li.att { color: var(--bad); } .brief li.ok { color: var(--ok); }
 details.more > summary { cursor: pointer; font-weight: 600; margin: 6px 0 12px; color: var(--accent); }
 .flink { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; background: var(--panel); border: 1px solid var(--line); border-left: 4px solid var(--ok); border-radius: 10px; padding: 10px 14px; margin-bottom: 14px; }
-.flink code { font-size: 15px; font-weight: 700; color: var(--accent); } .flink .grow { flex: 1; min-width: 160px; }
+.flink a.btn { text-decoration: none; } .flink code { font-size: 15px; font-weight: 700; color: var(--accent); } .flink .grow { flex: 1; min-width: 160px; }
 tr.band th { position: static; text-align: center; font-size: 11.5px; letter-spacing: .02em; text-transform: uppercase; border-bottom: 2px solid var(--line); }
 th.bl, td.bl { border-left: 2px solid var(--line); } td.tot, th.tot { font-weight: 700; background: var(--info-soft); }
 td .sub { display: block; font-size: 11px; color: var(--muted); font-weight: 400; } tfoot td { font-weight: 700; background: var(--info-soft); } tr.leave td { color: var(--grey-ink); }
@@ -410,7 +410,7 @@ async function surveyPage(reload) {
     (!can.work() ? '' : '<div class="toolbar"><button class="btn pri" id="svNew"' + (fresh.length ? '' : ' disabled') + '>⬇ Download new (' + fresh.length + ')</button>' +
     '<span class="small muted">' + (fresh.length ? 'Excel ' + gc(2) + ' · folder 1: ' + gc(1) + ' · folder 2: ' + gc(2) + ' · folder 3: ' + gc(3) : '') + '</span><span class="grow"></span>' +
     '<select id="svAgain"' + ((SVD.batches || []).length ? '' : ' disabled') + '><option value="">Download again…</option>' + (SVD.batches || []).map(b => '<option value="' + esc(b.id) + '">' + esc(svBatchLabel(b)) + ' (' + b.n + ')</option>').join('') + '</select>' +
-    '<button class="btn" id="svXls">⬇ Details (Excel)</button><button class="btn" id="svEE">⬇ Mobile changes for EE</button><button class="btn" id="svReload">↻</button></div>') +
+    '<button class="btn" id="svXls" title="Full record for Kasu">⬇ Details for Kasu (Excel)</button><button class="btn" id="svDept" title="Department format">⬇ For Department (Excel)</button><button class="btn" id="svEE">⬇ Mobile changes for EE</button><button class="btn" id="svReload">↻</button></div>') +
     (rows.length ? '<div class="tw"><table><thead><tr><th>Surveyed</th><th>Service no.</th><th>Beneficiary</th><th>Gender</th><th>Mobile (working / DB)</th><th>Distribution</th><th>Download folder</th><th>Location</th><th>Surveyor</th><th>House</th><th>Consent</th></tr></thead><tbody>' +
       rows.map(r => '<tr class="' + (r.batch ? 'svdone' : '') + '"><td>' + esc(dmy(r.at)) +
         (r.batch ? '<br><span class="b">⬇ ' + esc(bt[r.batch] ? svBatchLabel(bt[r.batch]) : 'downloaded') + '</span>' : '') +
@@ -551,6 +551,7 @@ document.addEventListener('click', async e => {
   if (t.id === 'svNew') { const ids = svRows().filter(r => !r.batch).map(r => r.id); if (!ids.length) return toast('Nothing new to download.'); return svBatch(t, 'surveyBatchNew', [ids, svFilterLabel()], true); }
   if (t.id === 'svXls') return svFile(t, 'surveyDetails');
   if (t.id === 'svEE') return svFile(t, 'mobileChanges');
+  if (t.id === 'svDept') return svFile(t, 'deptExcel');
   if (t.id === 'svReload') return surveyPage(true);
   if (t.id === 'supReload') return supPage(true);
   if (t.id === 'flCopy') { try { await navigator.clipboard.writeText(FIELD_LINK); toast('Link copied – paste it in WhatsApp.'); } catch (er) { prompt('Copy this link:', FIELD_LINK); } return; }
