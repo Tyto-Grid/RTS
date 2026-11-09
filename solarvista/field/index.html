@@ -266,8 +266,20 @@ function openForm(h) {               // h = house row from the list, or null (ty
     $('snMsg').innerHTML = '<div class="msg ' + (h[4] ? 'm-warn' : 'm-info') + '"><span class="tag ' + PR[h[3]][0] + '">' + PR[h[3]][1] + '</span>' +
       (h[4] ? ' Already surveyed on ' + esc(h[4]) + ' by ' + esc(h[5]) + '. Submitting again replaces it.' : '') +
       (h[6] ? ' Not met ' + h[6] + ' time' + (h[6] > 1 ? 's' : '') + ' (last ' + esc(h[7]) + ').' : '') + (h[8] ? ' The database mobile is shared with ' + h[8] + ' other house' + (h[8] > 1 ? 's' : '') + ' – get the beneficiary\'s own number.' : '') + '</div>';
+    if (!h[4] && navigator.onLine) liveCheck(h);
   } else { $('sn').readOnly = false; setTimeout(() => $('sn').focus(), 50); }
   gps();
+}
+/** Another supervisor may have surveyed this house after the list was loaded – ask the server before the visit. */
+function liveCheck(h) {
+  run('houseStatus', h[0]).then(st => {
+    if ($('sn').value !== h[0] || !st || !st.last) return;
+    h[4] = st.last.at; h[5] = st.last.by;            // the list shows ✓ when they go back
+    const me = String($('by').value || '').trim().toUpperCase(), who = String(st.last.by || '').trim().toUpperCase();
+    $('snMsg').innerHTML = '<div class="msg m-bad"><b>' + (who === me ? 'You already surveyed this house' : 'Already surveyed by ' + esc(st.last.by)) +
+      '</b> on ' + esc(st.last.at) + '. Go to the next house. (Submitting again replaces it.)</div>';
+    try { navigator.vibrate && navigator.vibrate(200); } catch (e) {}
+  }).catch(() => {});
 }
 let snT = null;
 function snCheck() {
