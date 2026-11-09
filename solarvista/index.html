@@ -317,7 +317,7 @@ function dash() {
       card('ULA', ula, '<b>ULA created</b>', 'In the DCR → OTP → inspection track') +
       card('PCHK', chk, '<b>Needs checking</b>', 'CA not verified / not eligible, consent accepted without ULA, not feasible or feasibility not known', chk ? 'fu' : '') + '</div>' +
     '<h3 class="sec" style="color:var(--bad)">Not yet on the MNRE portal · ' + N(offP) + ' houses · survey them; for the installed and feasible ones, give the Department the Excel (3 columns) and the consent forms</h3><div class="cards">' +
-      card('P2', P2[0], '<b>Installed · not on the portal</b>', 'Survey (consent form + working mobile) → Excel (3 columns) + consent form to the Department · ' + P2[1] + ' surveyed · ' + N(n(s => s.prio === 'P2' && s.shared > 0)) + ' shared mobile', 'p2', P2[2]) +
+      card('P2', P2[0], '<b>Installed · not on the portal · ' + crore(A.filter(s => s.prio === 'P2').reduce((a, s) => a + amtOf(s), 0)) + ' blocked</b>', 'Survey (consent form + working mobile) → Excel (3 columns) + consent form to the Department · ' + P2[1] + ' surveyed · ' + N(n(s => s.prio === 'P2' && s.shared > 0)) + ' shared mobile', 'red', P2[2]) +
       card('P4', P4[0], '<b>Feasible, not installed · not on the portal</b>', 'Survey → Excel (3 columns) + consent form to the Department · ' + P4[1] + ' surveyed', 'p4', P4[2]) +
       card('SV_OFF', n(s => !s.cl && s.prio === 'SURVEY'), '<b>Feasibility not known</b>', 'PMSG cloud feasibility survey still to be done', 'bal') +
       card('NF_OFF', n(s => !s.cl && s.prio === 'NOTFEAS'), '<b>Not feasible</b>', 'No action', 'bal') +
@@ -349,6 +349,9 @@ function brief(T, inst, found) {
   const L = [], onP = n(s => s.cl), offP = S.length - onP;
   L.push('<b>On the MNRE portal: ' + N(onP) + ' of our ' + N(S.length) + ' houses.</b> ' + N(n(s => s.prio === 'P1')) + ' installed and ' + N(n(s => s.prio === 'P3')) +
     ' feasible need <b>only the consent form</b> (ULA the same day) · ULA already created ' + N(ula) + ' · ' + N(n(s => s.cl && !['P1', 'P3', 'ULA'].includes(s.prio))) + ' need checking.');
+  { const p2 = S.filter(s => s.prio === 'P2'), p2v = p2.reduce((a, s) => a + amtOf(s), 0);
+    L.push('<b class="red-t" style="font-size:1.08em">' + N(p2.length) + ' installed houses are NOT on the MNRE portal – ' + crore(p2v) + ' subsidy blocked</b> until the Department uploads them. ' +
+      'Survey them, then give the Department the Excel (3 columns) and the consent forms. ' + N(p2.filter(s => s.shared > 0).length) + ' of them have a database mobile shared with another house – get the working mobile.'); }
   L.push('<b class="red-t">Not yet on the portal: ' + N(offP) + ' houses – survey them; for the installed and feasible ones, give the Department the Excel (3 columns) and the consent forms.</b> Installed ' + N(n(s => s.prio === 'P2')) +
     ' · feasible ' + N(n(s => s.prio === 'P4')) + ' · feasibility not known ' + N(n(s => !s.cl && s.prio === 'SURVEY')) +
     ' · not feasible ' + N(n(s => !s.cl && s.prio === 'NOTFEAS')) + '.');
