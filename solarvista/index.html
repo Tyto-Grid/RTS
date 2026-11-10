@@ -58,6 +58,16 @@ tr.below td { background: var(--warn-soft); }
 .brief { background: var(--panel); border: 1px solid var(--line); border-left: 4px solid var(--side); border-radius: 10px; padding: 14px 18px; margin-bottom: 18px; }
 .brief h2 { margin: 0 0 2px; font-size: 18px; } .brief .when { font-size: 12px; color: var(--muted); margin-bottom: 8px; }
 .brief ul { margin: 0; padding-left: 18px; } .brief li { margin: 5px 0; line-height: 1.5; } .brief li.att { color: var(--bad); }
+.vp { background: #142257; color: #fff; border-radius: 16px; padding: 16px 18px; margin-bottom: 14px; }
+.vp.two { background: #1b2a63; } .vp h2 { margin: 0; font-size: 19px; color: #fff; } .vp .vk { font-size: 12.5px; color: #AEB8D6; }
+.vp .vtop { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; flex-wrap: wrap; } .vp .vsub { color: #C7CFE6; font-size: 13px; margin: 3px 0 12px; }
+.vcells { display: grid; grid-auto-flow: column; grid-auto-columns: minmax(124px, 1fr); gap: 7px; overflow-x: auto; padding-bottom: 2px; }
+.vc { position: relative; background: #2B3F86; border-radius: 8px; padding: 34px 10px 10px; min-height: 150px; display: flex; flex-direction: column; justify-content: flex-start; color: #DCE2F2; overflow: hidden; border: 0; text-align: left; font: inherit; cursor: pointer; }
+.vc::before, .vc::after { content: ""; position: absolute; top: 0; bottom: 0; width: 1.5px; background: rgba(20,34,87,.35); } .vc::before { left: 33%; } .vc::after { left: 66%; }
+.vc > * { position: relative; z-index: 1; } .vc .vt { position: absolute; top: 8px; left: 10px; font-size: 12px; font-weight: 800; background: rgba(255,255,255,.18); padding: 1px 7px; border-radius: 10px; }
+.vc .vv { font-size: 23px; font-weight: 800; line-height: 1.1; } .vc .vr { font-size: 14.5px; font-weight: 700; } .vc .vl { font-size: 12.5px; font-weight: 600; margin-top: 2px; line-height: 1.25; } .vc .va { font-size: 11.5px; opacity: .85; margin-top: 2px; line-height: 1.25; }
+.vc:hover { filter: brightness(1.12); } .vc.hot { background: #F4A62A; color: #142257; } .vc.hot .vt { background: rgba(20,34,87,.15); }
+.vc.red { background: #D9454F; color: #fff; } .vc.ok { background: #1f7a4d; color: #fff; } .vc.dim { opacity: .65; }
 table.money td, table.money th { padding: 8px 10px; } table.money td.rs { font-weight: 700; text-align: right; white-space: nowrap; } table.money tr.click:hover td { background: var(--info-soft); cursor: pointer; }
 table.money tfoot td { font-weight: 700; background: var(--info-soft); } .money-wrap { margin-bottom: 18px; } .red-t { color: var(--bad); } .brief li.ok { color: var(--ok); }
 details.more > summary { cursor: pointer; font-weight: 600; margin: 6px 0 12px; color: var(--accent); }
@@ -221,6 +231,7 @@ const LISTS = {
   M_DCR: { t: 'Installed with ULA – DCR pending', f: s => s.ins && s.ula && !s.dcr, chips: [] },
   M_OTP: { t: 'DCR done – portal installation (OTP) pending', f: s => s.ins && s.dcr && !s.otp, chips: [] },
   M_INSP: { t: 'OTP done – inspection pending', f: s => s.ins && s.otp && !s.insp, chips: [] },
+  M_DUE: { t: 'Inspected – subsidy money due', f: s => s.ins && ['done', 'red'].includes(moneyStage(s)), chips: [['', 'All'], ['late', 'Over 30 days since inspection']], c: { late: s => daysSince(s.idt) > 30 } },
   M_DONE: { t: 'Inspection done – subsidy not yet redeemed', f: s => s.ins && moneyStage(s) === 'done', chips: [['', 'All'], ['late', 'Over 30 days since inspection']], c: { late: s => daysSince(s.idt) > 30 } },
   M_RED: { t: 'Subsidy redeemed – waiting for disbursal', f: s => s.ins && moneyStage(s) === 'red', chips: [] },
   M_PAID: { t: 'Subsidy received', f: s => s.ins && moneyStage(s) === 'paid', chips: [] },
@@ -267,6 +278,29 @@ function moneyStage(s) {
   if (s.ddt) return 'paid'; if (s.rdt || s.vdt) return 'red'; if (s.insp) return 'done'; if (s.otp) return 'insp'; if (s.dcr) return 'otp'; if (s.ula) return 'dcr';
   if (s.prio === 'P2') return 'p2'; if (s.prio === 'P1') return 'p1'; return 'oth';
 }
+function topPanels(A) {
+  const c = {}, v = {}; A.forEach(s => { const k = moneyStage(s); if (k) { c[k] = (c[k] || 0) + 1; v[k] = (v[k] || 0) + amtOf(s); } });
+  const W = ['p1', 'p2', 'dcr', 'otp', 'insp', 'done', 'red', 'oth'], it = W.reduce((a, k) => a + (c[k] || 0), 0), iv = W.reduce((a, k) => a + (v[k] || 0), 0);
+  const late = A.filter(s => s.ins && ['done', 'red'].includes(moneyStage(s)) && daysSince(s.idt) > 30).length, N = x => (x || 0).toLocaleString('en-IN');
+  const cell = (key, tag, cls, num, rs, label, act) => '<button class="vc ' + cls + '" data-list="' + key + '" title="Click to see the houses">' + (tag ? '<em class="vt">' + tag + '</em>' : '') +
+    '<div class="vv">' + N(num) + '</div>' + (rs != null ? '<div class="vr">' + crore(rs) + '</div>' : '') + '<div class="vl">' + label + '</div><div class="va">' + act + '</div></button>';
+  const n = f => A.filter(f).length;
+  return '<div class="vp"><div class="vtop"><h2>Installed houses · ' + crore(iv) + ' subsidy waiting</h2><div class="vk">' + N(it) + ' houses × ₹' + N(SUBSIDY()) + ' · click a tile to see the houses</div></div>' +
+    '<p class="vsub">Where each installed house is stuck – left to right is the road to the money.</p><div class="vcells">' +
+    cell('P1', 'P1', 'hot', c.p1, v.p1 || 0, 'On the portal · consent pending', 'Upload the consent form – ULA the same day') +
+    cell('P2', 'P2', 'red', c.p2, v.p2 || 0, 'Not on the MNRE portal', 'Survey → Excel (3 columns) + consent form to the Department') +
+    cell('M_DCR', 'ULA', '', c.dcr, v.dcr || 0, 'ULA created · DCR pending', 'Submit the DCR') +
+    cell('M_OTP', 'DCR', '', c.otp, v.otp || 0, 'DCR done · OTP pending', 'Consumer OTP on the working mobile') +
+    cell('M_INSP', 'OTP', '', c.insp, v.insp || 0, 'OTP done · inspection pending', 'Follow up the department inspection') +
+    cell('M_DUE', 'INSP', '', (c.done || 0) + (c.red || 0), (v.done || 0) + (v.red || 0), 'Inspected · money due', '18–30 days after inspection' + (late ? ' · <b>' + late + ' late</b>' : '')) +
+    cell('M_PAID', '✓', 'ok', c.paid || 0, v.paid || 0, 'Received', 'From the ULA file') + '</div></div>' +
+    '<div class="vp two"><div class="vtop"><h2>Not installed yet · work ahead</h2><div class="vk">target ' + N(D.target || 20378) + ' feasible houses installed</div></div>' +
+    '<p class="vsub">Feasible houses to bring in, and houses still to be surveyed.</p><div class="vcells">' +
+    cell('P3', 'P3', 'hot', n(s => s.prio === 'P3'), null, 'Feasible · on the portal', 'Consent form → ULA → install') +
+    cell('P4', 'P4', 'red', n(s => s.prio === 'P4'), null, 'Feasible · not on the portal', 'Survey → Excel (3 columns) + consent form to the Department') +
+    cell('SV_OFF', '?', '', n(s => !s.cl && s.prio === 'SURVEY'), null, 'Feasibility not known', 'PMSG cloud feasibility survey first') +
+    cell('NF_OFF', '✗', 'dim', n(s => !s.cl && s.prio === 'NOTFEAS'), null, 'Not feasible', 'No action') + '</div></div>';
+}
 function moneyTable(A) {
   const c = {}, v = {}; A.forEach(s => { const k = moneyStage(s); if (k) { c[k] = (c[k] || 0) + 1; v[k] = (v[k] || 0) + amtOf(s); } });
   const insp = A.filter(s => s.ins && ['done', 'red'].includes(moneyStage(s)));
@@ -304,13 +338,13 @@ function dash() {
   const m = D.meta || {}, T = D.target || 20378, inst = S.filter(s => s.ins === 'D').length, found = S.filter(s => s.ins || s.feas).length, bs = D.bstat || {};
   const pc = v => Math.min(100, Math.round(v * 100 / T));
   const mgmt = ROLE === 'viewer' || ROLE === 'owner';
-  $('page').innerHTML = (mgmt && m.at ? brief(T, inst, found) : '') +
+  $('page').innerHTML = (m.at ? topPanels(A) : '') + (mgmt && m.at ? brief(T, inst, found) : '') +
     (m.at ? '' : '<div class="note">No daily files yet – open <b>Daily files</b> and upload the Consumers list (PMSG cloud), the Installations report, the Consumer List and the MIS file.</div>') +
     '<div class="target"><div><div class="small muted">Target</div><div class="big">' + T.toLocaleString('en-IN') + '</div><div class="small muted">feasible houses installed</div></div>' +
       '<div class="grow"><b>' + inst.toLocaleString('en-IN') + '</b> installed (' + pc(inst) + '%)<div class="bar"><i style="width:' + pc(inst) + '%"></i></div></div>' +
       '<div class="grow"><b>' + found.toLocaleString('en-IN') + '</b> feasible found so far (installed + feasible) – ' + (found >= T ? 'enough' : (T - found).toLocaleString('en-IN') + ' more to find in the Balance') +
       '<div class="bar"><i style="width:' + pc(found) + '%;background:var(--accent)"></i></div></div></div>' +
-    moneyTable(A) +
+    '<details class="more"><summary>Money table and portal groups (details)</summary>' + moneyTable(A) +
     '<h3 class="sec">On the MNRE portal (department\'s list) · ' + N(onP) + ' of our ' + N(A.length) + ' houses</h3><div class="cards">' +
       card('P1', P1[0], '<b>Installed · consent pending</b>', 'Collect the consent form now – ULA the same day · ' + P1[1] + ' surveyed', 'p1', P1[2]) +
       card('P3', P3[0], '<b>Not installed, feasible · consent pending</b>', 'Collect the consent form now · ' + P3[1] + ' surveyed', 'p3', P3[2]) +
@@ -322,6 +356,7 @@ function dash() {
       card('SV_OFF', n(s => !s.cl && s.prio === 'SURVEY'), '<b>Feasibility not known</b>', 'PMSG cloud feasibility survey still to be done', 'bal') +
       card('NF_OFF', n(s => !s.cl && s.prio === 'NOTFEAS'), '<b>Not feasible</b>', 'No action', 'bal') +
       (oth ? card('OTH_OFF', oth, '<b>Other</b>', 'bad numbers, ULA not on the list', 'fu') : '') + '</div>' +
+    '</details>' +
     '<h3 class="sec">Field work</h3><div class="cards">' +
       card('REVISIT', n(s => s.na && !s.sv), '<b>Customer not available</b>', 'Revisit · ' + n(s => s.na && !s.sv && s.na[0] >= 3) + ' visited 3 times or more', 'fu') +
       card('MOB', n(s => s.shared > 0 && PGRP.includes(s.prio)), '<b>Database mobile shared with another house</b>', 'Likely to be rejected – get the working mobile', 'fu') + '</div>' +
