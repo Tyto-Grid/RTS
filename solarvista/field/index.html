@@ -74,6 +74,7 @@ button:disabled{opacity:.5}
 .top h1{color:var(--accent)}
 .row:active,.row:hover{border-color:#F4A62A}
 @media (prefers-color-scheme: dark){:root:not([data-theme="light"]) .card h2{color:#9db7ff}}
+.secondary{background:var(--card,#1c2333);color:var(--accent,#7aa2ff);border:1.5px solid var(--accent,#7aa2ff);border-radius:10px;font-weight:600;font-size:15px}
 </style>
 </head>
 <body>
@@ -101,6 +102,8 @@ button:disabled{opacity:.5}
   <div class="top"><button class="back" id="hBack">‹ Villages</button><h1 id="hTitle"></h1></div>
   <div class="sub" id="hSub"></div>
   <input id="hq" class="mono" inputmode="search" placeholder="Last digits of service no. or name" autocomplete="off">
+  <button id="nearBtn" class="secondary" style="width:100%;margin:8px 0 2px;padding:10px">📍 Nearest first (from where I stand)</button>
+  <div id="nearMsg" class="sub"></div>
   <div id="hList"></div>
   <button class="more" id="typeSn2">Service number not in this list? Type it</button>
 </div>
@@ -146,7 +149,8 @@ button:disabled{opacity:.5}
 </div>
 <!-- 4. done -->
 <div class="wrap hidden" id="pDone"><div class="card" style="text-align:center"><div style="font-size:40px">✓</div><h2>Survey saved</h2>
-  <div id="doneTxt"></div><button class="primary" id="next" style="margin-top:12px;width:100%;padding:12px">Next house</button></div></div>
+  <div id="doneTxt"></div><button class="primary" id="next" style="margin-top:12px;width:100%;padding:12px">Next house</button>
+  <div id="nearList" style="text-align:left;margin-top:14px"></div></div></div>
 
 <div style="text-align:center;font-size:12px;color:var(--muted);padding:4px 0 22px">Solar Vista by TytoGrid · Field data, made clear.</div>
 <script>
@@ -231,6 +235,14 @@ async function openDist(d) {
     else $('hSub').textContent = 'Could not load: ' + (e.message || e) + ' – open this village once with signal to keep it on the phone.'; }
 }
 async function markQueued() { try { (await qAll()).forEach(it => { const h = HOUSES.find(x => x[0] === it.payload.sn); if (h && !h[4]) { h[4] = it.at; h[5] = 'waiting to send'; } }); } catch (e) {} }
+// ---------------------------------------------------------------- distance (house coordinates from the PMSG survey)
+let HERE = null;                        // {lat,lng} when "Nearest first" is on
+const metres = (a, b, c, d) => { const r = Math.PI / 180, x = (d - b) * r * Math.cos(a * r), y = (c - a) * r; return Math.round(6371000 * Math.hypot(x, y)); };
+const fmtM = m => m < 1000 ? m + ' m' : (m / 1000).toFixed(1) + ' km';
+const mapsUrl = (la, lo) => 'https://www.google.com/maps/dir/?api=1&destination=' + la + ',' + lo + '&travelmode=driving';
+function whereAmI() {
+  return new Promise((ok, no) => navigator.geolocation ? navigator.geolocation.getCurrentPosition(p => ok({ lat: p.coords.latitude, lng: p.coords.longitude }), no, { enableHighAccuracy: true, timeout: 15000, maximumAge: 60000 }) : no(new Error('No GPS')));
+}
 function drawHouses() {
   const q = norm($('hq').value), L = HOUSES.filter(h => !q || h[0].endsWith(q) || h[0].includes(q) || norm(h[1]).includes(q));
   const todo = HOUSES.filter(h => !h[4]).length;
@@ -240,9 +252,11 @@ function drawHouses() {
   [1, 2, 3, 4].forEach(p => {
     const g = L.filter(h => h[3] === p); if (!g.length) return;
     const open = g.filter(h => !h[4]), done = g.filter(h => h[4]);
+    if (HERE) open.forEach(h => h.m = h[9] ? metres(HERE.lat, HERE.lng, h[9], h[10]) : 1e9), open.sort((a, b) => a.m - b.m);
     html += '<div class="grp">' + head[p] + ' · ' + open.length + '</div><div class="list">' + open.concat(done).slice(0, 300).map(h =>
       '<button class="row' + (h[4] ? ' done' : '') + '" data-sn="' + h[0] + '"><span class="l"><span class="mono">' + h[0] + '</span><div class="n">' + esc(h[1] || 'name not in the files') + '</div></span>' +
-      (h[4] ? '<span class="tag tdone">✓ ' + esc(h[4].slice(5, 10).split('-').reverse().join('-')) + '</span>' : h[6] ? '<span class="tag trv">Not met ×' + h[6] + '</span>' : '<span class="tag ' + PR[p][0] + '">P' + p + '</span>') + '</button>').join('') +
+      (h[4] ? '<span class="tag tdone">✓ ' + esc(h[4].slice(5, 10).split('-').reverse().join('-')) + '</span>' : h[6] ? '<span class="tag trv">Not met ×' + h[6] + '</span>' : '<span class="tag ' + PR[p][0] + '">P' + p + '</span>') +
+      (HERE && !h[4] && h.m < 1e9 ? '<span class="tag" style="margin-left:4px">' + (h[11] ? '≈' : '') + fmtM(h.m) + '</span>' : '') + '</button>').join('') +
       (g.length > 300 ? '<div class="sub">… type digits to find the rest</div>' : '') + '</div>';
   });
   $('hList').innerHTML = html || '<div class="msg m-info">No house matches.</div>';
@@ -266,6 +280,8 @@ function openForm(h) {               // h = house row from the list, or null (ty
     $('snMsg').innerHTML = '<div class="msg ' + (h[4] ? 'm-warn' : 'm-info') + '"><span class="tag ' + PR[h[3]][0] + '">' + PR[h[3]][1] + '</span>' +
       (h[4] ? ' Already surveyed on ' + esc(h[4]) + ' by ' + esc(h[5]) + '. Submitting again replaces it.' : '') +
       (h[6] ? ' Not met ' + h[6] + ' time' + (h[6] > 1 ? 's' : '') + ' (last ' + esc(h[7]) + ').' : '') + (h[8] ? ' The database mobile is shared with ' + h[8] + ' other house' + (h[8] > 1 ? 's' : '') + ' – get the beneficiary\'s own number.' : '') + '</div>';
+    if (h[9]) $('snMsg').innerHTML += '<a class="secondary" style="display:block;text-align:center;margin-top:6px;padding:10px;border-radius:10px;text-decoration:none" target="_blank" rel="noopener" href="' +
+      mapsUrl(h[9], h[10]) + '">📍 Show location' + (h[11] ? ' (approximate – survey point shared with other houses)' : '') + '</a>';
     if (!h[4] && navigator.onLine) liveCheck(h);
   } else { $('sn').readOnly = false; setTimeout(() => $('sn').focus(), 50); }
   gps();
@@ -442,9 +458,23 @@ async function submit() {
       (queued ? '<div class="msg m-warn" style="margin-top:8px">No signal – saved on this phone. It is sent automatically when signal returns. Do not clear the browser data.</div>' :
        r && r.resurvey ? '<div class="sub" style="margin-top:6px">Re-survey – the earlier one is replaced.</div>' : '');
     const h = HOUSES.find(x => x[0] === $('sn').value); if (h) { if (F.avail === 'No') { h[6] = (h[6] || 0) + 1; h[7] = phoneTime(); } else { h[4] = phoneTime(); h[5] = $('by').value; } }
-    show('pDone');
+    show('pDone'); showNearby();
   } catch (e) { $('err').innerHTML = '<li>' + esc(e.message || e) + '</li>'; }
   b.disabled = false; b.textContent = 'Submit survey';
+}
+/** After a survey: the nearest houses still to survey, any village (needs signal). */
+function showNearby() {
+  $('nearList').innerHTML = '';
+  if (!navigator.onLine || !F.gps) return;
+  const sn = $('sn').value;
+  run('getNearby', F.gps.lat, F.gps.lng, sn).then(j => {
+    const L = JSON.parse(j); if (!L.length) return;
+    $('nearList').innerHTML = '<div class="grp">Nearest houses still to survey</div><div class="list">' + L.slice(0, 5).map(x =>
+      '<div class="row" style="display:flex;gap:8px;align-items:center"><span class="l" style="flex:1"><span class="mono">' + x[0] + '</span><div class="n">' + esc(x[1] || '') + ' · ' + esc(x[2]) + '</div></span>' +
+      '<span class="tag ' + PR[x[3]][0] + '">P' + x[3] + '</span><span class="tag">' + (x[5] ? '≈' : '') + fmtM(x[4]) + '</span>' +
+      '<a class="tag" style="text-decoration:none" target="_blank" rel="noopener" href="' + mapsUrl(x[6], x[7]) + '">📍</a>' +
+      '<button class="tag" data-go="' + x[0] + '" data-d="' + esc(x[2]) + '">Open</button></div>').join('') + '</div>';
+  }).catch(() => {});
 }
 function nextHouse() { if (CUR) { drawHouses(); show('pHouses'); } else { show('pDist'); } }
 
@@ -453,6 +483,18 @@ $('by').value = store('supervisor') || '';
 $('dq').addEventListener('input', drawDists);
 $('hq').addEventListener('input', drawHouses);
 $('dList').addEventListener('click', e => { const b = e.target.closest('[data-d]'); if (b) openDist(b.dataset.d); });
+$('nearBtn').addEventListener('click', async () => {
+  if (HERE) { HERE = null; $('nearBtn').textContent = '📍 Nearest first (from where I stand)'; $('nearMsg').textContent = ''; return drawHouses(); }
+  $('nearMsg').textContent = 'Finding where you are…';
+  try { HERE = await whereAmI(); $('nearBtn').textContent = '↺ Back to normal order'; $('nearMsg').textContent = 'Sorted by distance from you. ≈ = approximate location.'; drawHouses(); }
+  catch (e) { $('nearMsg').textContent = 'Location not available – switch on GPS and allow location for this page.'; }
+});
+$('nearList').addEventListener('click', async e => {
+  const b = e.target.closest('[data-go]'); if (!b) return;
+  const d = b.dataset.d, sn = b.dataset.go;
+  if (d !== CUR) { await openDist(d); }
+  const h = HOUSES.find(x => x[0] === sn); if (h) openForm(h);
+});
 $('hList').addEventListener('click', e => { const b = e.target.closest('[data-sn]'); if (b) openForm(HOUSES.find(h => h[0] === b.dataset.sn)); });
 $('typeSn').onclick = () => { CUR = ''; openForm(null); };
 $('typeSn2').onclick = () => openForm(null);
