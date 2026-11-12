@@ -230,9 +230,9 @@ const LISTS = {
   P4: { t: 'P4 – feasible, not installed, not in Consumer List (Excel + consent)', f: s => s.prio === 'P4', chips: [['', 'All'], ['todo', 'Not surveyed'], ['sv', 'Surveyed']] },
   SURVEY: { t: 'Balance – feasibility survey still to do', f: s => s.prio === 'SURVEY', chips: [] },
   NOTFEAS: { t: 'Not feasible (PMSG survey)', f: s => s.prio === 'NOTFEAS', chips: [] },
-  M_DCR: { t: 'Installed with ULA – DCR pending', f: s => s.ins && s.ula && !s.dcr, chips: [] },
-  M_OTP: { t: 'DCR done – portal installation (OTP) pending', f: s => s.ins && s.dcr && !s.otp, chips: [] },
-  M_INSP: { t: 'OTP done – inspection pending', f: s => s.ins && s.otp && !s.insp, chips: [] },
+  M_DCR: { t: 'Stuck at DCR – installed with ULA, DCR not done', f: s => s.ins && s.ula && !s.dcr, chips: [] },
+  M_OTP: { t: 'Stuck at OTP – DCR done, portal installation (OTP) not done', f: s => s.ins && s.dcr && !s.otp, chips: [] },
+  M_INSP: { t: 'Stuck at inspection – OTP done, not inspected', f: s => s.ins && s.otp && !s.insp, chips: [] },
   M_DUE: { t: 'Inspected – subsidy money due', f: s => s.ins && ['done', 'red'].includes(moneyStage(s)), chips: [['', 'All'], ['late', 'Over 30 days since inspection']], c: { late: s => daysSince(s.idt) > 30 } },
   M_DONE: { t: 'Inspection done – subsidy not yet redeemed', f: s => s.ins && moneyStage(s) === 'done', chips: [['', 'All'], ['late', 'Over 30 days since inspection']], c: { late: s => daysSince(s.idt) > 30 } },
   M_RED: { t: 'Subsidy redeemed – waiting for disbursal', f: s => s.ins && moneyStage(s) === 'red', chips: [] },
@@ -248,18 +248,19 @@ const LISTS = {
   CHECK: { t: 'Not in PMSG cloud – kept aside', f: s => s.prio === 'CHECK', def: 'v',
     chips: [['v', 'CA Verified'], ['nv', 'CA not verified / not eligible'], ['acc', 'Consent accepted'], ['pend', 'Consent pending'], ['all', 'All']],
     c: { v: s => s.ca === 'V', nv: s => s.ca !== 'V', acc: s => s.cs === 'A', pend: s => s.cs !== 'A', all: s => true } },
-  ULA: { t: 'ULA application created', f: s => !!s.ula, chips: [] },
+  ULA: { t: 'ULA created – all till date', f: s => !!s.ula, chips: [] },
   HOLD: { t: 'Eligibility hold – above 200 units or 3 phase (surveyed)', f: s => !!(s.sv && s.sv[3]), chips: [] },
   ULAX: { t: 'ULA under VSA but not allotted to us (not in PMSG cloud)', src: () => ULAX, f: s => true, chips: [] },
-  DCR: { t: 'DCR', f: s => !!s.ula || s.dcr, chips: [['done', 'DCR done'], ['pend', 'DCR pending (ULA, installed, no DCR)']], def: 'done',
+  DCR: { t: 'DCR done – all till date', f: s => !!s.ula || s.dcr, chips: [['done', 'DCR done'], ['pend', 'DCR pending (ULA, installed, no DCR)']], def: 'done',
          c: { done: s => s.dcr, pend: s => s.ula && s.ins && !s.dcr } },
-  OTP: { t: 'Portal installation (consumer OTP)', f: s => !!s.ula || s.otp, chips: [['done', 'Installation (OTP) done'], ['pend', 'Pending (ULA, OTP not done)']], def: 'done',
+  OTP: { t: 'OTP done – all till date (portal installation)', f: s => !!s.ula || s.otp, chips: [['done', 'Installation (OTP) done'], ['pend', 'Pending (ULA, OTP not done)']], def: 'done',
          c: { done: s => s.otp, pend: s => s.ula && !s.otp } },
-  INSP: { t: 'Portal inspection (department)', f: s => s.otp || s.insp, chips: [['done', 'Inspection done'], ['pend', 'Pending (OTP done, not inspected)']], def: 'done',
+  INSP: { t: 'Inspection done – all till date', f: s => s.otp || s.insp, chips: [['done', 'Inspection done'], ['pend', 'Pending (OTP done, not inspected)']], def: 'done',
           c: { done: s => s.insp, pend: s => s.otp && !s.insp } },
   CONSENT_ACC: { t: 'Consent accepted – no ULA in our lists (MIS to check)', f: s => s.prio === 'CONSENT_ACC', chips: [] },
   CA_NV: { t: 'CA not verified / not eligible (follow up with MNRE)', f: s => s.prio === 'CA_NV', chips: [] },
   PROB: { t: 'Data problems in the files', f: s => !!s.prob, chips: [] },
+  RED_ALL: { t: 'Subsidy redeemed – all till date', f: s => s.ins && !!(s.rdt || s.vdt || s.ddt || moneyStage(s) === 'paid'), chips: [] },
 };
 const PAGES = [['dash', '▦', 'Dashboard'], ['list', '☰', 'Lists'], ['survey', '📝', 'Survey'], ['sup', '👤', 'Supervisors'], ['-'], ['files', '⬆', 'Daily files'], ['settings', '⚙', 'Settings', 'owner']];
 function nav() {
@@ -459,10 +460,23 @@ function ulaxHtml(R) {
       R.map(s => '<tr><td class="mono">' + esc(s.sn) + '</td><td>' + esc(s.name) + '</td><td>' + esc(s.dist) + '</td><td class="mono">' + esc(s.ula) + '</td><td>' + esc(s.us || '') + '</td><td>' + (s.cl ? 'Yes' : 'No') + '</td></tr>').join('') +
       '</tbody></table></div>' : '<div class="empty">None – every ULA under VSA is a house in the PMSG list.</div>');
 }
+// list buttons: grouped, each with a plain name. "Till date" lists keep every house that ever reached the step; "Stuck at" lists hold only houses waiting at that step.
+const CHIP_LABEL = { P1: 'P1', P2: 'P2', P3: 'P3', P4: 'P4', SURVEY: 'Balance survey', NOTFEAS: 'Not feasible',
+  ULA: 'ULA created', DCR: 'DCR done', OTP: 'OTP done', INSP: 'Inspection done', RED_ALL: 'Subsidy redeemed', M_PAID: 'Subsidy received',
+  M_DCR: 'DCR pending', M_OTP: 'OTP pending', M_INSP: 'Inspection pending', M_DUE: 'Subsidy due', M_DONE: 'Inspected, not redeemed', M_RED: 'Redeemed, not disbursed', M_OTH: 'Installed – check',
+  PCHK: 'On portal – needs checking', SV_OFF: 'Not on portal – feasibility unknown', NF_OFF: 'Not on portal – not feasible', OTH_OFF: 'Not on portal – other',
+  CONSENT_ACC: 'Consent accepted – no ULA', CA_NV: 'CA not verified', REVISIT: 'Customer not available', REJ: 'Rejected by portal', MOB: 'Mobile shared',
+  HOLD: 'Eligibility hold', ULAX: 'ULA not allotted to us', CHECK: 'Not in PMSG cloud', PROB: 'Data problems' };
+const CHIP_GROUPS = [['Consent work', ['P1', 'P2', 'P3', 'P4', 'SURVEY', 'NOTFEAS']],
+  ['Till date', ['ULA', 'DCR', 'OTP', 'INSP', 'RED_ALL', 'M_PAID']],
+  ['Stuck at', ['M_DCR', 'M_OTP', 'M_INSP', 'M_DUE', 'M_DONE', 'M_RED', 'M_OTH']],
+  ['Portal', ['PCHK', 'SV_OFF', 'NF_OFF', 'OTH_OFF', 'CONSENT_ACC', 'CA_NV']],
+  ['Attention', ['REVISIT', 'REJ', 'MOB', 'HOLD', 'ULAX', 'CHECK', 'PROB']]];
 function listPage() {
   if (!LIST) LIST = 'P1';
   const L = LISTS[LIST], R = listRows();
-  $('page').innerHTML = '<div class="chips">' + Object.keys(LISTS).map(k => '<button class="chip' + (k === LIST ? ' on' : '') + '" data-lst="' + k + '">' + esc(LISTS[k].t.split(' (')[0].split(' – ')[0]) + '</button>').join('') + '</div>' +
+  $('page').innerHTML = CHIP_GROUPS.map(g => '<div class="chips"><span class="small muted" style="align-self:center;min-width:120px">' + g[0] + '</span>' +
+      g[1].filter(k => LISTS[k]).map(k => '<button class="chip' + (k === LIST ? ' on' : '') + '" data-lst="' + k + '">' + esc(CHIP_LABEL[k] || LISTS[k].t) + '</button>').join('') + '</div>').join('') +
     (L.chips.length ? '<div class="chips">' + L.chips.map(c => '<button class="chip' + (c[0] === CHIP ? ' on' : '') + '" data-chip="' + c[0] + '">' + esc(c[1]) + '</button>').join('') + '</div>' : '') +
     '<div class="toolbar"><h2>' + R.length.toLocaleString('en-IN') + ' service numbers</h2>' + (can.work() ? '<button class="btn" id="csv">⬇ This list (CSV)</button>' : '') + '</div>' +
     (LIST === 'ULAX' ? ulaxHtml(R) : LIST === 'CHECK' ? '<div class="note">These houses are in the <b>department\'s Consumer List</b> (APSPDCL implementation agency) but <b>not in our PMSG cloud list</b> of 33,552. ' +
