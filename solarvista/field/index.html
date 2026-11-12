@@ -308,10 +308,11 @@ function snCheck() {
     if (!st.known && !SN_RE.test(sn)) { if (sn.length >= 13) $('snMsg').innerHTML = '<div class="msg m-bad">Service numbers here are 13 digits starting 59.</div>'; return; }
     F.site = st;
     if (st.ula) { $('snMsg').innerHTML = '<div class="msg m-bad">ULA already created (' + esc(st.ula) + ') – no survey needed.</div>'; return; }
+    if (st.notOurs) { $('snMsg').innerHTML = '<div class="msg m-bad"><b>Not in the PMSG list allotted to VSA – do not survey this house.</b> Tell the Manager.</div>'; return; }
     if (st.known) { if (!$('bname').value) $('bname').value = st.name || ''; $('dbmob').value = st.dbmob || ''; if (st.dist) $('dist').value = st.dist; }
     const p = PRT[st.prio];
     $('snMsg').innerHTML = '<div class="msg ' + (st.last ? 'm-warn' : 'm-info') + '">' + (p ? '<span class="tag ' + PR[p][0] + '">' + PR[p][1] + '</span> ' :
-      st.known ? ({ CONSENT_ACC: 'Consent already accepted on the portal', CA_NV: 'CA status not verified on the portal', OTHER: 'In the files' }[st.prio] || 'In the files') + ' – survey only if the office asked for it. ' : 'Not in any list – it will go for Excel upload. ') +
+      st.known ? ({ CONSENT_ACC: 'Consent already accepted on the portal', CA_NV: 'CA status not verified on the portal', OTHER: 'In the files' }[st.prio] || 'In the files') + ' – survey only if the office asked for it. ' : 'Not in any list – check with the office before surveying. ') +
       (st.last ? 'Already surveyed on ' + esc(st.last.at) + ' by ' + esc(st.last.by) + '. Submitting again replaces it.' : '') + '</div>';
   }).catch(() => {}), 300);
 }
@@ -425,6 +426,7 @@ function problems() {
   const p = [], sn = $('sn').value.replace(/\D/g, ''), mob = $('mob').value.replace(/\D/g, '');
   if ($('by').value.trim().length < 2) p.push('Enter your name (top of the first page).');
   if (!SN_RE.test(sn) && !(F.site && F.site.known !== false)) p.push('Service number: 13 digits starting 59.');
+  if (F.site && F.site.sn === sn && F.site.notOurs) p.push('This house is not in the PMSG list allotted to VSA – do not survey.');
   if (F.site && F.site.ula) p.push('This house already has a ULA – no survey needed.');
   if (!F.avail) p.push('Customer available? Choose Yes or No.');
   if (F.avail === 'No') {

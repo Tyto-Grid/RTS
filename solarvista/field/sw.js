@@ -1,5 +1,5 @@
 // Keeps the survey page on the phone so it opens without signal. Server calls (Apps Script) are never cached.
-const C = 'sv-field-v2', SHELL = ['/solarvista/field/', '/solarvista/config.js', '/solarvista/field/manifest.json', '/favicon.svg', '/assets/icon-192.png'];
+const C = 'sv-field-v3', SHELL = ['/solarvista/field/', '/solarvista/config.js', '/solarvista/field/manifest.json', '/favicon.svg', '/assets/icon-192.png'];
 self.addEventListener('install', e => { e.waitUntil(caches.open(C).then(c => c.addAll(SHELL)).then(() => self.skipWaiting())); });
 self.addEventListener('activate', e => { e.waitUntil(caches.keys().then(k => Promise.all(k.filter(x => x !== C).map(x => caches.delete(x)))).then(() => self.clients.claim())); });
 self.addEventListener('fetch', e => {

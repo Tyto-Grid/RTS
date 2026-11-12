@@ -197,13 +197,15 @@ const PR = k => PRIO[k] || PRIO.OTHER;
 const PGRP = ['P1', 'P2', 'P3', 'P4'];
 const GROUP = { 1: ['ok', 'Folder 1 · upload consent now'], 2: ['warn', 'Folder 2 · Excel first'], 3: ['bad', 'Folder 3 · check first'] };
 
-let D = null, S = [], ROLE = 'mis', PAGE = 'dash', LIST = null, CHIP = '';
+let D = null, S = [], ULAX = [], ROLE = 'mis', PAGE = 'dash', LIST = null, CHIP = '';
 const can = { manage: () => ROLE === 'owner' || ROLE === 'manager', owner: () => ROLE === 'owner', work: () => ROLE !== 'viewer' };
 
 // sites: [sn, name, dbMobile, dist, section, installed, dcr, inCL, ca, consent, ula, ulaStatus, otp, insp, group, problems, sharedMobile, inMaster, surveyed, feasible, rejectedWhy, inspDate, redeemDate, verifiedDate, disbursedDate, subsidyAmount]
 function build() {
   // only our houses: the PMSG cloud list. Houses only in the department's list (or with bad numbers) are not ours – left out completely
   const ours = (D.sites || []).some(r => r[17]);
+  // ULA created under VSA for a house that is not in the PMSG cloud list (not allotted to us) – kept aside for the Manager
+  ULAX = ours ? (D.sites || []).filter(r => r[10] && !r[17]).map(r => ({ sn: r[0], name: r[1], mob: r[2], dist: r[3], sec: r[4], ula: r[10], us: r[11], cl: !!r[7], prio: 'ULAX', prob: r[15] })) : [];
   S = (D.sites || []).filter(r => ours ? r[17] : !['CHECK', 'BAD'].includes(r[14])).map(r => ({ sn: r[0], name: r[1], mob: r[2], dist: r[3], sec: r[4], ins: r[5], dcr: !!r[6], cl: !!r[7], ca: r[8], cs: r[9], ula: r[10], us: r[11],
     otp: !!r[12], insp: !!r[13], prio: r[14], prob: r[15], shared: r[16] || 0, inM: !!r[17], msv: r[18] === 'Y', feas: r[19] === 'Y', rej: r[20] || '', idt: r[21] || '', rdt: r[22] || '', vdt: r[23] || '', ddt: r[24] || '', amt: Number(r[25]) || 0,
     sv: (D.sv || {})[r[0]] || null, na: (D.na || {})[r[0]] || null }));
@@ -247,6 +249,7 @@ const LISTS = {
     chips: [['v', 'CA Verified'], ['nv', 'CA not verified / not eligible'], ['acc', 'Consent accepted'], ['pend', 'Consent pending'], ['all', 'All']],
     c: { v: s => s.ca === 'V', nv: s => s.ca !== 'V', acc: s => s.cs === 'A', pend: s => s.cs !== 'A', all: s => true } },
   ULA: { t: 'ULA application created', f: s => !!s.ula, chips: [] },
+  ULAX: { t: 'ULA under VSA but not allotted to us (not in PMSG cloud)', src: () => ULAX, f: s => true, chips: [] },
   DCR: { t: 'DCR', f: s => !!s.ula || s.dcr, chips: [['done', 'DCR done'], ['pend', 'DCR pending (ULA, installed, no DCR)']], def: 'done',
          c: { done: s => s.dcr, pend: s => s.ula && s.ins && !s.dcr } },
   OTP: { t: 'Portal installation (consumer OTP)', f: s => !!s.ula || s.otp, chips: [['done', 'Installation (OTP) done'], ['pend', 'Pending (ULA, OTP not done)']], def: 'done',
@@ -410,6 +413,7 @@ function brief(T, inst, found) {
   const att = [];
   if (bs.red) att.push(bs.red + ' department upload batch' + (bs.red > 1 ? 'es' : '') + ' waiting for action');
   if (rej) att.push(N(rej) + ' house' + (rej > 1 ? 's' : '') + ' rejected by the portal (correct mobile needed)');
+  if (ULAX.length) att.push('<button data-list="ULAX" style="all:unset;cursor:pointer;color:var(--bad);font-weight:700;text-decoration:underline">' + N(ULAX.length) + ' ULA' + (ULAX.length > 1 ? 's' : '') + ' created under VSA for house' + (ULAX.length > 1 ? 's' : '') + ' NOT allotted to us (' + ULAX.slice(0, 3).map(x => esc(x.sn)).join(', ') + (ULAX.length > 3 ? ', …' : '') + ')</button> – do not survey, install or upload the agreement until NREDCAP adds them; find out who created them');
   const html = '<div class="brief" id="brief"><h2>' + esc(site) + ' – ' + ist.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric', timeZone: 'UTC' }) + '</h2>' +
     '<div class="when">From the files updated ' + esc(m.at || '') + '</div><ul>' + L.map(x => '<li>' + x + '</li>').join('') +
     (att.length ? '<li class="att"><b>Needs attention:</b> ' + att.join(' · ') + '.</li>' : '<li class="ok"><b>Nothing waiting for action.</b></li>') + '</ul></div>';
@@ -441,10 +445,17 @@ function distTable(A) {
     '<p class="small muted">Other = CA not verified, consent accepted without ULA, bad service numbers.</p>';
 }
 function listRows() {
-  const L = LISTS[LIST || 'P1'], A = scope().filter(L.f);
+  const L = LISTS[LIST || 'P1'], A = (L.src ? L.src() : scope()).filter(L.f);
   if (L.c && CHIP) return A.filter(L.c[CHIP]);
   if (CHIP === 'todo') return A.filter(s => !s.sv); if (CHIP === 'sv') return A.filter(s => s.sv);
   return A;
+}
+function ulaxHtml(R) {
+  return '<div class="note">A <b>ULA application was created under VSA</b> on the MNRE portal for these houses, but they are <b>not in the PMSG cloud list</b> – NREDCAP has not allotted them to us. ' +
+    '<b>Do not survey, install or upload the agreement</b> until NREDCAP adds them to the PMSG list; otherwise nobody pays for the system. Find out who created the application. Not counted in any total.</div>' +
+    (R.length ? '<div class="tw"><table><thead><tr><th>Service no.</th><th>Consumer (MNRE)</th><th>Village</th><th>ULA application</th><th>ULA status</th><th>In Consumer List</th></tr></thead><tbody>' +
+      R.map(s => '<tr><td class="mono">' + esc(s.sn) + '</td><td>' + esc(s.name) + '</td><td>' + esc(s.dist) + '</td><td class="mono">' + esc(s.ula) + '</td><td>' + esc(s.us || '') + '</td><td>' + (s.cl ? 'Yes' : 'No') + '</td></tr>').join('') +
+      '</tbody></table></div>' : '<div class="empty">None – every ULA under VSA is a house in the PMSG list.</div>');
 }
 function listPage() {
   if (!LIST) LIST = 'P1';
@@ -452,7 +463,7 @@ function listPage() {
   $('page').innerHTML = '<div class="chips">' + Object.keys(LISTS).map(k => '<button class="chip' + (k === LIST ? ' on' : '') + '" data-lst="' + k + '">' + esc(LISTS[k].t.split(' (')[0].split(' – ')[0]) + '</button>').join('') + '</div>' +
     (L.chips.length ? '<div class="chips">' + L.chips.map(c => '<button class="chip' + (c[0] === CHIP ? ' on' : '') + '" data-chip="' + c[0] + '">' + esc(c[1]) + '</button>').join('') + '</div>' : '') +
     '<div class="toolbar"><h2>' + R.length.toLocaleString('en-IN') + ' service numbers</h2>' + (can.work() ? '<button class="btn" id="csv">⬇ This list (CSV)</button>' : '') + '</div>' +
-    (LIST === 'CHECK' ? '<div class="note">These houses are in the <b>department\'s Consumer List</b> (APSPDCL implementation agency) but <b>not in our PMSG cloud list</b> of 33,552. ' +
+    (LIST === 'ULAX' ? ulaxHtml(R) : LIST === 'CHECK' ? '<div class="note">These houses are in the <b>department\'s Consumer List</b> (APSPDCL implementation agency) but <b>not in our PMSG cloud list</b> of 33,552. ' +
       'They may belong to another vendor. <b>Kept aside – not counted in any total, not shown to supervisors.</b> The file has no consumer name, and the distribution is known only where another house shares the number code.</div>' +
       (R.length ? '<div class="tw"><table><thead><tr><th>Service no.</th><th>Mobile (MNRE)</th><th>Distribution</th><th>Section</th><th>CA status</th><th>Consent status</th><th>ULA</th></tr></thead><tbody>' +
         R.slice(0, 2500).map(s => '<tr><td class="mono">' + esc(s.sn) + '</td><td class="mono">' + esc(s.mob) + '</td><td>' + esc(s.dist) + '</td><td>' + esc(s.sec) + '</td><td>' +
@@ -556,7 +567,7 @@ async function svBatch(el, fn, args, isNew) {
 async function svFile(btn, fn) {
   const rows = svRows(); if (!rows.length) return toast('Nothing to download.');
   btn.disabled = true; const t = btn.textContent; btn.textContent = 'Preparing…';
-  try { const o = await run(fn, KEY, rows.map(r => r.id)); saveB64(o, 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'); toast(o.n + ' rows – ' + o.name, 6000); }
+  try { const o = await run(fn, KEY, rows.map(r => r.id)); saveB64(o, 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'); toast(o.n + ' rows – ' + o.name + (o.left && o.left.length ? ' · left out ' + o.left.length + ' house(s) NOT allotted to VSA: ' + o.left.slice(0, 5).join(', ') : ''), o.left && o.left.length ? 12000 : 6000); }
   catch (e) { toast(e.message || e, 6000); }
   btn.disabled = false; btn.textContent = t;
 }
