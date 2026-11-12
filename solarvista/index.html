@@ -249,6 +249,7 @@ const LISTS = {
     chips: [['v', 'CA Verified'], ['nv', 'CA not verified / not eligible'], ['acc', 'Consent accepted'], ['pend', 'Consent pending'], ['all', 'All']],
     c: { v: s => s.ca === 'V', nv: s => s.ca !== 'V', acc: s => s.cs === 'A', pend: s => s.cs !== 'A', all: s => true } },
   ULA: { t: 'ULA application created', f: s => !!s.ula, chips: [] },
+  HOLD: { t: 'Eligibility hold – above 200 units or 3 phase (surveyed)', f: s => !!(s.sv && s.sv[3]), chips: [] },
   ULAX: { t: 'ULA under VSA but not allotted to us (not in PMSG cloud)', src: () => ULAX, f: s => true, chips: [] },
   DCR: { t: 'DCR', f: s => !!s.ula || s.dcr, chips: [['done', 'DCR done'], ['pend', 'DCR pending (ULA, installed, no DCR)']], def: 'done',
          c: { done: s => s.dcr, pend: s => s.ula && s.ins && !s.dcr } },
@@ -413,6 +414,7 @@ function brief(T, inst, found) {
   const att = [];
   if (bs.red) att.push(bs.red + ' department upload batch' + (bs.red > 1 ? 'es' : '') + ' waiting for action');
   if (rej) att.push(N(rej) + ' house' + (rej > 1 ? 's' : '') + ' rejected by the portal (correct mobile needed)');
+  { const hd = n(s => s.sv && s.sv[3]); if (hd) att.push('<button data-list="HOLD" style="all:unset;cursor:pointer;color:var(--bad);font-weight:700;text-decoration:underline">' + N(hd) + ' surveyed house' + (hd > 1 ? 's' : '') + ' on eligibility hold (above 200 units or 3 phase)</button> – kept out of the Department upload; get the Department\'s written decision'); }
   if (ULAX.length) att.push('<button data-list="ULAX" style="all:unset;cursor:pointer;color:var(--bad);font-weight:700;text-decoration:underline">' + N(ULAX.length) + ' ULA' + (ULAX.length > 1 ? 's' : '') + ' created under VSA for house' + (ULAX.length > 1 ? 's' : '') + ' NOT allotted to us (' + ULAX.slice(0, 3).map(x => esc(x.sn)).join(', ') + (ULAX.length > 3 ? ', …' : '') + ')</button> – do not survey, install or upload the agreement until NREDCAP adds them; find out who created them');
   const html = '<div class="brief" id="brief"><h2>' + esc(site) + ' – ' + ist.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric', timeZone: 'UTC' }) + '</h2>' +
     '<div class="when">From the files updated ' + esc(m.at || '') + '</div><ul>' + L.map(x => '<li>' + x + '</li>').join('') +
@@ -536,7 +538,7 @@ async function surveyPage(reload) {
         (r.batch ? '<br><span class="b">⬇ ' + esc(bt[r.batch] ? svBatchLabel(bt[r.batch]) : 'downloaded') + '</span>' : '') +
         (r.prev ? '<br><span class="b bad">Re-survey – earlier one went in ' + esc(bt[r.prev] ? svBatchLabel(bt[r.prev]).split(' · ')[0] : 'a batch') + '</span>' : '') +
         (r.times > 1 ? '<br><span class="b acc">re-surveyed ×' + (r.times - 1) + '</span>' : '') + '</td><td class="mono">' + esc(r.sn) + '<br><span class="b ' + (PRIO[r.prio] || PRIO.NEW)[0] + '">' + (PRIO[r.prio] || PRIO.NEW)[1] + '</span>' + (r.rej ? '<br><span class="b bad">Portal rejected: ' + esc(r.rej) + '</span>' : '') + '</td><td>' + esc(r.name) +
-        '</td><td>' + esc(r.gender) + '</td><td class="mono">' + esc(r.mobile) + (r.dbmob && r.dbmob !== r.mobile ? '<br><span class="small" style="color:var(--warn)">DB ' + esc(r.dbmob) + '</span>' : '') + (r.shared ? '<br><span class="small" style="color:var(--bad)">DB mobile shared ×' + r.shared + '</span>' : '') +
+        '</td><td>' + esc(r.gender) + (r.hold ? '<br><span class="b bad">Hold: ' + esc(r.hold) + '</span>' : r.units ? '<div class="small muted">' + esc(r.units) + ' · ' + esc(r.phase) + '</div>' : '') + '</td><td class="mono">' + esc(r.mobile) + (r.dbmob && r.dbmob !== r.mobile ? '<br><span class="small" style="color:var(--warn)">DB ' + esc(r.dbmob) + '</span>' : '') + (r.shared ? '<br><span class="small" style="color:var(--bad)">DB mobile shared ×' + r.shared + '</span>' : '') +
         '</td><td>' + esc(r.dist) + '</td><td><span class="b ' + GROUP[r.group][0] + '">' + GROUP[r.group][1] + '</span></td><td><a target="_blank" href="https://maps.google.com/?q=' + encodeURIComponent(r.lat + ',' + r.lng) + '">Map</a><div class="small muted">±' + esc(r.acc) + ' m</div></td><td>' + esc(r.by) +
         '</td><td><div class="ph" data-photo="' + esc(r.photo) + '">tap</div></td><td>' + (can.work() ? '<button class="btn" data-svpdf="' + esc(r.pdf) + '">⬇ PDF</button>' : '') + '<div class="small muted">' + esc(r.from) + '</div></td></tr>').join('') +
       '</tbody></table></div>' : '<div class="empty">No surveys for this filter.</div>');
@@ -567,7 +569,7 @@ async function svBatch(el, fn, args, isNew) {
 async function svFile(btn, fn) {
   const rows = svRows(); if (!rows.length) return toast('Nothing to download.');
   btn.disabled = true; const t = btn.textContent; btn.textContent = 'Preparing…';
-  try { const o = await run(fn, KEY, rows.map(r => r.id)); saveB64(o, 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'); toast(o.n + ' rows – ' + o.name + (o.left && o.left.length ? ' · left out ' + o.left.length + ' house(s) NOT allotted to VSA: ' + o.left.slice(0, 5).join(', ') : ''), o.left && o.left.length ? 12000 : 6000); }
+  try { const o = await run(fn, KEY, rows.map(r => r.id)); saveB64(o, 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'); toast(o.n + ' rows – ' + o.name + (o.left && o.left.length ? ' · left out ' + o.left.length + ' house(s) NOT allotted to VSA: ' + o.left.slice(0, 5).join(', ') : '') + (o.held && o.held.length ? ' · left out ' + o.held.length + ' on eligibility hold: ' + o.held.slice(0, 5).join(', ') : ''), (o.left && o.left.length) || (o.held && o.held.length) ? 12000 : 6000); }
   catch (e) { toast(e.message || e, 6000); }
   btn.disabled = false; btn.textContent = t;
 }

@@ -126,6 +126,11 @@ button:disabled{opacity:.5}
     <input id="bname" autocomplete="off" placeholder="As on the electricity bill">
     <label>Gender of the beneficiary *</label>
     <div class="seg" id="gender"><button data-g="Male">Male</button><button data-g="Female">Female</button><button data-g="Other">Other</button></div>
+    <label>Units per month (electricity bill) *</label>
+    <div class="seg" id="units"><button data-u="200 or below">200 or below</button><button data-u="Above 200">Above 200</button></div>
+    <label>Connection *</label>
+    <div class="seg" id="phase"><button data-ph="Single phase">Single phase</button><button data-ph="3 phase">3 phase</button></div>
+    <div id="eligMsg"></div>
     <label for="dbmob">Mobile in the database</label>
     <input id="dbmob" class="mono" readonly placeholder="not in the files">
     <label for="mob">Working mobile now * <span class="small">(ask the beneficiary)</span></label>
@@ -192,7 +197,7 @@ function cache(k, v) { try { if (v === undefined) { const x = localStorage.getIt
 function store(k, v) { try { if (v === undefined) return localStorage.getItem(k); localStorage.setItem(k, v); } catch (e) { return null; } }
 function show(id) { ['pDist', 'pHouses', 'pForm', 'pDone'].forEach(p => $(p).classList.toggle('hidden', p !== id)); window.scrollTo(0, 0); }
 
-let DISTS = [], HOUSES = [], CUR = '', F = { gender: '', gps: null, photo: null, consent: null, site: null, avail: '', naWhy: '' };
+let DISTS = [], HOUSES = [], CUR = '', F = { gender: '', units: '', phase: '', gps: null, photo: null, consent: null, site: null, avail: '', naWhy: '' };
 const pad2 = n => String(n).padStart(2, '0');
 function phoneTime() { const d = new Date(); return d.getFullYear() + '-' + pad2(d.getMonth() + 1) + '-' + pad2(d.getDate()) + ' ' + pad2(d.getHours()) + ':' + pad2(d.getMinutes()); }
 function todayKey() { return 'today_' + norm($('by').value) + '_' + phoneTime().slice(0, 10); }
@@ -264,7 +269,8 @@ function drawHouses() {
 // ---------------------------------------------------------------- form
 function resetForm() {
   ['sn', 'bname', 'mob', 'dbmob'].forEach(id => $(id).value = '');
-  Object.assign(F, { gender: '', photo: null, consent: null, site: null, gps: null, avail: '', naWhy: '' }); CF_TRIES = 0;
+  Object.assign(F, { gender: '', units: '', phase: '', photo: null, consent: null, site: null, gps: null, avail: '', naWhy: '' }); CF_TRIES = 0; $('eligMsg').innerHTML = '';
+  document.querySelectorAll('#units button, #phase button').forEach(b => b.classList.remove('on'));
   document.querySelectorAll('#avail button, #naWhy button').forEach(b => b.classList.remove('on')); $('mobMsg').innerHTML = '';
   $('naBox').classList.add('hidden'); $('metBox').classList.remove('hidden'); $('cfCard').classList.remove('hidden'); $('submit').textContent = 'Submit survey';
   document.querySelectorAll('#gender button').forEach(b => b.classList.remove('on'));
@@ -435,6 +441,8 @@ function problems() {
     if ($('dist').value.trim().length < 2) p.push('Enter the distribution.');
     if ($('bname').value.trim().length < 3) p.push('Enter the beneficiary name.');
     if (!F.gender) p.push('Choose the gender of the beneficiary.');
+    if (!F.units) p.push('Units per month: 200 or below, or above 200?');
+    if (!F.phase) p.push('Connection: single phase or 3 phase?');
     if (!/^[6-9]\d{9}$/.test(mob)) p.push('Working mobile: 10 digits starting 6, 7, 8 or 9.');
     if (!F.consent) p.push('Add the consent form.');
   }
@@ -449,7 +457,7 @@ async function submit() {
   try {
     store('supervisor', $('by').value.trim());
     const payload = { cid: 'c' + Date.now().toString(36) + Math.random().toString(36).slice(2, 8), by: $('by').value, dist: $('dist').value, sn: $('sn').value, name: $('bname').value,
-      gender: F.gender, mobile: $('mob').value, lat: F.gps.lat, lng: F.gps.lng, acc: F.gps.acc, photo: F.photo, consent: F.avail === 'No' ? '' : F.consent,
+      gender: F.gender, units: F.units, phase: F.phase, mobile: $('mob').value, lat: F.gps.lat, lng: F.gps.lng, acc: F.gps.acc, photo: F.photo, consent: F.avail === 'No' ? '' : F.consent,
       avail: F.avail, naWhy: F.naWhy, pat: phoneTime() };
     let r = null, queued = false;
     try { r = await run('submitSurvey', payload); }
@@ -458,7 +466,8 @@ async function submit() {
     $('doneTxt').innerHTML = '<div class="mono">' + esc($('sn').value) + '</div>' + (F.avail === 'No' ? '<div>Not available – ' + esc(F.naWhy) + '. Saved as a revisit.</div>' :
       '<div>' + esc($('bname').value) + ' · ' + esc(F.gender) + ' · ' + esc($('dist').value.toUpperCase()) + '</div>') +
       (queued ? '<div class="msg m-warn" style="margin-top:8px">No signal – saved on this phone. It is sent automatically when signal returns. Do not clear the browser data.</div>' :
-       r && r.resurvey ? '<div class="sub" style="margin-top:6px">Re-survey – the earlier one is replaced.</div>' : '');
+       r && r.resurvey ? '<div class="sub" style="margin-top:6px">Re-survey – the earlier one is replaced.</div>' : '') +
+      (F.avail !== 'No' && (F.units === 'Above 200' || F.phase === '3 phase') ? '<div class="msg m-warn" style="margin-top:8px">On hold – ' + (F.units === 'Above 200' ? 'above 200 units' : '') + (F.units === 'Above 200' && F.phase === '3 phase' ? ' + ' : '') + (F.phase === '3 phase' ? '3 phase' : '') + '. The office will check with the Department. Do not promise installation.</div>' : '');
     const h = HOUSES.find(x => x[0] === $('sn').value); if (h) { if (F.avail === 'No') { h[6] = (h[6] || 0) + 1; h[7] = phoneTime(); } else { h[4] = phoneTime(); h[5] = $('by').value; } }
     show('pDone'); showNearby();
   } catch (e) { $('err').innerHTML = '<li>' + esc(e.message || e) + '</li>'; }
@@ -502,6 +511,12 @@ $('typeSn').onclick = () => { CUR = ''; openForm(null); };
 $('typeSn2').onclick = () => openForm(null);
 $('hBack').onclick = () => { CUR = ''; show('pDist'); loadDists(); };
 $('fBack').onclick = () => CUR ? show('pHouses') : show('pDist');
+function eligShow() {
+  const bad = [F.units === 'Above 200' ? 'above 200 units' : '', F.phase === '3 phase' ? '3 phase connection' : ''].filter(Boolean);
+  $('eligMsg').innerHTML = bad.length ? '<div class="msg m-warn">' + bad.join(' and ') + ' – <b>not eligible under the scheme</b>. Finish the survey; the house goes on hold and the office checks with the Department. Do not promise installation.</div>' : '';
+}
+$('units').addEventListener('click', e => { const b = e.target.closest('[data-u]'); if (!b) return; F.units = b.dataset.u; document.querySelectorAll('#units button').forEach(x => x.classList.toggle('on', x === b)); eligShow(); });
+$('phase').addEventListener('click', e => { const b = e.target.closest('[data-ph]'); if (!b) return; F.phase = b.dataset.ph; document.querySelectorAll('#phase button').forEach(x => x.classList.toggle('on', x === b)); eligShow(); });
 $('gender').addEventListener('click', e => { const b = e.target.closest('[data-g]'); if (!b) return; F.gender = b.dataset.g; document.querySelectorAll('#gender button').forEach(x => x.classList.toggle('on', x === b)); });
 $('sn').addEventListener('input', snCheck);
 $('avail').addEventListener('click', e => { const b = e.target.closest('[data-a]'); if (b) setAvail(b.dataset.a); });
