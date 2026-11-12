@@ -91,7 +91,17 @@ tr.svdone td { background: var(--grey); color: var(--grey-ink); } tr.svdone .ph 
 .b.ok { background: var(--ok-soft); color: var(--ok); } .b.warn { background: var(--warn-soft); color: var(--warn); } .b.bad { background: var(--bad-soft); color: var(--bad); } .b.acc { background: var(--accent-soft); color: var(--accent); }
 .toolbar { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-bottom: 12px; } .toolbar h2 { margin: 0 auto 0 0; font-size: 17px; }
 .chips { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 12px; }
-.chip { border: 1px solid var(--line); background: var(--panel); border-radius: 16px; padding: 4px 11px; cursor: pointer; font-size: 13px; } .chip.on { background: var(--accent); border-color: var(--accent); color: #fff; }
+.chip { border: 1px solid var(--line); background: linear-gradient(135deg, rgba(37,99,235,.06), rgba(37,99,235,.16)); color: var(--ink); border-radius: 18px; padding: 7px 15px; cursor: pointer; font-size: 14px; transition: transform .08s, box-shadow .15s; }
+.chip:hover { transform: translateY(-1px); box-shadow: 0 2px 6px rgba(0,0,0,.12); }
+.chip.on { background: linear-gradient(135deg, #3b82f6, #1d4ed8); border-color: transparent; color: #fff; box-shadow: 0 2px 8px rgba(29,78,216,.35); }
+/* list buttons: one colour family per row */
+.lc .chip { border-color: transparent; font-weight: 500; }
+.lc.g0 .chip { background: linear-gradient(135deg, rgba(59,130,246,.14), rgba(37,99,235,.30)); } .lc.g0 .chip.on { background: linear-gradient(135deg, #3b82f6, #1d4ed8); color: #fff; }
+.lc.g1 .chip { background: linear-gradient(135deg, rgba(34,197,94,.14), rgba(21,128,61,.30)); } .lc.g1 .chip.on { background: linear-gradient(135deg, #22c55e, #15803d); color: #fff; }
+.lc.g2 .chip { background: linear-gradient(135deg, rgba(245,158,11,.16), rgba(217,119,6,.32)); } .lc.g2 .chip.on { background: linear-gradient(135deg, #f59e0b, #c2410c); color: #fff; }
+.lc.g3 .chip { background: linear-gradient(135deg, rgba(168,85,247,.14), rgba(126,34,206,.30)); } .lc.g3 .chip.on { background: linear-gradient(135deg, #a855f7, #7e22ce); color: #fff; }
+.lc.g4 .chip { background: linear-gradient(135deg, rgba(239,68,68,.14), rgba(185,28,28,.30)); } .lc.g4 .chip.on { background: linear-gradient(135deg, #ef4444, #b91c1c); color: #fff; }
+.lc .gl { align-self: center; min-width: 120px; font-size: 12.5px; font-weight: 600; text-transform: uppercase; letter-spacing: .04em; color: var(--muted); }
 .ph { width: 90px; height: 68px; border: 1px solid var(--line); border-radius: 8px; background: var(--info-soft); display: flex; align-items: center; justify-content: center; font-size: 12px; color: var(--muted); cursor: pointer; overflow: hidden; }
 .ph img { width: 100%; height: 100%; object-fit: cover; }
 #zoom { position: fixed; inset: 0; background: rgba(0,0,0,.9); z-index: 40; display: none; align-items: center; justify-content: center; } #zoom.open { display: flex; } #zoom img { max-width: 96vw; max-height: 94vh; }
@@ -480,7 +490,7 @@ const CHIP_GROUPS = [['Consent work', ['P1', 'P2', 'P3', 'P4', 'SURVEY', 'NOTFEA
 function listPage() {
   if (!LIST) LIST = 'P1';
   const L = LISTS[LIST], R = listRows();
-  $('page').innerHTML = CHIP_GROUPS.map(g => '<div class="chips"><span class="small muted" style="align-self:center;min-width:120px">' + g[0] + '</span>' +
+  $('page').innerHTML = CHIP_GROUPS.map((g, gi) => '<div class="chips lc g' + gi + '"><span class="gl">' + g[0] + '</span>' +
       g[1].filter(k => LISTS[k]).map(k => '<button class="chip' + (k === LIST ? ' on' : '') + '" data-lst="' + k + '">' + esc(CHIP_LABEL[k] || LISTS[k].t) + '</button>').join('') + '</div>').join('') +
     (L.chips.length ? '<div class="chips">' + L.chips.map(c => { const A0 = (L.src ? L.src() : scope()).filter(L.f), k = L.c && L.c[c[0]] ? A0.filter(L.c[c[0]]).length : c[0] === 'todo' ? A0.filter(s => !s.sv).length : c[0] === 'sv' ? A0.filter(s => s.sv).length : A0.length;
       return '<button class="chip' + (c[0] === CHIP ? ' on' : '') + '" data-chip="' + c[0] + '">' + esc(c[1]) + ' <b>' + k.toLocaleString('en-IN') + '</b></button>'; }).join('') + '</div>' : '') +
