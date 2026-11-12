@@ -101,6 +101,8 @@ tr.svdone td { background: var(--grey); color: var(--grey-ink); } tr.svdone .ph 
 .lc.g2 .chip { background: linear-gradient(135deg, rgba(245,158,11,.16), rgba(217,119,6,.32)); } .lc.g2 .chip.on { background: linear-gradient(135deg, #f59e0b, #c2410c); color: #fff; }
 .lc.g3 .chip { background: linear-gradient(135deg, rgba(168,85,247,.14), rgba(126,34,206,.30)); } .lc.g3 .chip.on { background: linear-gradient(135deg, #a855f7, #7e22ce); color: #fff; }
 .lc.g4 .chip { background: linear-gradient(135deg, rgba(239,68,68,.14), rgba(185,28,28,.30)); } .lc.g4 .chip.on { background: linear-gradient(135deg, #ef4444, #b91c1c); color: #fff; }
+.lc .chip.hot { background: linear-gradient(135deg, #ef4444, #991b1b); color: #fff; font-weight: 700; box-shadow: 0 2px 8px rgba(185,28,28,.35); }
+.lc .chip.hot.on { outline: 3px solid rgba(239,68,68,.45); outline-offset: 1px; }
 .lc .gl { align-self: center; min-width: 120px; font-size: 12.5px; font-weight: 600; text-transform: uppercase; letter-spacing: .04em; color: var(--muted); }
 .ph { width: 90px; height: 68px; border: 1px solid var(--line); border-radius: 8px; background: var(--info-soft); display: flex; align-items: center; justify-content: center; font-size: 12px; color: var(--muted); cursor: pointer; overflow: hidden; }
 .ph img { width: 100%; height: 100%; object-fit: cover; }
@@ -218,7 +220,7 @@ function build() {
   ULAX = ours ? (D.sites || []).filter(r => r[10] && !r[17]).map(r => ({ sn: r[0], name: r[1], mob: r[2], dist: r[3], sec: r[4], ula: r[10], us: r[11], cl: !!r[7], prio: 'ULAX', prob: r[15] })) : [];
   S = (D.sites || []).filter(r => ours ? r[17] : !['CHECK', 'BAD'].includes(r[14])).map(r => ({ sn: r[0], name: r[1], mob: r[2], dist: r[3], sec: r[4], ins: r[5], dcr: !!r[6], cl: !!r[7], ca: r[8], cs: r[9], ula: r[10], us: r[11],
     otp: !!r[12], insp: !!r[13], prio: r[14], prob: r[15], shared: r[16] || 0, inM: !!r[17], msv: r[18] === 'Y', feas: r[19] === 'Y', rej: r[20] || '', idt: r[21] || '', rdt: r[22] || '', vdt: r[23] || '', ddt: r[24] || '', amt: Number(r[25]) || 0,
-    sv: (D.sv || {})[r[0]] || null, na: (D.na || {})[r[0]] || null }));
+    sv: (D.sv || {})[r[0]] || null, na: (D.na || {})[r[0]] || null, back: (D.back || {})[r[0]] || null }));
   MOBMAP = {}; S.forEach(s => { if (s.shared > 0 && s.mob) (MOBMAP[s.mob] = MOBMAP[s.mob] || []).push(s.sn); });
   S.forEach(s => { s.text = '|' + norm(s.sn) + '|' + norm(s.name) + '|' + norm(s.ula) + '|'; });
 }
@@ -274,6 +276,8 @@ const LISTS = {
   CONSENT_ACC: { t: 'Consent accepted – no ULA in our lists (MIS to check)', f: s => s.prio === 'CONSENT_ACC', chips: [] },
   CA_NV: { t: 'CA not verified / not eligible (follow up with MNRE)', f: s => s.prio === 'CA_NV', chips: [] },
   PROB: { t: 'Data problems in the files', f: s => !!s.prob, chips: [] },
+  BACK: { t: 'Went back – dropped below the highest stage reached (rejected at inspection?)', f: s => !!s.back, chips: [['', 'All'], ['nor', 'Reason not recorded'], ['new', 'Last 7 days']],
+          c: { nor: s => !s.back[4], new: s => daysSince(s.back[2]) <= 7 } },
   RED_ALL: { t: 'Subsidy redeemed – all till date', f: s => s.ins && !!(s.rdt || s.vdt || s.ddt || moneyStage(s) === 'paid'), chips: [] },
 };
 const PAGES = [['dash', '▦', 'Dashboard'], ['list', '☰', 'Lists'], ['survey', '📝', 'Survey'], ['sup', '👤', 'Supervisors'], ['-'], ['files', '⬆', 'Daily files'], ['settings', '⚙', 'Settings', 'owner']];
@@ -429,6 +433,8 @@ function brief(T, inst, found) {
   const att = [];
   if (bs.red) att.push(bs.red + ' department upload batch' + (bs.red > 1 ? 'es' : '') + ' waiting for action');
   if (rej) att.push(N(rej) + ' house' + (rej > 1 ? 's' : '') + ' rejected by the portal (correct mobile needed)');
+  { const bk = n(s => s.back); if (bk) att.push('<button data-list="BACK" style="all:unset;cursor:pointer;color:var(--bad);font-weight:700;text-decoration:underline">' + N(bk) + ' house' + (bk > 1 ? 's' : '') + ' went back a stage (rejected at inspection?)</button>' +
+      (n(s => s.back && !s.back[4]) ? ' – reason not recorded for ' + N(n(s => s.back && !s.back[4])) : '')); }
   { const hd = n(s => s.sv && s.sv[3]); if (hd) att.push('<button data-list="HOLD" style="all:unset;cursor:pointer;color:var(--bad);font-weight:700;text-decoration:underline">' + N(hd) + ' surveyed house' + (hd > 1 ? 's' : '') + ' on eligibility hold (above 200 units or 3 phase)</button> – kept out of the Department upload; get the Department\'s written decision'); }
   if (ULAX.length) att.push('<button data-list="ULAX" style="all:unset;cursor:pointer;color:var(--bad);font-weight:700;text-decoration:underline">' + N(ULAX.length) + ' ULA' + (ULAX.length > 1 ? 's' : '') + ' created under VSA for house' + (ULAX.length > 1 ? 's' : '') + ' NOT allotted to us (' + ULAX.slice(0, 3).map(x => esc(x.sn)).join(', ') + (ULAX.length > 3 ? ', …' : '') + ')</button> – do not survey, install or upload the agreement until NREDCAP adds them; find out who created them');
   const html = '<div class="brief" id="brief"><h2>' + esc(site) + ' – ' + ist.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric', timeZone: 'UTC' }) + '</h2>' +
@@ -481,17 +487,17 @@ const CHIP_LABEL = { P1: 'P1', P2: 'P2', P3: 'P3', P4: 'P4', SURVEY: 'Balance su
   M_DCR: 'DCR pending', M_OTP: 'OTP pending', M_INSP: 'Inspection pending', M_DUE: 'Subsidy due', M_DONE: 'Inspected, not redeemed', M_RED: 'Redeemed, not disbursed', M_OTH: 'Installed – check',
   PCHK: 'On portal – needs checking', SV_OFF: 'Not on portal – feasibility unknown', NF_OFF: 'Not on portal – not feasible', OTH_OFF: 'Not on portal – other',
   CONSENT_ACC: 'Consent accepted – no ULA', CA_NV: 'CA not verified', REVISIT: 'Customer not available', REJ: 'Rejected by portal', MOB: 'Mobile shared',
-  HOLD: 'Eligibility hold', ULAX: 'ULA not allotted to us', CHECK: 'Not in PMSG cloud', PROB: 'Data problems' };
+  HOLD: 'Eligibility hold', BACK: 'Went back', ULAX: 'ULA not allotted to us', CHECK: 'Not in PMSG cloud', PROB: 'Data problems' };
 const CHIP_GROUPS = [['Consent work', ['P1', 'P2', 'P3', 'P4', 'SURVEY', 'NOTFEAS']],
   ['Till date', ['ULA', 'DCR', 'OTP', 'INSP', 'RED_ALL', 'M_PAID']],
   ['Stuck at', ['M_DCR', 'M_OTP', 'M_INSP', 'M_DUE', 'M_DONE', 'M_RED', 'M_OTH']],
   ['Portal', ['PCHK', 'SV_OFF', 'NF_OFF', 'OTH_OFF', 'CONSENT_ACC', 'CA_NV']],
-  ['Attention', ['REVISIT', 'REJ', 'MOB', 'HOLD', 'ULAX', 'CHECK', 'PROB']]];
+  ['Attention', ['BACK', 'REVISIT', 'REJ', 'MOB', 'HOLD', 'ULAX', 'CHECK', 'PROB']]];
 function listPage() {
   if (!LIST) LIST = 'P1';
   const L = LISTS[LIST], R = listRows();
   $('page').innerHTML = CHIP_GROUPS.map((g, gi) => '<div class="chips lc g' + gi + '"><span class="gl">' + g[0] + '</span>' +
-      g[1].filter(k => LISTS[k]).map(k => '<button class="chip' + (k === LIST ? ' on' : '') + '" data-lst="' + k + '">' + esc(CHIP_LABEL[k] || LISTS[k].t) + '</button>').join('') + '</div>').join('') +
+      g[1].filter(k => LISTS[k]).map(k => '<button class="chip' + (k === LIST ? ' on' : '') + (k === 'BACK' ? ' hot' : '') + '" data-lst="' + k + '">' + esc(CHIP_LABEL[k] || LISTS[k].t) + '</button>').join('') + '</div>').join('') +
     (L.chips.length ? '<div class="chips">' + L.chips.map(c => { const A0 = (L.src ? L.src() : scope()).filter(L.f), k = L.c && L.c[c[0]] ? A0.filter(L.c[c[0]]).length : c[0] === 'todo' ? A0.filter(s => !s.sv).length : c[0] === 'sv' ? A0.filter(s => s.sv).length : A0.length;
       return '<button class="chip' + (c[0] === CHIP ? ' on' : '') + '" data-chip="' + c[0] + '">' + esc(c[1]) + ' <b>' + k.toLocaleString('en-IN') + '</b></button>'; }).join('') + '</div>' : '') +
     '<div class="toolbar"><h2>' + R.length.toLocaleString('en-IN') + ' service numbers</h2>' + (can.work() ? '<button class="btn" id="csv">⬇ This list (CSV)</button>' : '') + '</div>' +
@@ -504,6 +510,9 @@ function listPage() {
     R.length ? '<div class="tw"><table><thead><tr><th>Service no.</th><th>Name</th><th>Distribution</th><th>Stage</th><th>Installed</th><th>CA / consent</th><th>ULA</th>' +
       '<th>DCR</th><th>OTP</th><th>Insp.</th><th>Surveyed</th></tr></thead><tbody>' + R.slice(0, 1500).map(s => '<tr><td class="mono">' + esc(s.sn) + '</td><td>' + esc(s.name) +
         (s.prob ? '<div class="small" style="color:var(--bad)">' + esc(s.prob) + '</div>' : '') + (s.rej ? '<div class="small" style="color:var(--bad)">Portal rejected: ' + esc(s.rej) + '</div>' : '') +
+        (s.back ? '<div class="small" style="color:var(--bad)"><b>Went back: ' + esc(s.back[0]) + ' → ' + esc(s.back[1]) + '</b> · noticed ' + esc(dmy(s.back[2])) + (s.back[3] ? ' · Discom: ' + esc(s.back[3]) : '') +
+          (can.work() ? ' · Reason: <select data-back="' + esc(s.sn) + '"><option value="">– choose –</option>' + (D.backReasons || []).map(x => '<option' + (x === s.back[4] ? ' selected' : '') + '>' + esc(x) + '</option>').join('') + '</select>'
+            : s.back[4] ? ' · Reason: ' + esc(s.back[4]) : '') + (s.back[5] ? ' <span class="muted">(' + esc(s.back[5]) + ')</span>' : '') + '</div>' : '') +
         (s.shared ? '<div class="small" style="color:var(--warn)">DB mobile ' + esc(s.mob) + ' shared with ' + (MOBMAP[s.mob] || []).filter(x => x !== s.sn).join(', ') +
           (s.shared > (MOBMAP[s.mob] || []).length - 1 ? ' + ' + (s.shared - (MOBMAP[s.mob] || []).length + 1) + ' not in our list' : '') + (s.otp ? ' (OTP done – no action)' : s.ula ? ' – OTP will go to this mobile' : '') + '</div>' : '') +
         (s.na && !s.sv ? '<div class="small muted">Not available ×' + s.na[0] + ' · last ' + esc(dmy(s.na[1])) + (s.na[2] ? ' · ' + esc(s.na[2]) : '') + '</div>' : '') +
@@ -723,6 +732,13 @@ document.addEventListener('click', async e => {
 });
 $('zoom').onclick = () => $('zoom').classList.remove('open');
 document.addEventListener('change', e => {
+  if (e.target.dataset && e.target.dataset.back) {               // reason a house went back
+    const sel = e.target, sn = sel.dataset.back; sel.disabled = true;
+    run('setBackReason', KEY, sn, sel.value).then(() => { const x = S.find(s => s.sn === sn); if (x && x.back) { x.back[4] = sel.value; x.back[5] = sel.value ? (D.me && D.me.name) || '' : ''; }
+      if (D.back && D.back[sn]) D.back[sn][4] = sel.value; toast(sel.value ? 'Reason saved.' : 'Reason cleared.'); })
+      .catch(er => toast(er.message || er, 6000)).then(() => { sel.disabled = false; });
+    return;
+  }
   const id = e.target.id;
   if (id === 'fSec') { fill(); render(); } else if (id === 'fVil') render();
   else if (id === 'svVil' || id === 'svG' || id === 'svP') { SVF[{ svVil: 'vil', svG: 'g', svP: 'p' }[id]] = e.target.value; surveyPage(); }
