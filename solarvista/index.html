@@ -197,7 +197,7 @@ const PR = k => PRIO[k] || PRIO.OTHER;
 const PGRP = ['P1', 'P2', 'P3', 'P4'];
 const GROUP = { 1: ['ok', 'Folder 1 · upload consent now'], 2: ['warn', 'Folder 2 · Excel first'], 3: ['bad', 'Folder 3 · check first'] };
 
-let D = null, S = [], ULAX = [], ROLE = 'mis', PAGE = 'dash', LIST = null, CHIP = '';
+let D = null, S = [], ULAX = [], MOBMAP = {}, ROLE = 'mis', PAGE = 'dash', LIST = null, CHIP = '';
 const can = { manage: () => ROLE === 'owner' || ROLE === 'manager', owner: () => ROLE === 'owner', work: () => ROLE !== 'viewer' };
 
 // sites: [sn, name, dbMobile, dist, section, installed, dcr, inCL, ca, consent, ula, ulaStatus, otp, insp, group, problems, sharedMobile, inMaster, surveyed, feasible, rejectedWhy, inspDate, redeemDate, verifiedDate, disbursedDate, subsidyAmount]
@@ -209,6 +209,7 @@ function build() {
   S = (D.sites || []).filter(r => ours ? r[17] : !['CHECK', 'BAD'].includes(r[14])).map(r => ({ sn: r[0], name: r[1], mob: r[2], dist: r[3], sec: r[4], ins: r[5], dcr: !!r[6], cl: !!r[7], ca: r[8], cs: r[9], ula: r[10], us: r[11],
     otp: !!r[12], insp: !!r[13], prio: r[14], prob: r[15], shared: r[16] || 0, inM: !!r[17], msv: r[18] === 'Y', feas: r[19] === 'Y', rej: r[20] || '', idt: r[21] || '', rdt: r[22] || '', vdt: r[23] || '', ddt: r[24] || '', amt: Number(r[25]) || 0,
     sv: (D.sv || {})[r[0]] || null, na: (D.na || {})[r[0]] || null }));
+  MOBMAP = {}; S.forEach(s => { if (s.shared > 0 && s.mob) (MOBMAP[s.mob] = MOBMAP[s.mob] || []).push(s.sn); });
   S.forEach(s => { s.text = '|' + norm(s.sn) + '|' + norm(s.name) + '|' + norm(s.ula) + '|'; });
 }
 function fill() {
@@ -244,11 +245,14 @@ const LISTS = {
   OTH_OFF: { t: 'Not on the portal – other', f: s => !s.cl && !['P2', 'P4', 'SURVEY', 'NOTFEAS'].includes(s.prio), chips: [] },
   REVISIT: { t: 'Customer not available – revisit', f: s => !!s.na && !s.sv, chips: [['', 'All'], ['n3', '3 visits or more']], c: { n3: s => s.na[0] >= 3 } },
   REJ: { t: 'Rejected by the portal (Invalid Consumer Data)', f: s => !!s.rej, chips: [] },
-  MOB: { t: 'Mobile shared with another house (likely to be rejected)', f: s => s.shared > 0 && PGRP.includes(s.prio), chips: [] },
+  MOB: { t: 'Mobile shared with another house', f: s => s.shared > 0, def: 'pre',
+         chips: [['pre', 'Before ULA – likely to be rejected'], ['otp', 'ULA created, OTP pending – OTP goes to this mobile'], ['done', 'OTP done – no action'], ['all', 'All']],
+         c: { pre: s => !s.ula, otp: s => !!s.ula && !s.otp, done: s => s.otp, all: s => true } },
   CHECK: { t: 'Not in PMSG cloud – kept aside', f: s => s.prio === 'CHECK', def: 'v',
     chips: [['v', 'CA Verified'], ['nv', 'CA not verified / not eligible'], ['acc', 'Consent accepted'], ['pend', 'Consent pending'], ['all', 'All']],
     c: { v: s => s.ca === 'V', nv: s => s.ca !== 'V', acc: s => s.cs === 'A', pend: s => s.cs !== 'A', all: s => true } },
-  ULA: { t: 'ULA created – all till date', f: s => !!s.ula, chips: [] },
+  ULA: { t: 'ULA created – all till date', f: s => !!s.ula, chips: [['', 'All'], ['dcr', 'DCR done'], ['idone', 'Installed – DCR pending'], ['iprog', 'Installation in progress'], ['none', 'Not installed']],
+         c: { dcr: s => s.dcr, idone: s => !s.dcr && s.ins === 'D', iprog: s => !s.dcr && s.ins && s.ins !== 'D', none: s => !s.dcr && !s.ins } },
   HOLD: { t: 'Eligibility hold – above 200 units or 3 phase (surveyed)', f: s => !!(s.sv && s.sv[3]), chips: [] },
   ULAX: { t: 'ULA under VSA but not allotted to us (not in PMSG cloud)', src: () => ULAX, f: s => true, chips: [] },
   DCR: { t: 'DCR done – all till date', f: s => !!s.ula || s.dcr, chips: [['done', 'DCR done'], ['pend', 'DCR pending (ULA, installed, no DCR)']], def: 'done',
@@ -364,7 +368,7 @@ function dash() {
     '</details>' +
     '<h3 class="sec">Field work</h3><div class="cards">' +
       card('REVISIT', n(s => s.na && !s.sv), '<b>Customer not available</b>', 'Revisit · ' + n(s => s.na && !s.sv && s.na[0] >= 3) + ' visited 3 times or more', 'fu') +
-      card('MOB', n(s => s.shared > 0 && PGRP.includes(s.prio)), '<b>Database mobile shared with another house</b>', 'Likely to be rejected – get the working mobile', 'fu') + '</div>' +
+      card('MOB', n(s => s.shared > 0 && !s.ula), '<b>Database mobile shared with another house</b>', 'Likely to be rejected – get the working mobile', 'fu') + '</div>' +
     '<h3 class="sec">After the survey · Department Excel upload</h3><div class="cards">' +
       '<button class="card ' + (bs.red ? 'red' : '') + '" data-page="survey"><div class="v">' + (bs.red || 0) + '</div><div class="l"><b>Upload batches needing action</b></div><div class="s muted">' + (bs.awaiting || 0) + ' upload outcome not recorded</div></button>' +
       card('REJ', n(s => s.rej), '<b>Rejected by the portal</b>', 'Get the correct mobile and upload again', n(s => s.rej) ? 'fu' : '') + '</div>' +
@@ -449,6 +453,7 @@ function distTable(A) {
 }
 function listRows() {
   const L = LISTS[LIST || 'P1'], A = (L.src ? L.src() : scope()).filter(L.f);
+  if (LIST === 'MOB') { const B = L.c && CHIP ? A.filter(L.c[CHIP]) : A; return B.slice().sort((a, b) => (a.mob + a.sn).localeCompare(b.mob + b.sn)); }
   if (L.c && CHIP) return A.filter(L.c[CHIP]);
   if (CHIP === 'todo') return A.filter(s => !s.sv); if (CHIP === 'sv') return A.filter(s => s.sv);
   return A;
@@ -477,7 +482,8 @@ function listPage() {
   const L = LISTS[LIST], R = listRows();
   $('page').innerHTML = CHIP_GROUPS.map(g => '<div class="chips"><span class="small muted" style="align-self:center;min-width:120px">' + g[0] + '</span>' +
       g[1].filter(k => LISTS[k]).map(k => '<button class="chip' + (k === LIST ? ' on' : '') + '" data-lst="' + k + '">' + esc(CHIP_LABEL[k] || LISTS[k].t) + '</button>').join('') + '</div>').join('') +
-    (L.chips.length ? '<div class="chips">' + L.chips.map(c => '<button class="chip' + (c[0] === CHIP ? ' on' : '') + '" data-chip="' + c[0] + '">' + esc(c[1]) + '</button>').join('') + '</div>' : '') +
+    (L.chips.length ? '<div class="chips">' + L.chips.map(c => { const A0 = (L.src ? L.src() : scope()).filter(L.f), k = L.c && L.c[c[0]] ? A0.filter(L.c[c[0]]).length : c[0] === 'todo' ? A0.filter(s => !s.sv).length : c[0] === 'sv' ? A0.filter(s => s.sv).length : A0.length;
+      return '<button class="chip' + (c[0] === CHIP ? ' on' : '') + '" data-chip="' + c[0] + '">' + esc(c[1]) + ' <b>' + k.toLocaleString('en-IN') + '</b></button>'; }).join('') + '</div>' : '') +
     '<div class="toolbar"><h2>' + R.length.toLocaleString('en-IN') + ' service numbers</h2>' + (can.work() ? '<button class="btn" id="csv">⬇ This list (CSV)</button>' : '') + '</div>' +
     (LIST === 'ULAX' ? ulaxHtml(R) : LIST === 'CHECK' ? '<div class="note">These houses are in the <b>department\'s Consumer List</b> (APSPDCL implementation agency) but <b>not in our PMSG cloud list</b> of 33,552. ' +
       'They may belong to another vendor. <b>Kept aside – not counted in any total, not shown to supervisors.</b> The file has no consumer name, and the distribution is known only where another house shares the number code.</div>' +
@@ -488,7 +494,8 @@ function listPage() {
     R.length ? '<div class="tw"><table><thead><tr><th>Service no.</th><th>Name</th><th>Distribution</th><th>Stage</th><th>Installed</th><th>CA / consent</th><th>ULA</th>' +
       '<th>DCR</th><th>OTP</th><th>Insp.</th><th>Surveyed</th></tr></thead><tbody>' + R.slice(0, 1500).map(s => '<tr><td class="mono">' + esc(s.sn) + '</td><td>' + esc(s.name) +
         (s.prob ? '<div class="small" style="color:var(--bad)">' + esc(s.prob) + '</div>' : '') + (s.rej ? '<div class="small" style="color:var(--bad)">Portal rejected: ' + esc(s.rej) + '</div>' : '') +
-        (s.shared ? '<div class="small" style="color:var(--warn)">DB mobile ' + esc(s.mob) + ' shared with ' + s.shared + ' other house(s)</div>' : '') +
+        (s.shared ? '<div class="small" style="color:var(--warn)">DB mobile ' + esc(s.mob) + ' shared with ' + (MOBMAP[s.mob] || []).filter(x => x !== s.sn).join(', ') +
+          (s.shared > (MOBMAP[s.mob] || []).length - 1 ? ' + ' + (s.shared - (MOBMAP[s.mob] || []).length + 1) + ' not in our list' : '') + (s.otp ? ' (OTP done – no action)' : s.ula ? ' – OTP will go to this mobile' : '') + '</div>' : '') +
         (s.na && !s.sv ? '<div class="small muted">Not available ×' + s.na[0] + ' · last ' + esc(dmy(s.na[1])) + (s.na[2] ? ' · ' + esc(s.na[2]) : '') + '</div>' : '') +
         '</td><td>' + esc(s.dist) + '</td><td><span class="b ' + PR(s.prio)[0] + '">' + PR(s.prio)[1] +
         '</span></td><td>' + (s.ins === 'D' ? 'Done' : s.ins === 'P' ? 'In progress' : '–') + '</td><td>' + (s.cl ? ({ V: 'Verified', N: 'Not verified', X: 'Not eligible' }[s.ca] || '?') + ' · ' + (s.cs === 'A' ? 'Accepted' : 'Pending') : 'Not in list') +
