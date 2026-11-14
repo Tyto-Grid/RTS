@@ -149,6 +149,15 @@ button:disabled{opacity:.5}
   <ul class="errors" id="err"></ul>
   <button class="primary" id="submit" style="width:100%;padding:14px;font-size:16px;margin:8px 0 30px">Submit survey</button>
   <input type="file" id="camIn" accept="image/*" capture="environment" class="hidden">
+  <!-- camera inside the page (14-11-2026): opening the phone's camera app made some phones close the browser, so the survey restarted -->
+  <div id="camBox" class="hidden" style="position:fixed;inset:0;background:#000;z-index:60;display:flex;flex-direction:column">
+    <video id="camV" playsinline autoplay muted style="flex:1;min-height:0;width:100%;object-fit:contain;background:#000"></video>
+    <div style="display:flex;align-items:center;justify-content:space-around;padding:14px 10px calc(14px + env(safe-area-inset-bottom,0px))">
+      <button id="camX" type="button" style="min-width:90px">Cancel</button>
+      <button id="camSnap" type="button" aria-label="Take photo" style="width:74px;height:74px;border-radius:50%;border:5px solid #fff;background:#e5e7eb;padding:0"></button>
+      <button id="camApp" type="button" style="min-width:90px">Phone camera</button>
+    </div>
+  </div>
   <input type="file" id="galIn" accept="image/*" class="hidden">
   <input type="file" id="fileIn" accept="application/pdf,image/jpeg,image/png" class="hidden">
 </div>
@@ -529,9 +538,26 @@ $('tabs').addEventListener('click', e => { const b = e.target.closest('[data-tab
 todayShow();
 $('mob').addEventListener('input', () => { let d = $('mob').value.replace(/\D/g, ''); if (d.length > 10 && /^91/.test(d)) d = d.slice(2); else if (d.length > 10 && /^0/.test(d)) d = d.slice(1); $('mob').value = d.slice(0, 10); });
 $('gps').onclick = gps;
-$('phCam').onclick = () => { $('camIn').dataset.for = 'photo'; $('camIn').value = ''; $('camIn').click(); };
+let CAM = null, CAMFOR = '';
+function nativeCam(f) { $('camIn').dataset.for = f; $('camIn').value = ''; $('camIn').click(); }
+async function openCam(f) {
+  CAMFOR = f;
+  if (!(navigator.mediaDevices && navigator.mediaDevices.getUserMedia)) return nativeCam(f);
+  try { CAM = await navigator.mediaDevices.getUserMedia({ audio: false, video: { facingMode: { ideal: 'environment' }, width: { ideal: 2560 }, height: { ideal: 1920 } } }); }
+  catch (e) { return nativeCam(f); }                                    // camera permission refused: the phone's camera app as before
+  $('camV').srcObject = CAM; $('camBox').classList.remove('hidden');
+}
+function closeCam() { if (CAM) CAM.getTracks().forEach(t => t.stop()); CAM = null; $('camV').srcObject = null; $('camBox').classList.add('hidden'); }
+$('camX').onclick = closeCam;
+$('camApp').onclick = () => { closeCam(); nativeCam(CAMFOR); };
+$('camSnap').onclick = () => {
+  const v = $('camV'); if (!v.videoWidth) return;
+  const c = document.createElement('canvas'); c.width = v.videoWidth; c.height = v.videoHeight; c.getContext('2d').drawImage(v, 0, 0);
+  c.toBlob(b => { closeCam(); if (!b) return; const file = new File([b], 'camera.jpg', { type: 'image/jpeg' }); if (CAMFOR === 'consent') onConsent(file); else onPhoto(file); }, 'image/jpeg', 0.92);
+};
+$('phCam').onclick = () => openCam('photo');
 $('phGal').onclick = () => { $('galIn').value = ''; $('galIn').click(); };
-$('cfCam').onclick = () => { $('camIn').dataset.for = 'consent'; $('camIn').value = ''; $('camIn').click(); };
+$('cfCam').onclick = () => openCam('consent');
 $('cfFile').onclick = () => { $('fileIn').value = ''; $('fileIn').click(); };
 $('camIn').onchange = e => { const f = e.target.files[0]; if ($('camIn').dataset.for === 'consent') onConsent(f); else onPhoto(f); };
 $('galIn').onchange = e => onPhoto(e.target.files[0]);
