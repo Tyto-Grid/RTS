@@ -204,7 +204,7 @@ const dmy = s => { const m = /^(\d{4})-(\d{2})-(\d{2})(?: (\d{2}:\d{2}))?/.exec(
 const ROLE_T = { owner: 'Administrator', manager: 'Manager', mis: 'MIS', viewer: 'Viewer' };
 const PRIO = { P1: ['ok', 'P1 · consent only'], P2: ['warn', 'P2 · Excel + consent'], P3: ['acc', 'P3 · feasible, consent'], P4: ['warn', 'P4 · feasible, Excel + consent'],
   SURVEY: ['', 'Balance · feasibility survey'], NOTFEAS: ['', 'Not feasible'], ULA: ['', 'ULA created'], CHECK: ['', 'Not in PMSG cloud – kept aside'], BAD: ['bad', 'Bad service number'],
-  CONSENT_ACC: ['bad', 'Consent accepted – no ULA'], CA_NV: ['bad', 'CA not verified'], OTHER: ['', 'Other'], NEW: ['warn', 'Not in any file'] };
+  CONSENT_ACC: ['bad', 'Consent accepted – no ULA'], CA_NV: ['bad', 'CA not verified'], PRE: ['warn', 'Consent taken earlier'], OTHER: ['', 'Other'], NEW: ['warn', 'Not in any file'] };
 const PR = k => PRIO[k] || PRIO.OTHER;
 const PGRP = ['P1', 'P2', 'P3', 'P4'];
 const GROUP = { 1: ['ok', 'Folder 1 · upload consent now'], 2: ['warn', 'Folder 2 · Excel first'], 3: ['bad', 'Folder 3 · check first'] };
@@ -256,6 +256,9 @@ const LISTS = {
   NF_OFF: { t: 'Not on the portal – not feasible', f: s => !s.cl && s.prio === 'NOTFEAS', chips: [] },
   OTH_OFF: { t: 'Not on the portal – other', f: s => !s.cl && !['P2', 'P4', 'SURVEY', 'NOTFEAS'].includes(s.prio), chips: [] },
   REVISIT: { t: 'Customer not available – revisit', f: s => !!s.na && !s.sv, chips: [['', 'All'], ['n3', '3 visits or more']], c: { n3: s => s.na[0] >= 3 } },
+  PRE: { t: 'Consent collected before the app – not yet accepted on the portal', f: s => s.prio === 'PRE',
+         chips: [['', 'All'], ['nocl', 'Not on Consumer List – send to the Department'], ['cl', 'On Consumer List – consent not accepted yet']],
+         c: { nocl: s => !s.cl, cl: s => !!s.cl } },
   REJ: { t: 'Rejected by the portal (Invalid Consumer Data)', f: s => !!s.rej, chips: [] },
   MOB: { t: 'Mobile shared with another house', f: s => s.shared > 0, def: 'pre',
          chips: [['pre', 'Before ULA – likely to be rejected'], ['otp', 'ULA created, OTP pending – OTP goes to this mobile'], ['done', 'OTP done – no action'], ['all', 'All']],
@@ -482,13 +485,13 @@ function ulaxHtml(R) {
       '</tbody></table></div>' : '<div class="empty">None – every ULA under VSA is a house in the PMSG list.</div>');
 }
 // list buttons: grouped, each with a plain name. "Till date" lists keep every house that ever reached the step; "Stuck at" lists hold only houses waiting at that step.
-const CHIP_LABEL = { P1: 'P1', P2: 'P2', P3: 'P3', P4: 'P4', SURVEY: 'Balance survey', NOTFEAS: 'Not feasible',
+const CHIP_LABEL = { P1: 'P1', P2: 'P2', P3: 'P3', P4: 'P4', PRE: 'Consent taken earlier', SURVEY: 'Balance survey', NOTFEAS: 'Not feasible',
   ULA: 'ULA created', DCR: 'DCR done', OTP: 'OTP done', INSP: 'Inspection done', RED_ALL: 'Subsidy redeemed', M_PAID: 'Subsidy received',
   M_DCR: 'DCR pending', M_OTP: 'OTP pending', M_INSP: 'Inspection pending', M_DUE: 'Subsidy due', M_DONE: 'Inspected, not redeemed', M_RED: 'Redeemed, not disbursed', M_OTH: 'Installed – check',
   PCHK: 'On portal – needs checking', SV_OFF: 'Not on portal – feasibility unknown', NF_OFF: 'Not on portal – not feasible', OTH_OFF: 'Not on portal – other',
   CONSENT_ACC: 'Consent accepted – no ULA', CA_NV: 'CA not verified', REVISIT: 'Customer not available', REJ: 'Rejected by portal', MOB: 'Mobile shared',
   HOLD: 'Eligibility hold', BACK: 'Went back', ULAX: 'ULA not allotted to us', CHECK: 'Not in PMSG cloud', PROB: 'Data problems' };
-const CHIP_GROUPS = [['Consent work', ['P1', 'P2', 'P3', 'P4', 'SURVEY', 'NOTFEAS']],
+const CHIP_GROUPS = [['Consent work', ['P1', 'P2', 'P3', 'P4', 'PRE', 'SURVEY', 'NOTFEAS']],
   ['Till date', ['ULA', 'DCR', 'OTP', 'INSP', 'RED_ALL', 'M_PAID']],
   ['Stuck at', ['M_DCR', 'M_OTP', 'M_INSP', 'M_DUE', 'M_DONE', 'M_RED', 'M_OTH']],
   ['Portal', ['PCHK', 'SV_OFF', 'NF_OFF', 'OTH_OFF', 'CONSENT_ACC', 'CA_NV']],
@@ -661,7 +664,8 @@ function shrinkPhoto(file) {
 function filesPage() {
   const m = D.meta || {}, have = {}; (m.files || []).forEach(f => have[f.kind] = f);
   const kinds = [['MASTER', 'Consumers list (PMSG cloud) – the 33,552', 'master list: feasibility, survey status'], ['INST', 'Installations report (PMSG cloud)', 'who is installed, DCR, portal OTP'], ['CL', 'Consumer List (MNRE)', 'CA status and consent status'],
-    ['MIS', 'ULA Vendor My Applications List (MIS)', 'ULA numbers – APKUP only'], ['APP', 'My Applications List (portal) – optional', 'extra ULA numbers – APKUP only']];
+    ['MIS', 'ULA Vendor My Applications List (MIS)', 'ULA numbers – APKUP only'], ['APP', 'My Applications List (portal) – optional', 'extra ULA numbers – APKUP only'],
+    ['PRE', 'Consents collected before the app – once', 'these houses never go to the field (columns: consumer service number, distribution)']];
   $('page').innerHTML = '<div class="box"><h3>The daily files</h3><div class="tw"><table><thead><tr><th>File</th><th>Used for</th><th>Current file</th><th class="num">Rows</th><th>Uploaded</th></tr></thead><tbody>' +
     kinds.map(k => { const f = have[k[0]]; return '<tr><td><b>' + k[1] + '</b></td><td class="small muted">' + k[2] + '</td><td class="small">' + (f ? esc(f.name) : '<span class="b bad">missing</span>') +
       '</td><td class="num">' + (f ? f.rows.toLocaleString('en-IN') : '') + '</td><td class="small">' + (f ? esc(f.date) : '') + '</td></tr>'; }).join('') +
