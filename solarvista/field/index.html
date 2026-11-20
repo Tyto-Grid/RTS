@@ -88,7 +88,7 @@ button:disabled{opacity:.5}
 <circle cx="37" cy="37" r="16" fill="none" stroke="#FFFFFF" stroke-width="2.4"/></svg><div><div class="org">Kasu Infra Projects Pvt. Ltd.</div><h1>Survey · Kuppam</h1><div class="sub">Consent forms for ULA – installed houses first.</div></div></header>
   <div class="card"><h2>1 · Your name</h2><input id="by" autocomplete="name" placeholder="Supervisor name"></div>
   <div class="tabs hidden" id="tabs"><button data-tab="pri" class="on">Priority – consent</button><button data-tab="bal">Balance – survey</button></div>
-  <div class="card" id="todayCard"><div class="count"><span>Today</span><span><b id="todayN">0</b> / 30 visits</span></div><div class="bar2"><i id="todayBar" style="width:0"></i></div></div>
+  <div class="card" id="todayCard"><div class="count"><span>Today</span><span><b id="todayN">0</b> / 50 visits</span></div><div class="bar2"><i id="todayBar" style="width:0"></i></div></div>
   <div class="card hidden" id="balCard"><h2>Balance – feasibility survey</h2><div class="msg m-info">For houses not surveyed yet (roof, shade, feasible or not). This tab opens soon – collect consent forms in the Priority tab now.</div></div>
   <div class="card" id="distCard"><h2>2 · Distribution (village)</h2>
     <input id="dq" placeholder="Type to search" autocomplete="off">
@@ -210,7 +210,7 @@ let DISTS = [], HOUSES = [], CUR = '', F = { gender: '', units: '', phase: '', g
 const pad2 = n => String(n).padStart(2, '0');
 function phoneTime() { const d = new Date(); return d.getFullYear() + '-' + pad2(d.getMonth() + 1) + '-' + pad2(d.getDate()) + ' ' + pad2(d.getHours()) + ':' + pad2(d.getMinutes()); }
 function todayKey() { return 'today_' + norm($('by').value) + '_' + phoneTime().slice(0, 10); }
-function todayShow() { const n = Number(store(todayKey()) || 0); $('todayN').textContent = n; $('todayBar').style.width = Math.min(100, n * 100 / 30) + '%'; }
+function todayShow() { const n = Number(store(todayKey()) || 0); $('todayN').textContent = n; $('todayBar').style.width = Math.min(100, n * 100 / 50) + '%'; }
 function todayAdd() { store(todayKey(), String(Number(store(todayKey()) || 0) + 1)); todayShow(); }
 function setAvail(a) {
   F.avail = a; document.querySelectorAll('#avail button').forEach(x => x.classList.toggle('on', x.dataset.a === a));

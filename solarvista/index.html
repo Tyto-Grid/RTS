@@ -47,6 +47,10 @@ h3.sec { font-size: 13px; color: var(--muted); text-transform: uppercase; letter
 .card .s { font-size: 12px; margin-top: 4px; } .card.p1 { border-left: 4px solid var(--ok); } .card.p2 { border-left: 4px solid var(--warn); } .card.p3 { border-left: 4px solid var(--accent); }
 .card.fu { border-left: 4px solid var(--bad); } .card.p4 { border-left: 4px solid var(--warn); } .card.bal { border-left: 4px solid var(--grey-ink); }
 .card.red { border-left: 4px solid var(--bad); background: var(--bad-soft); }
+.dl { background: var(--panel); border: 2px solid var(--bad); border-radius: 12px; padding: 14px 16px; margin-bottom: 16px; }
+.dl.ok { border-color: var(--ok); } .dl h3 { margin: 0 0 4px; font-size: 16px; } .dl .verdict { font-size: 17px; font-weight: 700; margin: 6px 0 10px; }
+.dl .row { display: flex; flex-wrap: wrap; gap: 10px; } .dl .k { flex: 1; min-width: 150px; background: var(--grey); border-radius: 8px; padding: 8px 10px; }
+.dl .k .v { font-size: 22px; font-weight: 700; } .dl .k.need .v { color: var(--bad); } .dl .k.good .v { color: var(--ok); }
 .target { display: flex; flex-wrap: wrap; gap: 18px; align-items: center; background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 12px 14px; margin-bottom: 16px; }
 .target .big { font-size: 24px; font-weight: 700; } .target .grow { flex: 1; min-width: 200px; }
 .target .bar { height: 8px; background: var(--grey); border-radius: 6px; overflow: hidden; margin-top: 6px; } .target .bar i { display: block; height: 100%; background: var(--ok); }
@@ -364,7 +368,7 @@ function dash() {
   const m = D.meta || {}, T = D.target || 20378, inst = S.filter(s => s.ins === 'D').length, found = S.filter(s => s.ins || s.feas).length, bs = D.bstat || {};
   const pc = v => Math.min(100, Math.round(v * 100 / T));
   const mgmt = ROLE === 'viewer' || ROLE === 'owner';
-  $('page').innerHTML = (m.at ? topPanels(A) : '') + (mgmt && m.at ? brief(T, inst, found) : '') +
+  $('page').innerHTML = deadlineBox() + quietBox() + (m.at ? topPanels(A) : '') + (mgmt && m.at ? brief(T, inst, found) : '') +
     (m.at ? '' : '<div class="note">No daily files yet – open <b>Daily files</b> and upload the Consumers list (PMSG cloud), the Installations report, the Consumer List and the MIS file.</div>') +
     '<div class="target"><div><div class="small muted">Target</div><div class="big">' + T.toLocaleString('en-IN') + '</div><div class="small muted">feasible houses installed</div></div>' +
       '<div class="grow"><b>' + inst.toLocaleString('en-IN') + '</b> installed (' + pc(inst) + '%)<div class="bar"><i style="width:' + pc(inst) + '%"></i></div></div>' +
@@ -396,6 +400,39 @@ function dash() {
     (n(s => s.prob) ? '<h3 class="sec">Office clean-up</h3><div class="cards">' + card('PROB', n(s => s.prob), '<b>Data problems in the files</b>', 'bad numbers, duplicates, mobile mismatch', 'fu') + '</div>' : '') +
     (ROLE === 'viewer' ? '<details class="more"><summary>Details by distribution</summary>' + distTable(A) + '</details>' : distTable(A)) +
     '<p class="small muted">Click a badge to open its list. Data: daily files updated ' + esc(m.at || 'never') + (m.by ? ' by ' + esc(m.by) : '') + '.</p>';
+}
+// ---------------------------------------------------------------- MNRE cut-off: what is needed per day vs what is being done (17-11-2026)
+function deadlineBox() {
+  const N = v => Number(v || 0).toLocaleString('en-IN'), ist = new Date(Date.now() + 5.5 * 36e5), day = d => d.toISOString().slice(0, 10);
+  const today = day(ist), ago = k => day(new Date(ist - k * 864e5)), fe = D.fieldEnd || '2026-11-30', pe = D.portalEnd || '2026-12-15';
+  const daysTo = e => Math.max(0, Math.round((Date.parse(e) - Date.parse(today)) / 864e5) + 1), fd = daysTo(fe), pd = daysTo(pe);
+  const dmy = d => d.slice(8, 10) + '-' + d.slice(5, 7);
+  // consents: any field group (P1–P4) – supervisors take whatever house is in front of them
+  const open = S.filter(s => PGRP.includes(s.prio)), left = open.filter(s => !s.sv).length;
+  const svd = {}; Object.keys(D.sv || {}).forEach(sn => { const d = String(D.sv[sn][0]).slice(0, 10); svd[d] = (svd[d] || 0) + 1; });
+  const wk = d => { let t = 0; for (let k = 1; k <= 7; k++) t += d[ago(k)] || 0; return t; };
+  const cAvg = Math.round(wk(svd) / 7), cNeed = fd ? Math.ceil(left / fd) : left, cProj = cAvg * fd;
+  // ULA applications: first seen date in My Applications (or its application date)
+  const ud = D.ulaDays || {}, uAvg = Math.round(wk(ud) / 7), uNeed = pd ? Math.ceil(open.length / pd) : open.length, uKnown = Object.keys(ud).length > 0;
+  const ok = !left || cAvg >= cNeed;
+  const verdict = !left ? 'All field houses have a consent form. Now finish the portal uploads before ' + dmy(pe) + '.'
+    : !fd ? 'Field cut-off (' + dmy(fe) + ') has passed – ' + N(left) + ' houses still without consent.'
+    : ok ? 'On track: ' + N(cAvg) + ' consents a day against ' + N(cNeed) + ' needed.'
+    : 'Short: at ' + N(cAvg) + ' a day the field reaches about ' + N(cProj) + ' of ' + N(left) + ' houses by ' + dmy(fe) + ' – ' + N(left - cProj) + ' houses will miss the MNRE cut-off. Need ' + N(cNeed) + ' a day (' + N(Math.ceil(cNeed / Math.max(1, D.dayTarget || 30))) + ' supervisors at ' + (D.dayTarget || 50) + ' each).';
+  return '<div class="dl' + (ok ? ' ok' : '') + '">' + (ROLE ? '<button class="btn" id="repPdf" style="float:right">⬇ Survey report (PDF, from day one)</button>' : '') + '<h3>MNRE cut-off ' + dmy(pe) + ' · field work to end ' + dmy(fe) + ' (' + fd + ' day' + (fd === 1 ? '' : 's') + ' left, Sundays included)</h3>' +
+    '<div class="verdict" style="color:var(--' + (ok ? 'ok' : 'bad') + ')">' + verdict + '</div><div class="row">' +
+    '<div class="k need"><div class="small muted">Consents needed per day</div><div class="v">' + N(cNeed) + '</div><div class="small muted">' + N(left) + ' houses (P1–P4, any order) ÷ ' + fd + ' days</div></div>' +
+    '<div class="k ' + (ok ? 'good' : '') + '"><div class="small muted">Consents collected</div><div class="v">' + N(svd[today] || 0) + '</div><div class="small muted">today so far · yesterday ' + N(svd[ago(1)] || 0) + ' · 7-day average ' + N(cAvg) + '</div></div>' +
+    '<div class="k ' + (uKnown && uAvg >= uNeed ? 'good' : 'need') + '"><div class="small muted">ULA applications created</div><div class="v">' + (uKnown ? N(ud[today] || 0) : '–') + '</div><div class="small muted">' +
+      (uKnown ? 'today · yesterday ' + N(ud[ago(1)] || 0) + ' · 7-day average ' + N(uAvg) + ' · need ' + N(uNeed) + ' a day to ' + dmy(pe) : 'run rebuildStageHistory once to start counting') + '</div></div>' +
+    '</div><div class="small muted" style="margin-top:6px">Only houses registered on the National portal with valid consent uploaded by ' + dmy(pe) + ' count (MNRE OM of 16-11-2026). ULA counts come from the latest My Applications file – upload it daily.</div></div>';
+}
+// ---------------------------------------------------------------- what has gone quiet (the app watches even when nobody uses it)
+function quietBox() {
+  const W = D.watch || [];
+  if (!W.length) return '<div class="dl ok" style="padding:10px 16px"><b style="color:var(--ok)">✅ Nothing has gone quiet</b> <span class="small muted">– surveys, downloads and daily files are all moving.</span></div>';
+  return '<div class="dl"><h3>What has gone quiet</h3><ul style="margin:6px 0 0 18px;padding:0">' +
+    W.map(x => '<li style="margin:3px 0;color:' + (x.level === 'red' ? 'var(--bad)' : x.level === 'blue' ? '#1F4E78' : '#B35C00') + '">' + esc(x.text) + '</li>').join('') + '</ul></div>';
 }
 // ---------------------------------------------------------------- management summary (plain sentences, written from the day's files)
 let BRIEF_SUP = null;
@@ -604,7 +641,7 @@ async function svBatch(el, fn, args, isNew) {
   try {
     const o = await run(fn, KEY, ...args); saveB64(o, 'application/zip');
     toast(o.name + ' – Excel: ' + o.xl + ' houses (upload first) · folder 1: ' + o.g1 + ' upload now · folder 2: ' + o.g2 + ' after CA Verified' + (o.g3 ? ' · folder 3: ' + o.g3 + ' check' : '') +
-      (o.missing && o.missing.length ? ' · consent missing: ' + o.missing.join(', ') : '') + (isNew ? '. If the file did not save, use "Download again".' : ''), 12000);
+      (o.missing && o.missing.length ? ' · consent missing: ' + o.missing.join(', ') : '') + (isNew ? '. If the file did not save, use "Download again".' : '') + (o.more ? ' · ' + o.more + ' MORE houses waiting – press "Download new" again (150 per ZIP).' : ''), o.more ? 20000 : 12000);
     if (isNew) return surveyPage(true);
   } catch (e) { toast(e.message || e, 8000); }
   el.disabled = false; if (t) el.textContent = t;
@@ -721,6 +758,7 @@ document.addEventListener('click', async e => {
   if (t.id === 'svReload') return surveyPage(true);
   if (t.id === 'supReload') return supPage(true);
   if (t.id === 'flCopy') { try { await navigator.clipboard.writeText(FIELD_LINK); toast('Link copied – paste it in WhatsApp.'); } catch (er) { prompt('Copy this link:', FIELD_LINK); } return; }
+  if (t.id === 'repPdf') { t.disabled = true; const x = t.textContent; t.textContent = 'Preparing PDF…'; try { saveB64(await run('surveyReportPdf', KEY)); } catch (er) { toast(er.message || er, 6000); } t.disabled = false; t.textContent = x; return; }
   if (t.id === 'supXls') { t.disabled = true; try { saveB64(await run('supervisorReport', KEY, 31)); } catch (er) { toast(er.message || er, 6000); } t.disabled = false; return; }
   if (t.dataset.leave) { const p = t.dataset.leave.split('|'); t.disabled = true; try { SUP = JSON.parse(await run('setLeave', KEY, p[0], p[1], p[2] === '1')); supPage(); } catch (er) { toast(er.message || er); t.disabled = false; } return; }
   if (t.dataset.svpdf) { t.disabled = true; try { saveB64(await run('getSurveyFile', KEY, t.dataset.svpdf)); } catch (er) { toast(er.message || er); } t.disabled = false; return; }
