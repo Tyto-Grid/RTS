@@ -16,6 +16,105 @@
       ],
       "destination": "/yemmiganur-office",
       "permanent": false
+    },
+    {
+      "source": "/",
+      "has": [
+        {
+          "type": "host",
+          "value": "www.solarvista.tech"
+        }
+      ],
+      "destination": "/yemmiganur-office",
+      "permanent": false
+    },
+    {
+      "source": "/yemmiganur-office",
+      "has": [
+        {
+          "type": "host",
+          "value": "tytogrid.com"
+        }
+      ],
+      "destination": "https://www.solarvista.tech/yemmiganur-office",
+      "permanent": false
+    },
+    {
+      "source": "/yemmiganur-office/:path*",
+      "has": [
+        {
+          "type": "host",
+          "value": "tytogrid.com"
+        }
+      ],
+      "destination": "https://www.solarvista.tech/yemmiganur-office/:path*",
+      "permanent": false
+    },
+    {
+      "source": "/yemmiganur",
+      "has": [
+        {
+          "type": "host",
+          "value": "tytogrid.com"
+        }
+      ],
+      "destination": "https://www.solarvista.tech/yemmiganur",
+      "permanent": false
+    },
+    {
+      "source": "/yemmiganur/:path*",
+      "has": [
+        {
+          "type": "host",
+          "value": "tytogrid.com"
+        }
+      ],
+      "destination": "https://www.solarvista.tech/yemmiganur/:path*",
+      "permanent": false
+    },
+    {
+      "source": "/yemmiganur-office",
+      "has": [
+        {
+          "type": "host",
+          "value": "www.tytogrid.com"
+        }
+      ],
+      "destination": "https://www.solarvista.tech/yemmiganur-office",
+      "permanent": false
+    },
+    {
+      "source": "/yemmiganur-office/:path*",
+      "has": [
+        {
+          "type": "host",
+          "value": "www.tytogrid.com"
+        }
+      ],
+      "destination": "https://www.solarvista.tech/yemmiganur-office/:path*",
+      "permanent": false
+    },
+    {
+      "source": "/yemmiganur",
+      "has": [
+        {
+          "type": "host",
+          "value": "www.tytogrid.com"
+        }
+      ],
+      "destination": "https://www.solarvista.tech/yemmiganur",
+      "permanent": false
+    },
+    {
+      "source": "/yemmiganur/:path*",
+      "has": [
+        {
+          "type": "host",
+          "value": "www.tytogrid.com"
+        }
+      ],
+      "destination": "https://www.solarvista.tech/yemmiganur/:path*",
+      "permanent": false
     }
   ],
   "headers": [
