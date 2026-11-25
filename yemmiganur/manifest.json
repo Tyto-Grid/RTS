@@ -1,8 +1,8 @@
 {
-  "name": "Solar Vista – Survey",
-  "short_name": "Survey",
-  "start_url": "/solarvista/field/",
-  "scope": "/solarvista/field/",
+  "name": "Solar Vista – Yemmiganur Survey",
+  "short_name": "YMG Survey",
+  "start_url": "/yemmiganur/",
+  "scope": "/yemmiganur/",
   "display": "standalone",
   "background_color": "#f4f6f8",
   "theme_color": "#142257",

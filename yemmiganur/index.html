@@ -1,0 +1,833 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Survey – Yemmiganur</title>
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<meta name="theme-color" content="#142257">
+<link rel="manifest" href="/yemmiganur/manifest.json">
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="/assets/icon-192.png">
+<script src="/yemmiganur/config.js"></script>
+<style>
+:root{
+  --bg:#f4f6f8; --card:#fff; --ink:#1b2230; --muted:#667085; --line:#dfe3e8; --accent:#1F3A93; --accent-ink:#fff;
+  --ok:#137a3f; --ok-bg:#e4f5eb; --warn:#9a6200; --warn-bg:#fff3d6; --bad:#b42318; --bad-bg:#fdeceb; --chip:#eef2f7;
+  --p1:#137a3f; --p1-bg:#e4f5eb; --p2:#9a6200; --p2-bg:#fff3d6; --p3:#3d5a99; --p3-bg:#e8eefb;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#12151b; --card:#1b2029; --ink:#e7eaf0; --muted:#98a2b3; --line:#2c3340; --accent:#6f9bff; --accent-ink:#0d1220;
+    --ok:#5fd394; --ok-bg:#16301f; --warn:#f2c14e; --warn-bg:#33290f; --bad:#ff8a80; --bad-bg:#3a1a18; --chip:#242a35;
+    --p1:#5fd394; --p1-bg:#16301f; --p2:#f2c14e; --p2-bg:#33290f; --p3:#9db7ff; --p3-bg:#1d2840;
+  }
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,"Noto Sans Telugu",sans-serif}
+.wrap{max-width:560px;margin:0 auto;padding:12px 16px 40px}
+h1{font-size:20px;margin:6px 0 2px}
+.sub{color:var(--muted);font-size:13px;margin-bottom:10px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px;margin:12px 0}
+.card h2{font-size:15px;margin:0 0 8px;color:var(--muted);font-weight:600}
+label{display:block;font-size:13px;color:var(--muted);margin:10px 0 4px}
+input{width:100%;font:inherit;color:inherit;background:var(--card);border:1px solid var(--line);border-radius:10px;padding:11px 12px}
+input:focus{outline:2px solid var(--accent);border-color:transparent}
+input[readonly]{background:var(--chip)}
+.mono{font-family:ui-monospace,Consolas,monospace;letter-spacing:.3px}
+button{font:inherit;border-radius:10px;border:1px solid var(--line);background:var(--card);color:inherit;padding:10px 14px;cursor:pointer}
+button.primary{background:var(--accent);border-color:var(--accent);color:var(--accent-ink);font-weight:600}
+button:disabled{opacity:.5}
+.list{display:flex;flex-direction:column;gap:6px;margin-top:8px}
+.row{display:flex;justify-content:space-between;gap:8px;align-items:center;text-align:left;width:100%;padding:10px 12px}
+.row .l{min-width:0}.row .n{font-size:13px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.row.done{opacity:.6}
+.tag{display:inline-block;border-radius:6px;padding:1px 7px;font-size:11.5px;font-weight:700;white-space:nowrap}
+.t1{background:var(--p1-bg);color:var(--p1)}.t2{background:var(--p2-bg);color:var(--p2)}.t3{background:var(--p3-bg);color:var(--p3)}
+.tdone{background:var(--chip);color:var(--muted)}
+.t4{background:#f3e8ff;color:#6b21a8}.trv{background:var(--bad-bg);color:var(--bad)}
+.tabs{display:flex;gap:6px;margin:12px 0 4px}.tabs button{flex:1;padding:10px;font-weight:600}
+.tabs button.on{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+.count{display:flex;justify-content:space-between;align-items:center;font-size:14px;margin-top:8px}.count b{font-size:18px}
+.bar2{height:6px;background:var(--chip);border-radius:3px;overflow:hidden;margin-top:4px}.bar2 i{display:block;height:100%;background:var(--ok)}
+.grp{font-weight:700;font-size:13px;margin:14px 0 2px;color:var(--muted)}
+.msg{font-size:13.5px;margin-top:6px;padding:6px 9px;border-radius:8px}
+.m-ok{background:var(--ok-bg);color:var(--ok)}.m-warn{background:var(--warn-bg);color:var(--warn)}.m-bad{background:var(--bad-bg);color:var(--bad)}.m-info{background:var(--chip);color:var(--muted)}
+.seg{display:flex;gap:6px}.seg button{flex:1;padding:11px 6px}
+.seg button.on{background:var(--accent);border-color:var(--accent);color:var(--accent-ink);font-weight:600}
+.btns{display:flex;gap:6px;margin-top:8px}.btns button{flex:1;padding:10px}
+.thumb img{width:100%;max-height:220px;object-fit:contain;border-radius:8px;background:var(--bg);margin-top:8px}
+.errors{color:var(--bad);font-size:14px}.errors li{margin:2px 0}
+.top{display:flex;align-items:center;gap:8px}.top h1{flex:1}
+.back{padding:6px 12px;font-size:14px}
+.hidden{display:none!important}
+.more{width:100%;margin-top:8px;font-size:14px}
+.small{font-size:12px;font-weight:400}
+
+/* brand */
+.band{margin:-12px -16px 14px;padding:18px 16px 16px;background:linear-gradient(135deg,#142257 0%,#22397f 100%);color:#fff;display:flex;gap:12px;align-items:center;border-bottom:4px solid #F4A62A}
+.band svg{flex:0 0 auto;border-radius:10px;box-shadow:0 0 0 1px rgba(255,255,255,.15)}
+.band .org{font-size:13px;font-weight:600;color:#F4A62A;letter-spacing:.2px}
+.band h1{margin:1px 0 2px;color:#fff;font-size:21px}
+.band .sub{margin:0;color:#c9d2ec}
+.card{border-top:3px solid #F4A62A}
+.card h2{color:#142257;font-weight:700}
+.top h1{color:var(--accent)}
+.row:active,.row:hover{border-color:#F4A62A}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]) .card h2{color:#9db7ff}}
+.secondary{background:var(--card,#1c2333);color:var(--accent,#7aa2ff);border:1.5px solid var(--accent,#7aa2ff);border-radius:10px;font-weight:600;font-size:15px}
+.seg.wrap{flex-wrap:wrap;row-gap:6px}.seg.wrap button{flex:1 1 30%}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:8px}.grid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px}
+.grid3 label,.grid2 label{font-size:12px;min-height:32px;display:flex;align-items:flex-end}
+textarea{width:100%;font:inherit;color:inherit;background:var(--card);border:1px solid var(--line);border-radius:10px;padding:10px 12px;resize:vertical}
+.chk{display:flex;gap:8px;align-items:center;color:var(--ink);font-size:14px;margin-top:8px}.chk input{width:auto}
+.card h2 .small{color:var(--muted)}
+.te{font-size:.86em;color:var(--muted);font-weight:400}button.on .te,.primary .te{color:inherit;opacity:.9}
+select{width:100%;font:inherit;color:inherit;background:var(--card);border:1px solid var(--line);border-radius:10px;padding:11px 12px}
+</style>
+</head>
+<body>
+<div id="qBar" class="hidden" style="position:sticky;top:0;z-index:9;background:#fff3d6;color:#7a4d00;border-bottom:1px solid #f0d58a;padding:9px 16px;font-size:14px;display:flex;gap:10px;align-items:center">
+  <span id="qTxt" style="flex:1"></span><button id="qSend" style="padding:5px 12px;font-size:13px">Send now</button></div>
+<!-- 0. login: pick your name, type your PIN -->
+<div class="wrap hidden" id="pLogin">
+    <header class="band"><svg width="40" height="40" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="TytoGrid"><defs><clipPath id="tgLensF"><circle cx="37" cy="37" r="16"/></clipPath></defs>
+<rect width="64" height="64" rx="15" fill="#142257"/><g fill="#34488F"><rect x="11" y="11" width="8" height="8" rx="1.8"/><rect x="22" y="11" width="8" height="8" rx="1.8"/><rect x="33" y="11" width="8" height="8" rx="1.8"/><rect x="44" y="11" width="8" height="8" rx="1.8"/><rect x="11" y="22" width="8" height="8" rx="1.8"/><rect x="22" y="22" width="8" height="8" rx="1.8"/><rect x="33" y="22" width="8" height="8" rx="1.8"/><rect x="44" y="22" width="8" height="8" rx="1.8"/><rect x="11" y="33" width="8" height="8" rx="1.8"/><rect x="22" y="33" width="8" height="8" rx="1.8"/><rect x="33" y="33" width="8" height="8" rx="1.8"/><rect x="44" y="33" width="8" height="8" rx="1.8"/><rect x="11" y="44" width="8" height="8" rx="1.8"/><rect x="22" y="44" width="8" height="8" rx="1.8"/><rect x="33" y="44" width="8" height="8" rx="1.8"/><rect x="44" y="44" width="8" height="8" rx="1.8"/></g>
+<g clip-path="url(#tgLensF)"><circle cx="37" cy="37" r="16" fill="#142257"/><g fill="#F4A62A" transform="translate(37 37) scale(1.6) translate(-37 -37)"><rect x="11" y="11" width="8" height="8" rx="1.8"/><rect x="22" y="11" width="8" height="8" rx="1.8"/><rect x="33" y="11" width="8" height="8" rx="1.8"/><rect x="44" y="11" width="8" height="8" rx="1.8"/><rect x="11" y="22" width="8" height="8" rx="1.8"/><rect x="22" y="22" width="8" height="8" rx="1.8"/><rect x="33" y="22" width="8" height="8" rx="1.8"/><rect x="44" y="22" width="8" height="8" rx="1.8"/><rect x="11" y="33" width="8" height="8" rx="1.8"/><rect x="22" y="33" width="8" height="8" rx="1.8"/><rect x="33" y="33" width="8" height="8" rx="1.8"/><rect x="44" y="33" width="8" height="8" rx="1.8"/><rect x="11" y="44" width="8" height="8" rx="1.8"/><rect x="22" y="44" width="8" height="8" rx="1.8"/><rect x="33" y="44" width="8" height="8" rx="1.8"/><rect x="44" y="44" width="8" height="8" rx="1.8"/></g></g>
+<circle cx="37" cy="37" r="16" fill="none" stroke="#FFFFFF" stroke-width="2.4"/></svg><div><div class="org">Kasu Infra Projects Pvt. Ltd.</div><h1>Survey · Yemmiganur</h1><div class="sub">New SC/ST candidates · కొత్త SC/ST లబ్ధిదారులు</div></div></header>
+  <div class="card"><h2>Your name <span class="te">మీ పేరు</span></h2>
+    <select id="lgName"><option value="">– choose / ఎంచుకోండి –</option></select>
+    <label for="lgPin">PIN <span class="te">(PM ఇచ్చిన 4 అంకెలు)</span></label>
+    <input id="lgPin" class="mono" inputmode="numeric" maxlength="4" placeholder="••••" style="letter-spacing:6px;font-size:20px;text-align:center">
+    <div id="lgMsg"></div>
+    <button class="primary" id="lgGo" style="width:100%;padding:12px;margin-top:12px">Start <span class="te">ప్రారంభించండి</span></button>
+    <div class="msg m-info" style="margin-top:10px">Name not in the list? Contact PM. <span class="te">మీ పేరు లేదా? PM ని సంప్రదించండి.</span></div>
+  </div>
+</div>
+<!-- 1. distributions -->
+<div class="wrap hidden" id="pDist">
+    <header class="band"><svg width="40" height="40" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="TytoGrid"><defs><clipPath id="tgLensG"><circle cx="37" cy="37" r="16"/></clipPath></defs>
+<rect width="64" height="64" rx="15" fill="#142257"/><g fill="#34488F"><rect x="11" y="11" width="8" height="8" rx="1.8"/><rect x="22" y="11" width="8" height="8" rx="1.8"/><rect x="33" y="11" width="8" height="8" rx="1.8"/><rect x="44" y="11" width="8" height="8" rx="1.8"/><rect x="11" y="22" width="8" height="8" rx="1.8"/><rect x="22" y="22" width="8" height="8" rx="1.8"/><rect x="33" y="22" width="8" height="8" rx="1.8"/><rect x="44" y="22" width="8" height="8" rx="1.8"/><rect x="11" y="33" width="8" height="8" rx="1.8"/><rect x="22" y="33" width="8" height="8" rx="1.8"/><rect x="33" y="33" width="8" height="8" rx="1.8"/><rect x="44" y="33" width="8" height="8" rx="1.8"/><rect x="11" y="44" width="8" height="8" rx="1.8"/><rect x="22" y="44" width="8" height="8" rx="1.8"/><rect x="33" y="44" width="8" height="8" rx="1.8"/><rect x="44" y="44" width="8" height="8" rx="1.8"/></g>
+<g clip-path="url(#tgLensG)"><circle cx="37" cy="37" r="16" fill="#142257"/><g fill="#F4A62A" transform="translate(37 37) scale(1.6) translate(-37 -37)"><rect x="11" y="11" width="8" height="8" rx="1.8"/><rect x="22" y="11" width="8" height="8" rx="1.8"/><rect x="33" y="11" width="8" height="8" rx="1.8"/><rect x="44" y="11" width="8" height="8" rx="1.8"/><rect x="11" y="22" width="8" height="8" rx="1.8"/><rect x="22" y="22" width="8" height="8" rx="1.8"/><rect x="33" y="22" width="8" height="8" rx="1.8"/><rect x="44" y="22" width="8" height="8" rx="1.8"/><rect x="11" y="33" width="8" height="8" rx="1.8"/><rect x="22" y="33" width="8" height="8" rx="1.8"/><rect x="33" y="33" width="8" height="8" rx="1.8"/><rect x="44" y="33" width="8" height="8" rx="1.8"/><rect x="11" y="44" width="8" height="8" rx="1.8"/><rect x="22" y="44" width="8" height="8" rx="1.8"/><rect x="33" y="44" width="8" height="8" rx="1.8"/><rect x="44" y="44" width="8" height="8" rx="1.8"/></g></g>
+<circle cx="37" cy="37" r="16" fill="none" stroke="#FFFFFF" stroke-width="2.4"/></svg><div><div class="org">Kasu Infra Projects Pvt. Ltd.</div><h1>Survey · Yemmiganur</h1><div class="sub">New SC/ST candidates · కొత్త SC/ST లబ్ధిదారులు</div></div></header>
+  <div class="card"><div class="count"><span><b id="meName"></b></span><button class="back" id="lgOut">Change <span class="te">మార్చు</span></button></div></div>
+  <div class="card" id="todayCard"><div class="count"><span>Today <span class="te">ఈరోజు</span></span><span><b id="todayN">0</b> / 25</span></div><div class="bar2"><i id="todayBar" style="width:0"></i></div></div>
+  <div class="card" id="distCard"><h2>Distribution (village) <span class="te">డిస్ట్రిబ్యూషన్ (గ్రామం)</span></h2>
+    <input id="dq" placeholder="Search village or section / గ్రామం వెతకండి" autocomplete="off">
+    <div class="msg m-info" id="dMsg">Loading…</div>
+    <div class="list" id="dList"></div>
+    <button class="more" id="typeSn">Type a service number <span class="te">సర్వీస్ నంబర్ టైప్ చేయండి</span></button>
+  </div>
+</div>
+<!-- 2. houses of one distribution -->
+<div class="wrap hidden" id="pHouses">
+  <div class="top"><button class="back" id="hBack">‹ Villages</button><h1 id="hTitle"></h1></div>
+  <div class="sub" id="hSub"></div>
+  <input id="hq" class="mono" inputmode="search" placeholder="Last digits or name / చివరి అంకెలు లేదా పేరు" autocomplete="off">
+  <button id="nearBtn" class="secondary hidden" style="width:100%;margin:8px 0 2px;padding:10px">📍 Nearest first</button>
+  <div id="nearMsg" class="sub"></div>
+  <div id="hList"></div>
+  <button class="more" id="typeSn2">Type a service number <span class="te">సర్వీస్ నంబర్ టైప్ చేయండి</span></button>
+</div>
+<!-- 3. survey form -->
+<div class="wrap hidden" id="pForm">
+  <div class="top"><button class="back" id="fBack">‹ Back</button><h1>Survey <span class="te">సర్వే</span></h1></div>
+  <div class="card"><h2>House <span class="te">ఇల్లు</span></h2>
+    <label for="sn">Service number * <span class="te">సర్వీస్ నంబర్</span></label>
+    <input id="sn" class="mono" inputmode="numeric" maxlength="13" placeholder="86…">
+    <div id="snMsg"></div>
+    <div id="formBody">
+    <label>Customer available? * <span class="te">కస్టమర్ ఉన్నారా?</span></label>
+    <div class="seg" id="avail"><button data-v="Yes">Yes <span class="te">ఉన్నారు</span></button><button data-v="No">No <span class="te">లేరు</span></button></div>
+    <div id="naBox" class="hidden"><label>Why not available? * <span class="te">ఎందుకు లేరు?</span></label>
+      <div class="seg wrap" id="naWhy"><button data-v="House locked">House locked <span class="te">ఇల్లు తాళం</span></button><button data-v="Gone out">Gone out <span class="te">బయటికి వెళ్లారు</span></button><button data-v="Migrated">Migrated <span class="te">వలస వెళ్లారు</span></button><button data-v="Refused to meet">Refused to meet <span class="te">కలవలేదు</span></button></div>
+      <div class="msg m-info">Take the location and the house photo, then save. The house stays on your list. <span class="te">లొకేషన్, ఇంటి ఫోటో తీసి సేవ్ చేయండి. ఇల్లు మళ్లీ మీ జాబితాలో ఉంటుంది.</span></div></div>
+    </div>
+  </div>
+  <div id="metBox" class="hidden">
+    <div class="card"><h2>Customer <span class="te">కస్టమర్</span></h2>
+      <label>Distribution <span class="te">డిస్ట్రిబ్యూషన్</span></label>
+      <input id="dist" readonly>
+      <label>Beneficiary name <span class="te">లబ్ధిదారు పేరు</span></label>
+      <input id="listName" readonly>
+      <label class="chk"><input type="checkbox" id="nameDiff"> Name is different on the bill <span class="te">బిల్లుపై పేరు వేరుగా ఉంది</span></label>
+      <div id="nameBox" class="hidden">
+        <label for="bname">Name as on the bill * <span class="te">బిల్లుపై ఉన్న పేరు</span></label>
+        <input id="bname" autocomplete="off" maxlength="60">
+        <label>Why? * <span class="te">ఎందుకు?</span></label>
+        <div class="seg wrap" id="nameWhy"><button data-v="Spelling corrected">Spelling <span class="te">స్పెల్లింగ్</span></button><button data-v="Bill in family member name">Family member <span class="te">కుటుంబ సభ్యుడు</span></button><button data-v="House changed hands">House changed hands <span class="te">ఇల్లు మారింది</span></button><button data-v="Other">Other <span class="te">ఇతర</span></button></div>
+      </div>
+      <label>Gender * <span class="te">లింగం</span></label>
+      <div class="seg" id="gender"><button data-v="Male">Male <span class="te">పురుషుడు</span></button><button data-v="Female">Female <span class="te">స్త్రీ</span></button><button data-v="Other">Other <span class="te">ఇతర</span></button></div>
+      <label>Mobile in the database <span class="te">డేటాబేస్ మొబైల్</span></label>
+      <input id="dbmob" class="mono" readonly placeholder="–">
+      <label for="mob">Working mobile now * <span class="te">ప్రస్తుతం పనిచేసే మొబైల్</span></label>
+      <input id="mob" class="mono" inputmode="tel" placeholder="10 digits / 10 అంకెలు">
+      <div id="mobMsg"></div>
+      <label for="alt">Alternate mobile <span class="te">మరో మొబైల్ (కుటుంబం)</span></label>
+      <input id="alt" class="mono" inputmode="tel" placeholder="optional / ఐచ్ఛికం">
+    </div>
+    <div class="card"><h2>Consent <span class="te">సమ్మతి</span></h2>
+      <label>Does the customer agree to solar? * <span class="te">సోలార్‌కు కస్టమర్ అంగీకరిస్తున్నారా?</span></label>
+      <div class="seg" id="consent"><button data-v="Yes">Yes <span class="te">అవును</span></button><button data-v="No">No <span class="te">కాదు</span></button></div>
+      <div id="cnBox" class="hidden"><label>Why No? * <span class="te">ఎందుకు వద్దు?</span></label>
+        <div class="seg wrap" id="cnWhy"><button data-v="Not interested">Not interested <span class="te">ఆసక్తి లేదు</span></button><button data-v="Rented house">Rented house <span class="te">అద్దె ఇల్లు</span></button><button data-v="Will rebuild / sell the house">Rebuild / sell <span class="te">మళ్లీ కడతారు / అమ్ముతారు</span></button><button data-v="Fears bill or loan">Fears bill / loan <span class="te">బిల్లు / అప్పు భయం</span></button><button data-v="Family not agreeing">Family says no <span class="te">కుటుంబం ఒప్పుకోలేదు</span></button><button data-v="Other">Other <span class="te">ఇతర</span></button></div>
+        <div class="msg m-info">Take the house photo and the location, then save. <span class="te">ఇంటి ఫోటో, లొకేషన్ తీసి సేవ్ చేయండి.</span></div></div>
+    </div>
+    <div id="yesBox" class="hidden">
+      <div class="card"><h2>Bill and meter <span class="te">బిల్లు, మీటర్</span></h2>
+        <label for="unitsN">Units per month * <span class="te">నెలకు యూనిట్లు (తాజా బిల్లు)</span></label>
+        <input id="unitsN" class="mono" inputmode="numeric" maxlength="4" placeholder="e.g. 85">
+        <label>Connection * <span class="te">కనెక్షన్</span></label>
+        <div class="seg" id="phase"><button data-v="Single phase">Single phase <span class="te">సింగిల్ ఫేజ్</span></button><button data-v="3 phase">3 phase <span class="te">త్రీ ఫేజ్</span></button></div>
+        <label>Bill in whose name? * <span class="te">బిల్లు ఎవరి పేరున?</span></label>
+        <div class="seg" id="billName"><button data-v="Beneficiary">Beneficiary <span class="te">లబ్ధిదారు</span></button><button data-v="Family member">Family <span class="te">కుటుంబం</span></button><button data-v="Someone else">Someone else <span class="te">వేరే వ్యక్తి</span></button></div>
+        <label>Already has solar? * <span class="te">ఇప్పటికే సోలార్ ఉందా?</span></label>
+        <div class="seg" id="hasSolar"><button data-v="No">No <span class="te">లేదు</span></button><button data-v="Yes">Yes <span class="te">ఉంది</span></button></div>
+        <label>Meter * <span class="te">మీటర్</span></label>
+        <div class="seg wrap" id="meter"><button data-v="Working">Working <span class="te">పనిచేస్తోంది</span></button><button data-v="Absent">Absent <span class="te">లేదు</span></button><button data-v="Burnt">Burnt <span class="te">కాలిపోయింది</span></button><button data-v="Not reading">Not reading <span class="te">రీడింగ్ లేదు</span></button></div>
+        <label>Photo of the bill * <span class="te">కరెంట్ బిల్లు ఫోటో</span></label>
+        <div class="pblk" data-k="bill"><div class="thumb hidden"><img alt="Bill"></div><div class="btns"><button data-cam="bill">📷 Camera</button><button data-gal="bill">🖼 Gallery</button></div></div>
+        <label class="chk"><input type="checkbox" id="noBill"> No bill at the house <span class="te">ఇంట్లో బిల్లు లేదు</span></label>
+        <label>Photo of the meter <span class="small" id="meterReq">(optional / ఐచ్ఛికం)</span></label>
+        <div class="pblk" data-k="meterPh"><div class="thumb hidden"><img alt="Meter"></div><div class="btns"><button data-cam="meterPh">📷 Camera</button><button data-gal="meterPh">🖼 Gallery</button></div></div>
+      </div>
+      <div class="card"><h2>House and roof <span class="te">ఇల్లు, పైకప్పు</span></h2>
+        <label>Roof type * <span class="te">పైకప్పు రకం</span></label>
+        <div class="seg wrap" id="roof"><button data-v="RCC">RCC</button><button data-v="Sheet (ACC / tin)">Sheet <span class="te">రేకులు</span></button><button data-v="Mud (stone slab + soil)">Mud (stone slab + soil) <span class="te">మట్టి మిద్దె</span></button><button data-v="Tiles / sloped">Tiles / sloped <span class="te">పెంకులు / వాలు పైకప్పు</span></button><button data-v="Thatched">Thatched <span class="te">పూరి</span></button><button data-v="Other">Other <span class="te">ఇతర</span></button></div>
+        <label>Floors * <span class="te">అంతస్తులు</span></label>
+        <div class="seg" id="floors"><button data-v="Ground">Ground</button><button data-v="G+1">G+1</button><button data-v="G+2 or more">G+2+</button></div>
+        <label>Steps to the roof? * <span class="te">పైకప్పుకు మెట్లు ఉన్నాయా?</span></label>
+        <div class="seg" id="steps"><button data-v="Yes">Yes <span class="te">ఉన్నాయి</span></button><button data-v="No">No – ladder <span class="te">లేవు – నిచ్చెన</span></button></div>
+        <label>Shade on the roof * <span class="te">పైకప్పుపై నీడ</span></label>
+        <div class="seg" id="shade"><button data-v="None">None <span class="te">లేదు</span></button><button data-v="Part of the day">Part of day <span class="te">కొంతసేపు</span></button><button data-v="Heavy">Heavy <span class="te">ఎక్కువ</span></button></div>
+        <label>Trees or buildings around the house that cast shadow? * <span class="te">ఇంటి చుట్టూ నీడ వేసే చెట్లు / భవనాలు ఉన్నాయా?</span></label>
+        <div class="seg" id="trees"><button data-v="No">No <span class="te">లేవు</span></button><button data-v="Yes">Yes <span class="te">ఉన్నాయి</span></button></div>
+        <div id="dirBox" class="hidden"><div class="msg m-info" style="margin:6px 0">Stand on the roof (or in front of the house) and take one photo each way. <span class="te">పైకప్పుపై నిలబడి నాలుగు దిక్కులకు ఒక్కో ఫోటో తీయండి.</span> <span id="compass" class="small"></span></div>
+          <div class="grid2"><div><div class="small"><b>North</b> <span class="te">ఉత్తరం</span></div><div class="pblk" data-k="dir_north"><div class="thumb hidden"><img alt="North"></div><div class="btns"><button data-cam="dir_north">📷</button><button data-gal="dir_north">🖼</button></div></div></div><div><div class="small"><b>East</b> <span class="te">తూర్పు</span></div><div class="pblk" data-k="dir_east"><div class="thumb hidden"><img alt="East"></div><div class="btns"><button data-cam="dir_east">📷</button><button data-gal="dir_east">🖼</button></div></div></div><div><div class="small"><b>South</b> <span class="te">దక్షిణం</span></div><div class="pblk" data-k="dir_south"><div class="thumb hidden"><img alt="South"></div><div class="btns"><button data-cam="dir_south">📷</button><button data-gal="dir_south">🖼</button></div></div></div><div><div class="small"><b>West</b> <span class="te">పడమర</span></div><div class="pblk" data-k="dir_west"><div class="thumb hidden"><img alt="West"></div><div class="btns"><button data-cam="dir_west">📷</button><button data-gal="dir_west">🖼</button></div></div></div></div></div>
+        <label>Roof condition * <span class="te">పైకప్పు స్థితి</span></label>
+        <div class="seg" id="roofCond"><button data-v="Good">Good <span class="te">బాగుంది</span></button><button data-v="Cracks / leaks">Cracks / leaks <span class="te">పగుళ్లు / కారుతోంది</span></button><button data-v="Weak">Weak <span class="te">బలహీనం</span></button></div>
+        <label>Mobile signal at the roof * <span class="te">పైకప్పుపై మొబైల్ సిగ్నల్</span></label>
+        <div class="seg" id="signal"><button data-v="Good">Good <span class="te">బాగుంది</span></button><button data-v="Weak">Weak <span class="te">తక్కువ</span></button><button data-v="None">None <span class="te">లేదు</span></button></div>
+        <label>House photo 2 * <span class="te">ఇంటి ఫోటో 2 (పైకప్పు కనిపించేలా)</span></label>
+        <div class="pblk" data-k="photo2"><div class="thumb hidden"><img alt="House 2"></div><div class="btns"><button data-cam="photo2">📷 Camera</button><button data-gal="photo2">🖼 Gallery</button></div></div>
+        <label>Photo on the roof <span class="small">(optional / ఐచ్ఛికం)</span></label>
+        <div class="pblk" data-k="roofPh"><div class="thumb hidden"><img alt="Roof"></div><div class="btns"><button data-cam="roofPh">📷 Camera</button><button data-gal="roofPh">🖼 Gallery</button></div></div>
+      </div>
+      <div class="card"><h2>Technical <span class="te">సాంకేతిక వివరాలు</span></h2>
+        <label>Panel structure * <span class="te">ప్యానెల్ స్ట్రక్చర్</span></label>
+        <div class="seg" id="struct"><button data-v="1x4">1 × 4 <span class="te">ఒకే వరుస</span></button><button data-v="2x2">2 × 2 <span class="te">చతురస్రం</span></button><button data-v="No space">No space <span class="te">స్థలం లేదు</span></button></div>
+        <div class="grid2"><div><label for="rl">Free roof length (m) <span class="te">పొడవు</span></label><input id="rl" class="mono" inputmode="decimal" placeholder="1–40"></div>
+          <div><label for="rw">Free roof width (m) <span class="te">వెడల్పు</span></label><input id="rw" class="mono" inputmode="decimal" placeholder="1–40"></div></div>
+        <label>Soil space for 3 earth pits? * <span class="te">3 ఎర్త్ పిట్లకు మట్టి స్థలం?</span></label>
+        <div class="seg wrap" id="pits"><button data-v="Yes – 3 pits">Yes – 3 <span class="te">అవును – 3</span></button><button data-v="Only 1 or 2">Only 1–2 <span class="te">1–2 మాత్రమే</span></button><button data-v="No soil (all concrete)">No soil <span class="te">మట్టి లేదు</span></button></div>
+        <label>Inverter place <span class="te">ఇన్వర్టర్ స్థలం</span> <span class="small">(optional)</span></label>
+        <div class="seg wrap" id="inv"><button data-v="Inside – wall">Inside wall <span class="te">లోపలి గోడ</span></button><button data-v="Outside – shaded wall">Outside, shade <span class="te">బయట, నీడ</span></button><button data-v="Outside – open">Outside, open <span class="te">బయట, ఎండ</span></button></div>
+        <label>Approximate cable lengths (metres) * <span class="te">సుమారు కేబుల్ పొడవులు (మీటర్లు)</span></label>
+        <div class="grid3"><div><label for="earth">Earthing <span class="te">ఎర్తింగ్</span> 3–60</label><input id="earth" class="mono" inputmode="decimal"></div>
+          <div><label for="dc">DC roof→inverter 3–40</label><input id="dc" class="mono" inputmode="decimal"></div>
+          <div><label for="ac">AC inverter→meter 2–50</label><input id="ac" class="mono" inputmode="decimal"></div></div>
+      </div>
+    </div>
+    <div id="vMsg"></div>
+  </div>
+  <div class="card"><h2>Location <span class="te">లొకేషన్</span></h2><div id="loc" class="msg m-info">Not taken yet</div><button id="gps" style="margin-top:8px">📍 Get location <span class="te">లొకేషన్ తీసుకోండి</span></button></div>
+  <div class="card"><h2 id="ph1Title">House photo * <span class="te">ఇంటి ఫోటో</span></h2>
+    <div class="pblk" data-k="photo"><div class="thumb hidden"><img alt="House"></div><div class="btns"><button data-cam="photo">📷 Camera</button><button data-gal="photo">🖼 Gallery</button></div></div></div>
+  <div class="card hidden" id="cfCard"><h2>Consent form, signed * <span class="te">సమ్మతి పత్రం (సంతకంతో)</span></h2>
+    <div id="cfInfo" class="msg m-info">Scan the signed form: hold the phone above it, fill the screen. No Aadhaar. <span class="te">సంతకం చేసిన ఫారం పైన ఫోన్ పట్టి స్కాన్ చేయండి. ఆధార్ వద్దు.</span></div>
+    <div class="thumb hidden" id="cfWrap"><img id="cf" alt="Consent form"></div>
+    <div class="btns"><button id="cfCam">📄 Scan <span class="te">స్కాన్</span></button><button id="cfFile">📎 PDF / photo</button></div></div>
+  <div class="card hidden" id="rmCard"><h2>Remarks <span class="te">వ్యాఖ్యలు</span> <span class="small">(optional)</span></h2><textarea id="remarks" rows="2" maxlength="300"></textarea></div>
+  <ul class="errors" id="err"></ul>
+  <button class="primary" id="submit" style="width:100%;padding:14px;font-size:16px;margin:8px 0 30px">Submit survey</button>
+  <input type="file" id="camIn" accept="image/*" capture="environment" class="hidden">
+  <div id="camBox" class="hidden" style="position:fixed;inset:0;background:#000;z-index:60;display:flex;flex-direction:column">
+    <video id="camV" playsinline autoplay muted style="flex:1;min-height:0;width:100%;object-fit:contain;background:#000"></video>
+    <div id="camHint" style="color:#fff;text-align:center;font-size:14px;padding:6px"></div>
+    <div style="display:flex;align-items:center;justify-content:space-around;padding:14px 10px calc(14px + env(safe-area-inset-bottom,0px))">
+      <button id="camX" type="button" style="min-width:90px">Cancel</button>
+      <button id="camSnap" type="button" aria-label="Take photo" style="width:74px;height:74px;border-radius:50%;border:5px solid #fff;background:#e5e7eb;padding:0"></button>
+      <button id="camApp" type="button" style="min-width:90px">Phone camera</button>
+    </div>
+  </div>
+  <!-- document scanner: corners, flatten, clean -->
+  <div id="scanBox" class="hidden" style="position:fixed;inset:0;background:#111;z-index:70;display:flex;flex-direction:column">
+    <div style="color:#fff;padding:10px 14px;font-size:14px">Drag the 4 corners to the edges of the form. <span class="te">4 మూలలను ఫారం అంచులకు జరపండి.</span></div>
+    <div id="scanStage" style="flex:1;min-height:0;position:relative;touch-action:none"><canvas id="scanCv" style="position:absolute;left:0;top:0"></canvas></div>
+    <div style="display:flex;gap:10px;padding:12px 14px calc(12px + env(safe-area-inset-bottom,0px))">
+      <button id="scanRe" style="flex:1">Retake <span class="te">మళ్లీ</span></button>
+      <button id="scanOk" class="primary" style="flex:2">Use this <span class="te">ఇది ఉపయోగించు</span></button></div>
+  </div>
+  <input type="file" id="galIn" accept="image/*" class="hidden">
+  <input type="file" id="fileIn" accept="application/pdf,image/jpeg,image/png" class="hidden">
+</div>
+<!-- 4. done -->
+<div class="wrap hidden" id="pDone"><div class="card" style="text-align:center"><div style="font-size:40px">✓</div><h2>Survey saved <span class="te">సర్వే సేవ్ అయింది</span></h2>
+  <div id="doneTxt"></div><button class="primary" id="next" style="margin-top:12px;width:100%;padding:12px">Next house <span class="te">తదుపరి ఇల్లు</span></button>
+  <div id="nearList" style="text-align:left;margin-top:14px"></div></div></div>
+
+<div style="text-align:center;font-size:12px;color:var(--muted);padding:4px 0 22px">Solar Vista by TytoGrid · Field data, made clear.</div>
+<script>
+const $ = id => document.getElementById(id);
+const esc = s => String(s == null ? '' : s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+const norm = s => String(s || '').toUpperCase().replace(/[^0-9A-Z]/g, '');
+const SN_RE = /^86\d{11}$/;
+const DAY = 25, GPS_MAX = 30, FENCE_OK = 3000, FENCE_MAX = 5000;
+const PM = ' Contact PM. / PM ని సంప్రదించండి.';
+const PR = { 1: ['t1', 'On portal'], 2: ['t2', 'Excel first'] };
+const PRT = { P1: 1, P2: 2 };
+const VCLS = { 'Feasible': 't1', 'Special structure': 't3', 'Needs action': 't2', 'Not eligible': 'trv', 'Not feasible': 'trv', 'Consent No': 'tdone' };
+const VTE = { 'Feasible': 'సాధ్యం', 'Special structure': 'ప్రత్యేక స్ట్రక్చర్', 'Needs action': 'ముందు సరిచేయాలి', 'Not eligible': 'అర్హత లేదు', 'Not feasible': 'సాధ్యం కాదు', 'Consent No': 'సమ్మతి లేదు' };
+// server calls go to the Apps Script back end (exec URL in /yemmiganur/config.js). A network failure is marked e.offline.
+function run(fn, ...args) {
+  return fetch(window.SV_API, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify({ fn, args }) })
+    .catch(() => { const e = new Error('No signal – could not reach the server.'); e.offline = true; throw e; })
+    .then(r => { if (!r.ok) { const e = new Error('Server busy (' + r.status + ') – try again.'); e.offline = r.status >= 500; throw e; } return r.json(); })
+    .then(j => { if (!j.ok) throw new Error(j.error || 'Server error'); return j.data; });
+}
+// ---------------------------------------------------------------- offline: surveys wait on the phone until there is signal
+const QDB = () => new Promise((ok, fail) => { const r = indexedDB.open('yemmiganur-survey', 1); r.onupgradeneeded = () => r.result.createObjectStore('q', { keyPath: 'cid' }); r.onsuccess = () => ok(r.result); r.onerror = () => fail(r.error); });
+async function qAll() { const db = await QDB(); return new Promise(ok => { const t = db.transaction('q').objectStore('q').getAll(); t.onsuccess = () => ok(t.result || []); t.onerror = () => ok([]); }); }
+async function qPut(item) { const db = await QDB(); return new Promise((ok, fail) => { const t = db.transaction('q', 'readwrite'); t.objectStore('q').put(item); t.oncomplete = ok; t.onerror = () => fail(t.error); }); }
+async function qDel(cid) { const db = await QDB(); return new Promise(ok => { const t = db.transaction('q', 'readwrite'); t.objectStore('q').delete(cid); t.oncomplete = ok; t.onerror = ok; }); }
+let qBusy = false;
+async function qShow() {
+  let n = 0; try { n = (await qAll()).length; } catch (e) {}
+  $('qBar').classList.toggle('hidden', !n); $('qBar').style.display = n ? 'flex' : 'none';
+  $('qTxt').textContent = n + ' survey' + (n === 1 ? '' : 's') + ' saved on this phone, waiting for signal. Keep the page; they send by themselves.';
+}
+async function qFlush() {
+  if (qBusy) return; qBusy = true;
+  try {
+    for (const it of await qAll()) {
+      try { await run('submitSurvey', it.payload); await qDel(it.cid); }
+      catch (e) { if (e.offline) break; it.error = e.message; await qPut(it); }          // a real error (e.g. not allowed) stays with its message
+    }
+  } catch (e) {}
+  qBusy = false; qShow();
+}
+function cache(k, v) { try { if (v === undefined) { const x = localStorage.getItem('c_' + k); return x ? JSON.parse(x) : null; } localStorage.setItem('c_' + k, JSON.stringify({ at: Date.now(), v })); } catch (e) { return null; } }
+function store(k, v) { try { if (v === undefined) return localStorage.getItem(k); localStorage.setItem(k, v); } catch (e) { return null; } }
+
+// every field call carries the supervisor's id + PIN
+let AUTH = null; try { AUTH = JSON.parse(localStorage.getItem('ymg_auth') || 'null'); } catch (e) {}
+const call = (fn, ...a) => run(fn, AUTH, ...a).catch(e => { if (/^LOGIN/.test(e.message || '')) { logout(e.message.replace(/^LOGIN: /, '')); } throw e; });
+let DISTS = [], HOUSES = [], CUR = '';
+const F0 = () => ({ site: null, gps: null, consentForm: null, avail: '', naWhy: '', gender: '', consent: '', cnWhy: '', phase: '', billName: '', hasSolar: '', meter: '', roof: '', floors: '', steps: '', shade: '', roofCond: '', signal: '', struct: '', pits: '', inv: '', nameWhy: '',
+  img: { photo: null, photo2: null, roofPh: null, bill: null, meterPh: null, dir_north: null, dir_east: null, dir_south: null, dir_west: null }, trees: '' });
+let F = F0();
+const pad2 = n => String(n).padStart(2, '0');
+function phoneTime() { const d = new Date(); return d.getFullYear() + '-' + pad2(d.getMonth() + 1) + '-' + pad2(d.getDate()) + ' ' + pad2(d.getHours()) + ':' + pad2(d.getMinutes()); }
+function todayKey() { return 'today_' + (AUTH ? AUTH.id : '') + '_' + phoneTime().slice(0, 10); }
+function todayShow() { const n = Number(store(todayKey()) || 0); $('todayN').textContent = n; $('todayBar').style.width = Math.min(100, n * 100 / DAY) + '%'; }
+function todayAdd() { store(todayKey(), String(Number(store(todayKey()) || 0) + 1)); todayShow(); }
+// ---------------------------------------------------------------- login
+function showView(id) { ['pLogin', 'pDist', 'pHouses', 'pForm', 'pDone'].forEach(p => $(p).classList.toggle('hidden', p !== id)); window.scrollTo(0, 0); }
+function show(id) { showView(id); }
+async function loginPage(msg) {
+  showView('pLogin'); $('lgMsg').innerHTML = msg ? '<div class="msg m-bad">' + esc(msg) + '</div>' : '';
+  let L = cache('sups'); try { const r = await run('supList'); cache('sups', r); L = { v: r }; } catch (e) { if (!L) $('lgMsg').innerHTML = '<div class="msg m-bad">No signal – open once with signal. / సిగ్నల్ ఉన్నప్పుడు తెరవండి.</div>'; }
+  const cur = $('lgName').value;
+  $('lgName').innerHTML = '<option value="">– choose / ఎంచుకోండి –</option>' + ((L && L.v) || []).map(x => '<option value="' + esc(x[0]) + '"' + (x[0] === cur ? ' selected' : '') + '>' + esc(x[1]) + '</option>').join('');
+}
+async function loginGo() {
+  const id = $('lgName').value, pin = $('lgPin').value.replace(/\D/g, '');
+  if (!id || pin.length !== 4) { $('lgMsg').innerHTML = '<div class="msg m-bad">Choose your name and type the 4-digit PIN. / పేరు ఎంచుకుని 4 అంకెల PIN టైప్ చేయండి.</div>'; return; }
+  $('lgGo').disabled = true;
+  try { const u = await run('supLogin', id, pin); AUTH = { id, pin, name: u.name }; localStorage.setItem('ymg_auth', JSON.stringify(AUTH)); $('lgPin').value = ''; startApp(); }
+  catch (e) { $('lgMsg').innerHTML = '<div class="msg m-bad">' + esc(e.message || e) + '</div>'; }
+  $('lgGo').disabled = false;
+}
+function logout(msg) { AUTH = null; try { localStorage.removeItem('ymg_auth'); } catch (e) {} loginPage(msg); }
+function startApp() { $('meName').textContent = AUTH.name; todayShow(); showView('pDist'); loadDists(); qShow(); qFlush(); }
+// ---------------------------------------------------------------- the choices (one handler for every button row)
+const SEGS = ['avail', 'naWhy', 'gender', 'consent', 'cnWhy', 'phase', 'billName', 'hasSolar', 'meter', 'roof', 'floors', 'steps', 'shade', 'trees', 'roofCond', 'signal', 'struct', 'pits', 'inv', 'nameWhy'];
+function setSeg(k, v) { F[k] = v; document.querySelectorAll('#' + k + ' button').forEach(b => b.classList.toggle('on', b.dataset.v === v)); layout(); }
+function layout() {
+  const met = F.avail === 'Yes', yes = met && F.consent === 'Yes', no = met && F.consent === 'No';
+  $('naBox').classList.toggle('hidden', F.avail !== 'No');
+  $('metBox').classList.toggle('hidden', !met);
+  $('cnBox').classList.toggle('hidden', !no);
+  $('yesBox').classList.toggle('hidden', !yes);
+  $('cfCard').classList.toggle('hidden', !yes);
+  $('rmCard').classList.toggle('hidden', !met);
+  $('nameBox').classList.toggle('hidden', !$('nameDiff').checked);
+  $('dirBox').classList.toggle('hidden', F.trees !== 'Yes'); if (F.trees === 'Yes') compassOn();
+  $('ph1Title').innerHTML = yes ? 'Customer holding the signed form, in front of the house * <span class="te">సంతకం చేసిన ఫారం పట్టుకున్న కస్టమర్, ఇంటి ముందు</span>' : 'House photo * <span class="te">ఇంటి ఫోటో</span>';
+  $('meterReq').innerHTML = F.meter && F.meter !== 'Working' ? '* (meter place / మీటర్ స్థలం)' : '(optional / ఐచ్ఛికం)';
+  $('submit').innerHTML = F.avail === 'No' ? 'Save visit (not available) <span class="te">సేవ్</span>' : no ? 'Save (consent No) <span class="te">సేవ్</span>' : 'Submit survey <span class="te">సర్వే సమర్పించండి</span>';
+  verdictShow();
+}
+/** Same rules as the server. */
+function verdict() {
+  if (F.avail !== 'Yes') return null;
+  if (F.consent !== 'Yes') return F.consent === 'No' ? { v: 'Consent No', why: [F.cnWhy] } : null;
+  const un = Number($('unitsN').value), elig = [], nf = [], act = [], sp = [];
+  if (un > 200) elig.push('above 200 units'); if (F.phase === '3 phase') elig.push('3 phase'); if (F.hasSolar === 'Yes') elig.push('already has solar');
+  if (F.roof === 'Thatched') nf.push('thatched roof'); if (F.roofCond === 'Weak') nf.push('weak roof'); if (F.struct === 'No space') nf.push('no space for 4 panels');
+  if (F.meter && F.meter !== 'Working') act.push('meter ' + F.meter.toLowerCase()); if (F.pits && F.pits !== 'Yes – 3 pits') act.push('earth pits short'); if (F.shade === 'Heavy') act.push('heavy shade');
+  if (F.billName === 'Someone else') act.push('bill in someone else\'s name');
+  if (F.roof === 'Sheet (ACC / tin)') sp.push('sheet roof'); if (F.roof === 'Mud (stone slab + soil)') sp.push('mud roof'); if (F.roof === 'Tiles / sloped') nf.push('tiled / sloped roof');
+  const v = elig.length ? 'Not eligible' : nf.length ? 'Not feasible' : act.length ? 'Needs action' : sp.length ? 'Special structure' : 'Feasible';
+  return { v, why: elig.concat(nf, act, sp) };
+}
+function verdictShow() {
+  const x = verdict(); if (!x || x.v === 'Consent No') { $('vMsg').innerHTML = ''; return; }
+  const cls = { 'Feasible': 'm-ok', 'Special structure': 'm-info', 'Needs action': 'm-warn' }[x.v] || 'm-bad';
+  $('vMsg').innerHTML = '<div class="msg ' + cls + '" style="margin:0 0 4px"><b>So far: ' + esc(x.v) + ' / ' + VTE[x.v] + '</b>' + (x.why.length ? ' (' + esc(x.why.join(', ')) + ')' : '') +
+    (x.v === 'Not eligible' || x.v === 'Not feasible' ? ' – finish the survey; do not promise installation. <span class="te">సర్వే పూర్తి చేయండి; ఏర్పాటు హామీ ఇవ్వవద్దు.</span>' : '') + '</div>';
+}
+let mobT = null;
+function mobCheck() {
+  const m = $('mob').value; $('mobMsg').innerHTML = ''; if (!/^[6-9]\d{9}$/.test(m)) return;
+  clearTimeout(mobT); mobT = setTimeout(() => call('checkMobile', m, $('sn').value).then(r => {
+    if ($('mob').value !== m || !r || !r.others || !r.others.length) return;
+    $('mobMsg').innerHTML = '<div class="msg m-warn">Also used for ' + r.others.map(esc).join(', ') + '. Ask for the beneficiary\'s own number. <span class="te">ఈ నంబర్ వేరే ఇంటికి కూడా ఉంది – సొంత నంబర్ అడగండి.</span></div>';
+  }).catch(() => {}), 400);
+}
+// ---------------------------------------------------------------- distributions
+async function loadDists() {
+  $('dMsg').textContent = 'Loading…'; $('dMsg').classList.remove('hidden');
+  try { const j = await call('getDists'); cache('dists', j); DISTS = JSON.parse(j); drawDists(); }
+  catch (e) { const c = cache('dists'); if (c) { DISTS = JSON.parse(c.v); drawDists(); $('dMsg').classList.remove('hidden'); $('dMsg').textContent = 'No signal – list from ' + new Date(c.at).toLocaleString('en-GB', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' }) + '.'; }
+    else $('dMsg').textContent = 'Could not load: ' + (e.message || e); }
+}
+function drawDists() {
+  const q = norm($('dq').value), L = DISTS.filter(d => !q || norm(d.d).includes(q) || norm(d.sec).includes(q));
+  $('dMsg').classList.toggle('hidden', !!L.length); if (!L.length) $('dMsg').textContent = DISTS.length ? 'No village matches.' : 'No houses to survey.';
+  $('dList').innerHTML = L.map(d => '<button class="row" data-d="' + esc(d.d) + '"><span class="l"><b>' + esc(d.d) + '</b><div class="n">' + esc(d.sec || '') +
+    (d.done ? ' · ' + d.done + ' surveyed' : '') + '</div></span><span><span class="tag t1">' + ((d.p1 || 0) + (d.p2 || 0)) + '</span></span></button>').join('');
+}
+const centreOf = d => { const x = DISTS.find(z => z.d === d); return x && x.c ? x.c : null; };
+// ---------------------------------------------------------------- houses
+async function openDist(d) {
+  CUR = d; store('dist', d); $('hTitle').textContent = d; $('hSub').textContent = 'Loading…'; $('hList').innerHTML = ''; $('hq').value = ''; show('pHouses');
+  try { const j = await call('getHouses', d); cache('h_' + d, j); HOUSES = JSON.parse(j); await markQueued(); drawHouses(); }
+  catch (e) { const c = cache('h_' + d); if (c) { HOUSES = JSON.parse(c.v); await markQueued(); drawHouses(); $('hSub').textContent += ' · no signal – list from ' + new Date(c.at).toLocaleString('en-GB', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' }); }
+    else $('hSub').textContent = 'Could not load: ' + (e.message || e); }
+}
+async function markQueued() { try { (await qAll()).forEach(it => { const h = HOUSES.find(x => x[0] === it.payload.sn); if (h && !h[4]) { h[4] = it.at; h[5] = 'waiting to send'; } }); } catch (e) {} }
+// ---------------------------------------------------------------- distance (house coordinates from the PMSG survey)
+let HERE = null;                        // {lat,lng} when "Nearest first" is on
+const metres = (a, b, c, d) => { const r = Math.PI / 180, x = (d - b) * r * Math.cos(a * r), y = (c - a) * r; return Math.round(6371000 * Math.hypot(x, y)); };
+const fmtM = m => m < 1000 ? m + ' m' : (m / 1000).toFixed(1) + ' km';
+const mapsUrl = (la, lo) => 'https://www.google.com/maps/dir/?api=1&destination=' + la + ',' + lo + '&travelmode=driving';
+function whereAmI() {
+  return new Promise((ok, no) => navigator.geolocation ? navigator.geolocation.getCurrentPosition(p => ok({ lat: p.coords.latitude, lng: p.coords.longitude }), no, { enableHighAccuracy: true, timeout: 15000, maximumAge: 60000 }) : no(new Error('No GPS')));
+}
+function drawHouses() {
+  const q = norm($('hq').value), L = HOUSES.filter(h => !q || h[0].endsWith(q) || h[0].includes(q) || norm(h[1]).includes(q));
+  const todo = HOUSES.filter(h => !h[4]).length;
+  $('hSub').textContent = todo + ' to visit · ' + (HOUSES.length - todo) + ' surveyed';
+  $('nearBtn').classList.toggle('hidden', !HOUSES.some(h => h[9]));
+  const open = L.filter(h => !h[4]), done = L.filter(h => h[4]);
+  if (HERE) open.forEach(h => h.m = h[9] ? metres(HERE.lat, HERE.lng, h[9], h[10]) : 1e9), open.sort((a, b) => a.m - b.m);
+  const row = h => '<button class="row' + (h[4] ? ' done' : '') + '" data-sn="' + h[0] + '"><span class="l"><span class="mono">' + h[0] + '</span><div class="n">' + esc(h[1] || '') + '</div></span>' +
+    (h[4] ? '<span class="tag ' + (VCLS[h[12]] || 'tdone') + '">✓ ' + esc(h[12] || h[4].slice(5, 10).split('-').reverse().join('-')) + '</span>' : h[6] ? '<span class="tag trv">Not met ×' + h[6] + '</span>' : '<span class="tag ' + PR[h[3]][0] + '">' + PR[h[3]][1] + '</span>') + '</button>';
+  let html = '<div class="grp">To visit / సందర్శించాలి · ' + open.length + '</div><div class="list">' + open.slice(0, 300).map(row).join('') + (open.length > 300 ? '<div class="sub">… type digits to find the rest</div>' : '') + '</div>';
+  if (done.length) html += '<div class="grp">Surveyed / పూర్తి · ' + done.length + '</div><div class="list">' + done.slice(0, 200).map(row).join('') + '</div>';
+  $('hList').innerHTML = L.length ? html : '<div class="msg m-info">No house matches.</div>';
+}
+// ---------------------------------------------------------------- form
+function resetForm() {
+  ['sn', 'bname', 'listName', 'mob', 'dbmob', 'alt', 'unitsN', 'rl', 'rw', 'earth', 'dc', 'ac', 'remarks', 'dist'].forEach(id => $(id).value = '');
+  F = F0(); CF_TRIES = 0; $('noBill').checked = false; $('nameDiff').checked = false;
+  SEGS.forEach(k => document.querySelectorAll('#' + k + ' button').forEach(b => b.classList.remove('on')));
+  document.querySelectorAll('.pblk .thumb').forEach(t => t.classList.add('hidden'));
+  $('mobMsg').innerHTML = ''; $('cfWrap').classList.add('hidden'); $('snMsg').innerHTML = ''; $('err').innerHTML = ''; $('formBody').classList.remove('hidden');
+  $('loc').className = 'msg m-info'; $('loc').textContent = 'Not taken yet';
+  $('cfInfo').className = 'msg m-info'; $('cfInfo').innerHTML = 'Scan the signed form: hold the phone above it, fill the screen. No Aadhaar. <span class="te">సంతకం చేసిన ఫారం పైన ఫోన్ పట్టి స్కాన్ చేయండి. ఆధార్ వద్దు.</span>';
+  layout();
+}
+function fillHouse(sn, name, dbmob, dist) { $('sn').value = sn; $('listName').value = name || ''; $('bname').value = name || ''; $('dbmob').value = dbmob || ''; $('dist').value = dist || ''; }
+function openForm(h) {               // h = house row from the list, or null (typed)
+  resetForm(); show('pForm');
+  if (h) {
+    fillHouse(h[0], h[1], h[2], CUR); $('sn').readOnly = true; F.site = { prio: 'P' + h[3], dist: CUR, ok: true, sn: h[0] };
+    $('snMsg').innerHTML = '<div class="msg ' + (h[4] ? 'm-warn' : 'm-info') + '"><span class="tag ' + PR[h[3]][0] + '">' + PR[h[3]][1] + '</span>' +
+      (h[4] ? ' Already surveyed on ' + esc(h[4]) + ' by ' + esc(h[5]) + (h[12] ? ' (' + esc(h[12]) + ')' : '') + '. Submitting again replaces it.' : '') +
+      (h[6] ? ' Not met ' + h[6] + '× (last ' + esc(h[7]) + ').' : '') + (h[8] ? ' Database mobile shared with ' + h[8] + ' other house(s) – get the own number.' : '') + '</div>';
+    if (!h[4] && navigator.onLine) liveCheck(h);
+  } else { $('sn').readOnly = false; $('formBody').classList.add('hidden'); setTimeout(() => $('sn').focus(), 50); }
+  gps();
+}
+function liveCheck(h) {
+  call('houseStatus', h[0]).then(st => {
+    if ($('sn').value !== h[0] || !st) return;
+    if (st.done || st.ula) { block((st.done ? 'Already installed' : 'ULA already created') + ' – no survey needed. / సర్వే అవసరం లేదు.'); return; }
+    if (!st.last) return;
+    h[4] = st.last.at; h[5] = st.last.by;
+    $('snMsg').innerHTML = '<div class="msg m-bad"><b>Already surveyed by ' + esc(st.last.by) + '</b> on ' + esc(st.last.at) + '. Go to the next house. <span class="te">ఇప్పటికే సర్వే అయింది – తదుపరి ఇంటికి వెళ్లండి.</span></div>';
+    try { navigator.vibrate && navigator.vibrate(200); } catch (e) {}
+  }).catch(() => {});
+}
+function block(msg) { F.site = Object.assign(F.site || {}, { ok: false, why: msg }); $('snMsg').innerHTML = '<div class="msg m-bad"><b>' + esc(msg) + '</b></div>'; $('formBody').classList.add('hidden'); }
+let snT = null;
+/** A typed service number must be one of the houses to survey – nothing else is accepted. */
+function snCheck() {
+  if ($('sn').readOnly) return;
+  const sn = $('sn').value.replace(/\D/g, '').slice(0, 13); $('sn').value = sn; $('snMsg').innerHTML = ''; F.site = null; $('formBody').classList.add('hidden');
+  if (sn.length < 13) return;
+  if (!SN_RE.test(sn)) return block('Service numbers here are 13 digits starting 86.' + PM);
+  clearTimeout(snT); $('snMsg').innerHTML = '<div class="msg m-info">Checking… / చెక్ చేస్తోంది…</div>';
+  snT = setTimeout(() => call('houseStatus', sn).then(st => {
+    if ($('sn').value !== sn) return;
+    if (!st.known || st.notOurs) return block('Not in the survey list.' + PM);
+    if (st.done) return block('Already installed – no survey needed. / ఇప్పటికే ఏర్పాటైంది.');
+    if (st.ula) return block('ULA already created – no survey needed.');
+    if (st.prio === 'PRE') return block('Consent already collected earlier – no survey needed.');
+    if (!PRT[st.prio] && !st.last) return block('This house is not for the survey.' + PM);
+    F.site = { prio: st.prio, dist: st.dist, ok: true, sn }; fillHouse(sn, st.name, st.dbmob, st.dist); $('formBody').classList.remove('hidden');
+    $('snMsg').innerHTML = '<div class="msg ' + (st.last ? 'm-warn' : 'm-ok') + '">' + esc(st.dist) + (st.last ? ' · Already surveyed on ' + esc(st.last.at) + ' by ' + esc(st.last.by) + '. Submitting again replaces it.' : ' ✓') + '</div>';
+    gps();
+  }).catch(e => { if (!/^LOGIN/.test(e.message || '')) block(e.offline ? 'No signal – a typed number can be checked only with signal. Pick the house from the village list. / సిగ్నల్ లేదు – గ్రామ జాబితా నుండి ఎంచుకోండి.' : (e.message || e)); }), 300);
+}
+// ---------------------------------------------------------------- location: best reading over ~25 s, must be 30 m or better and inside the village
+let gpsW = null;
+function gps() {
+  if (!navigator.geolocation) { $('loc').textContent = 'This phone cannot give a location.'; return; }
+  if (gpsW != null) navigator.geolocation.clearWatch(gpsW);
+  F.gps = null; let best = null; const t0 = Date.now();
+  $('loc').className = 'msg m-info'; $('loc').textContent = 'Getting location… / లొకేషన్ తీసుకుంటోంది…';
+  gpsW = navigator.geolocation.watchPosition(p => {
+    if (!best || p.coords.accuracy < best.acc) best = { lat: p.coords.latitude, lng: p.coords.longitude, acc: p.coords.accuracy };
+    gpsShow(best); if (best.acc <= 12 || Date.now() - t0 > 25000) { navigator.geolocation.clearWatch(gpsW); gpsW = null; }
+  }, e => { $('loc').className = 'msg m-bad'; $('loc').textContent = 'No location: ' + (e.code === 1 ? 'allow location for this site' : 'try again outside') + ' / లొకేషన్ రాలేదు'; }, { enableHighAccuracy: true, timeout: 30000, maximumAge: 0 });
+}
+function fenceOf(g) {
+  const c = centreOf((F.site && F.site.dist) || $('dist').value || CUR); if (!c || !g) return { chk: 'none' };
+  const m = metres(c[0], c[1], g.lat, g.lng); return { m, chk: m <= FENCE_OK ? 'ok' : m <= FENCE_MAX || c[2] ? 'check' : 'far' };
+}
+function gpsShow(b) {
+  const good = b.acc <= GPS_MAX, fz = fenceOf(b);
+  F.gps = good ? b : null;
+  let t = (good ? '✓ ' : '') + b.lat.toFixed(6) + ', ' + b.lng.toFixed(6) + ' (±' + Math.round(b.acc) + ' m)';
+  if (!good) t += ' – not accurate enough (needs ' + GPS_MAX + ' m). Step outside, wait, tap again. / ఖచ్చితత్వం సరిపోలేదు – బయటికి వెళ్లి మళ్లీ నొక్కండి.';
+  else if (fz.chk === 'far') { F.gps = null; t = '✗ ' + (fz.m / 1000).toFixed(1) + ' km from ' + ((F.site && F.site.dist) || CUR) + ' – location does not match the village.' + PM; }
+  else if (fz.chk === 'check') t += ' · ' + (fz.m / 1000).toFixed(1) + ' km from the village – the office will check. / కార్యాలయం చెక్ చేస్తుంది.';
+  $('loc').className = 'msg ' + (!F.gps ? 'm-bad' : fz.chk === 'check' ? 'm-warn' : 'm-ok'); $('loc').textContent = t;
+}
+const blobToDataUrl = b => new Promise((res, rej) => { const fr = new FileReader(); fr.onload = () => res(fr.result); fr.onerror = rej; fr.readAsDataURL(b); });
+async function bitmap(file) {
+  try { return await createImageBitmap(file, { imageOrientation: 'from-image' }); } catch (e) {}
+  try { return await createImageBitmap(file); } catch (e) {}
+  return await new Promise((res, rej) => { const u = URL.createObjectURL(file), im = new Image(); im.onload = () => { res(im); setTimeout(() => URL.revokeObjectURL(u), 2000); }; im.onerror = () => { URL.revokeObjectURL(u); rej(new Error('format')); }; im.src = u; });
+}
+async function toJpeg(file, maxSide) {
+  const img = await bitmap(file), sc = Math.min(1, maxSide / Math.max(img.width, img.height)), c = document.createElement('canvas');
+  c.width = Math.round(img.width * sc); c.height = Math.round(img.height * sc); c.getContext('2d').drawImage(img, 0, 0, c.width, c.height);
+  const url = c.toDataURL('image/jpeg', 0.82); c.width = 0; c.height = 0; return url;
+}
+// consent form: black-and-white document, small file (target ~250 KB) – the portal copy is for reference
+const CF_KB = 250, kb = u => Math.round((u.length - u.indexOf(',') - 1) * 0.75 / 1024);
+function docJpeg(c) {
+  const x = c.getContext('2d'), d = x.getImageData(0, 0, c.width, c.height), a = d.data;
+  for (let i = 0; i < a.length; i += 4) { let v = 0.3 * a[i] + 0.59 * a[i + 1] + 0.11 * a[i + 2]; v = v > 200 ? 255 : v * 1.1; a[i] = a[i + 1] = a[i + 2] = v > 255 ? 255 : v; }
+  x.putImageData(d, 0, 0);
+  let q = 0.62, u = c.toDataURL('image/jpeg', q);
+  while (kb(u) > CF_KB && q > 0.3) { q -= 0.08; u = c.toDataURL('image/jpeg', q); }
+  if (kb(u) > CF_KB) { const t = document.createElement('canvas'); t.width = Math.round(c.width * 0.75); t.height = Math.round(c.height * 0.75); t.getContext('2d').drawImage(c, 0, 0, t.width, t.height); u = t.toDataURL('image/jpeg', 0.5); }
+  c.width = 0; c.height = 0; return u;
+}
+/** Is the consent form readable? Sharpness (edges of the writing), light, size. Checked on the phone, before saving. */
+const CF_SHARP = 50, CF_DARK = 70;
+function cfQuality(src) {
+  const k = Math.min(1, 1000 / Math.max(src.width, src.height)), w = Math.round(src.width * k), h = Math.round(src.height * k), c = document.createElement('canvas');
+  c.width = w; c.height = h; const x = c.getContext('2d'); x.drawImage(src, 0, 0, w, h); const a = x.getImageData(0, 0, w, h).data, g = new Float32Array(w * h);
+  let sum = 0; for (let i = 0; i < w * h; i++) { g[i] = 0.3 * a[i * 4] + 0.59 * a[i * 4 + 1] + 0.11 * a[i * 4 + 2]; sum += g[i]; }
+  const L = [];
+  for (let y = 2; y < h - 2; y += 2) for (let xx = 2; xx < w - 2; xx += 2) { const i = y * w + xx; L.push(Math.abs(4 * g[i] - g[i - 1] - g[i + 1] - g[i - w] - g[i + w])); }
+  L.sort((p, q) => p - q); c.width = 0;
+  const sharp = Math.round(L[Math.floor(L.length * 0.995)] || 0), bright = Math.round(sum / (w * h)), big = Math.max(src.width, src.height);
+  const why = big < 900 ? 'The photo is too small – use 📷 Camera, not a WhatsApp copy.' : bright < CF_DARK ? 'The photo is too dark – go to the light or switch on the flash.'
+    : sharp < CF_SHARP ? 'The photo is blurred – hold the phone steady, let it focus, fill the screen with the form.' : '';
+  return { ok: !why, why, sharp, bright };
+}
+let CF_TRIES = 0;
+async function consentJpeg(file) {
+  const img = await bitmap(file), q = cfQuality(img);
+  if (!q.ok && ++CF_TRIES < 3) throw Object.assign(new Error(q.why), { quality: q });
+  const sc = Math.min(1, 1700 / Math.max(img.width, img.height)), c = document.createElement('canvas');
+  c.width = Math.round(img.width * sc); c.height = Math.round(img.height * sc); c.getContext('2d').drawImage(img, 0, 0, c.width, c.height);
+  return { url: docJpeg(c), q };
+}
+function loadPdfJs() {
+  if (window.pdfjsLib) return Promise.resolve(window.pdfjsLib);
+  return new Promise((ok, fail) => { const s = document.createElement('script'); s.src = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js';
+    s.onload = () => { pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js'; ok(pdfjsLib); }; s.onerror = fail; document.head.appendChild(s); });
+}
+/** A scanned PDF that is too big: redraw its pages (up to 3) one below the other as one small black-and-white image. */
+async function shrinkPdf(file) {
+  const lib = await loadPdfJs(), doc = await lib.getDocument({ data: await file.arrayBuffer() }).promise, n = Math.min(doc.numPages, 3), parts = [];
+  for (let i = 1; i <= n; i++) { const pg = await doc.getPage(i), v0 = pg.getViewport({ scale: 1 }), v = pg.getViewport({ scale: 1400 / v0.width }), c = document.createElement('canvas');
+    c.width = Math.round(v.width); c.height = Math.round(v.height); const x = c.getContext('2d'); x.fillStyle = '#fff'; x.fillRect(0, 0, c.width, c.height);
+    await pg.render({ canvasContext: x, viewport: v }).promise; parts.push(c); }
+  const all = document.createElement('canvas'); all.width = 1400; all.height = parts.reduce((h, c) => h + c.height, 0);
+  const ax = all.getContext('2d'); let y = 0; parts.forEach(c => { ax.drawImage(c, 0, y); y += c.height; c.width = 0; });
+  const q = cfQuality(all);
+  if (!q.ok && ++CF_TRIES < 3) throw Object.assign(new Error(q.why.replace('The photo', 'The scanned PDF')), { quality: q });
+  return { url: docJpeg(all), pages: doc.numPages, q };
+}
+function photoMsg(file) {
+  const t = String((file && file.type) || '') + ' ' + String((file && file.name) || '');
+  if (file && file.size === 0) return 'That photo is only in the cloud (e.g. Google Photos). Open it once in the Gallery so it downloads, or use 📷 Camera.';
+  if (/hei[cf]/i.test(t)) return 'HEIC photo – the browser cannot open it. Use 📷 Camera here.';
+  return 'Could not read that photo. Try again, or use 📷 Camera.';
+}
+async function onImg(k, file) {
+  if (!file) return;
+  try {
+    let url;
+    if (k === 'bill') { const img = await bitmap(file), sc = Math.min(1, 1400 / Math.max(img.width, img.height)), c = document.createElement('canvas');
+      c.width = Math.round(img.width * sc); c.height = Math.round(img.height * sc); c.getContext('2d').drawImage(img, 0, 0, c.width, c.height); url = docJpeg(c); }
+    else url = await toJpeg(file, 1280);
+    F.img[k] = url; const b = document.querySelector('.pblk[data-k="' + k + '"]'); b.querySelector('img').src = url; b.querySelector('.thumb').classList.remove('hidden');
+    if (k === 'bill') $('noBill').checked = false;
+  } catch (e) { alert(photoMsg(file)); }
+}
+// ---------------------------------------------------------------- compass: which way the phone faces (where the phone allows it)
+let compassStarted = false;
+function compassOn() {
+  if (compassStarted) return; compassStarted = true;
+  const show = h => { const n = ['North / ఉత్తరం', 'East / తూర్పు', 'South / దక్షిణం', 'West / పడమర'][Math.round(((h % 360) + 360) % 360 / 90) % 4]; $('compass').textContent = '🧭 Phone faces: ' + n + ' (' + Math.round(h) + '°)'; };
+  const on = e => { let h = e.webkitCompassHeading != null ? e.webkitCompassHeading : e.absolute && e.alpha != null ? 360 - e.alpha : null; if (h != null) show(h); };
+  try { if (typeof DeviceOrientationEvent !== 'undefined' && DeviceOrientationEvent.requestPermission) DeviceOrientationEvent.requestPermission().catch(() => {}); } catch (e) {}
+  window.addEventListener('deviceorientationabsolute', on); window.addEventListener('deviceorientation', on);
+}
+// ---------------------------------------------------------------- document scanner (like Office Lens / Adobe Scan): find the paper, flatten it, even out the light
+let SC = null;      // { img, w, h, pts:[[x,y]×4] in image pixels, scale }
+async function openScanner(file) {
+  let img; try { img = await bitmap(file); } catch (e) { alert(photoMsg(file)); return; }
+  const k = Math.min(1, 2400 / Math.max(img.width, img.height)), c = document.createElement('canvas'); c.width = Math.round(img.width * k); c.height = Math.round(img.height * k);
+  c.getContext('2d').drawImage(img, 0, 0, c.width, c.height);
+  SC = { src: c, w: c.width, h: c.height, pts: findPaper(c) };
+  $('scanBox').classList.remove('hidden'); scanDraw();
+}
+/** The form is the large bright area: threshold (Otsu), largest bright blob, its 4 extreme corners. */
+function findPaper(c) {
+  const W = 320, s = W / c.width, H = Math.round(c.height * s), t = document.createElement('canvas'); t.width = W; t.height = H;
+  const x = t.getContext('2d'); x.filter = 'blur(2px)'; x.drawImage(c, 0, 0, W, H); const a = x.getImageData(0, 0, W, H).data, g = new Uint8Array(W * H), hist = new Array(256).fill(0);
+  for (let i = 0; i < W * H; i++) { g[i] = (a[i * 4] * 0.3 + a[i * 4 + 1] * 0.59 + a[i * 4 + 2] * 0.11) | 0; hist[g[i]]++; }
+  let sum = 0; for (let i = 0; i < 256; i++) sum += i * hist[i]; let sB = 0, wB = 0, best = 0, th = 128;
+  for (let i = 0; i < 256; i++) { wB += hist[i]; if (!wB) continue; const wF = W * H - wB; if (!wF) break; sB += i * hist[i]; const mB = sB / wB, mF = (sum - sB) / wF, v = wB * wF * (mB - mF) * (mB - mF); if (v > best) { best = v; th = i; } }
+  const lab = new Int32Array(W * H).fill(-1); let bestN = 0, bestId = -1, id = 0; const stack = [];
+  for (let i = 0; i < W * H; i++) { if (g[i] <= th || lab[i] >= 0) continue; let n = 0; stack.push(i); lab[i] = id;
+    while (stack.length) { const p = stack.pop(); n++; const px = p % W, py = (p / W) | 0;
+      [[1, 0], [-1, 0], [0, 1], [0, -1]].forEach(d => { const qx = px + d[0], qy = py + d[1]; if (qx < 0 || qy < 0 || qx >= W || qy >= H) return; const q = qy * W + qx; if (g[q] > th && lab[q] < 0) { lab[q] = id; stack.push(q); } }); }
+    if (n > bestN) { bestN = n; bestId = id; } id++; }
+  const inset = () => [[0.05, 0.05], [0.95, 0.05], [0.95, 0.95], [0.05, 0.95]].map(p => [p[0] * c.width, p[1] * c.height]);
+  if (bestN < W * H * 0.15) return inset();
+  let tl = null, tr = null, br = null, bl = null;
+  for (let i = 0; i < W * H; i++) { if (lab[i] !== bestId) continue; const px = i % W, py = (i / W) | 0;
+    if (!tl || px + py < tl[0] + tl[1]) tl = [px, py]; if (!br || px + py > br[0] + br[1]) br = [px, py];
+    if (!tr || px - py > tr[0] - tr[1]) tr = [px, py]; if (!bl || px - py < bl[0] - bl[1]) bl = [px, py]; }
+  return [tl, tr, br, bl].map(p => [p[0] / s, p[1] / s]);
+}
+function scanDraw() {
+  const st = $('scanStage'), cv = $('scanCv'), W = st.clientWidth, H = st.clientHeight, k = Math.min(W / SC.w, H / SC.h);
+  SC.k = k; SC.ox = (W - SC.w * k) / 2; SC.oy = (H - SC.h * k) / 2; cv.width = W; cv.height = H;
+  const x = cv.getContext('2d'); x.fillStyle = '#111'; x.fillRect(0, 0, W, H); x.drawImage(SC.src, SC.ox, SC.oy, SC.w * k, SC.h * k);
+  const P = SC.pts.map(p => [SC.ox + p[0] * k, SC.oy + p[1] * k]);
+  x.strokeStyle = '#F4A62A'; x.lineWidth = 3; x.beginPath(); P.forEach((p, i) => i ? x.lineTo(p[0], p[1]) : x.moveTo(p[0], p[1])); x.closePath(); x.stroke();
+  x.fillStyle = 'rgba(244,166,42,.9)'; P.forEach(p => { x.beginPath(); x.arc(p[0], p[1], 14, 0, 7); x.fill(); });
+}
+let scanDrag = -1;
+function scanPt(e) { const r = $('scanCv').getBoundingClientRect(), t = e.touches ? e.touches[0] : e; return [(t.clientX - r.left - SC.ox) / SC.k, (t.clientY - r.top - SC.oy) / SC.k]; }
+function scanDown(e) { if (!SC) return; const p = scanPt(e); let bi = -1, bd = 1e9; SC.pts.forEach((q, i) => { const d = Math.hypot(q[0] - p[0], q[1] - p[1]) * SC.k; if (d < bd) { bd = d; bi = i; } }); if (bd < 50) { scanDrag = bi; e.preventDefault(); } }
+function scanMove(e) { if (scanDrag < 0) return; e.preventDefault(); const p = scanPt(e); SC.pts[scanDrag] = [Math.max(0, Math.min(SC.w, p[0])), Math.max(0, Math.min(SC.h, p[1]))]; scanDraw(); }
+function scanUp() { scanDrag = -1; }
+/** Homography from the output rectangle to the 4 corners (8 unknowns, Gaussian elimination). */
+function homography(src, dst) {
+  const A = [], b = [];
+  for (let i = 0; i < 4; i++) { const [x, y] = src[i], [u, v] = dst[i];
+    A.push([x, y, 1, 0, 0, 0, -u * x, -u * y]); b.push(u); A.push([0, 0, 0, x, y, 1, -v * x, -v * y]); b.push(v); }
+  for (let i = 0; i < 8; i++) { let m = i; for (let r = i + 1; r < 8; r++) if (Math.abs(A[r][i]) > Math.abs(A[m][i])) m = r;
+    [A[i], A[m]] = [A[m], A[i]]; [b[i], b[m]] = [b[m], b[i]];
+    for (let r = 0; r < 8; r++) { if (r === i) continue; const f = A[r][i] / A[i][i]; for (let c = i; c < 8; c++) A[r][c] -= f * A[i][c]; b[r] -= f * b[i]; } }
+  return b.map((v, i) => v / A[i][i]);
+}
+function scanFlatten() {
+  const P = SC.pts, dist = (a, c) => Math.hypot(a[0] - c[0], a[1] - c[1]);
+  const wq = Math.max(dist(P[0], P[1]), dist(P[3], P[2])), hq = Math.max(dist(P[0], P[3]), dist(P[1], P[2]));
+  const OW = 1240, OH = Math.round(OW * Math.min(1.6, Math.max(0.6, hq / wq)));
+  const h = homography([[0, 0], [OW, 0], [OW, OH], [0, OH]], P);
+  const sx = SC.src.getContext('2d').getImageData(0, 0, SC.w, SC.h).data, out = document.createElement('canvas'); out.width = OW; out.height = OH;
+  const ox = out.getContext('2d'), od = ox.createImageData(OW, OH), o = od.data, g = new Float32Array(OW * OH);
+  for (let y = 0; y < OH; y++) for (let x = 0; x < OW; x++) {
+    const d = h[6] * x + h[7] * y + 1, u = (h[0] * x + h[1] * y + h[2]) / d, v = (h[3] * x + h[4] * y + h[5]) / d;
+    const ui = Math.min(SC.w - 1, Math.max(0, u | 0)), vi = Math.min(SC.h - 1, Math.max(0, v | 0)), si = (vi * SC.w + ui) * 4;
+    g[y * OW + x] = sx[si] * 0.3 + sx[si + 1] * 0.59 + sx[si + 2] * 0.11;
+  }
+  // even out the light: divide by the local background (big blur of a small copy), then stretch – the paper turns white, ink stays dark, signatures stay
+  const bw = 64, bh = Math.round(64 * OH / OW), bc = document.createElement('canvas'); bc.width = OW; bc.height = OH;
+  const bx = bc.getContext('2d'), gd = bx.createImageData(OW, OH); for (let i = 0; i < OW * OH; i++) { gd.data[i * 4] = gd.data[i * 4 + 1] = gd.data[i * 4 + 2] = g[i]; gd.data[i * 4 + 3] = 255; } bx.putImageData(gd, 0, 0);
+  const sm = document.createElement('canvas'); sm.width = bw; sm.height = bh; const smx = sm.getContext('2d'); smx.filter = 'blur(3px)'; smx.drawImage(bc, 0, 0, bw, bh);
+  const big = document.createElement('canvas'); big.width = OW; big.height = OH; const bgx = big.getContext('2d'); bgx.imageSmoothingQuality = 'high'; bgx.drawImage(sm, 0, 0, OW, OH);
+  const bg = bgx.getImageData(0, 0, OW, OH).data;
+  for (let i = 0; i < OW * OH; i++) { let v = g[i] / Math.max(40, bg[i * 4]) * 255; v = (v - 60) * 1.35; v = v > 235 ? 255 : v < 0 ? 0 : v; o[i * 4] = o[i * 4 + 1] = o[i * 4 + 2] = v; o[i * 4 + 3] = 255; }
+  ox.putImageData(od, 0, 0); bc.width = 0; sm.width = 0; big.width = 0;
+  return out;
+}
+function scanUse() {
+  const out = scanFlatten(), q = cfQuality(out);
+  let qq = 0.7, u = out.toDataURL('image/jpeg', qq); while (kb(u) > 300 && qq > 0.35) { qq -= 0.08; u = out.toDataURL('image/jpeg', qq); }
+  out.width = 0; $('scanBox').classList.add('hidden'); SC.src.width = 0; SC = null;
+  if (!q.ok && ++CF_TRIES < 3) { F.consentForm = null; $('cfWrap').classList.add('hidden'); $('cfInfo').className = 'msg m-bad'; $('cfInfo').textContent = '✗ ' + q.why + ' (try ' + (CF_TRIES + 1) + ' of 3)'; return; }
+  F.consentForm = u; $('cf').src = u; $('cfWrap').classList.remove('hidden');
+  $('cfInfo').className = q.ok ? 'msg m-ok' : 'msg m-warn'; $('cfInfo').textContent = q.ok ? '✓ Scanned (' + kb(u) + ' KB) – becomes <service no>M.pdf / F.pdf' : '⚠ Still not clear after 3 tries – saved anyway; the office may ask again.';
+}
+async function onConsent(file) {
+  if (!file) return;
+  if (file.type === 'application/pdf' || /\.pdf$/i.test(file.name)) return onConsentPdf(file);
+  openScanner(file);
+}
+async function onConsentPdf(file) {
+
+    if (file.size > 10 * 1024 * 1024) { alert('PDF larger than 10 MB – photograph the form instead.'); return; }
+    if (file.size <= 300 * 1024) {
+      F.consentForm = (await blobToDataUrl(file)).replace(/^data:[^;]*;/, 'data:application/pdf;'); $('cfWrap').classList.add('hidden');
+      $('cfInfo').className = 'msg m-ok'; $('cfInfo').textContent = '✓ PDF: ' + file.name + ' (' + Math.round(file.size / 1024) + ' KB) – saved as <service no>M.pdf / F.pdf';
+      return;
+    }
+    $('cfInfo').className = 'msg m-info'; $('cfInfo').textContent = 'Making the PDF smaller (' + Math.round(file.size / 1024) + ' KB)…';
+    try { const r = await shrinkPdf(file); F.consentForm = r.url; $('cf').src = r.url; $('cfWrap').classList.remove('hidden');
+      $('cfInfo').className = 'msg m-ok'; $('cfInfo').textContent = '✓ PDF made smaller: ' + Math.round(file.size / 1024) + ' KB → ' + kb(r.url) + ' KB' + (r.pages > 3 ? ' (first 3 of ' + r.pages + ' pages)' : '') + ' – saved as <service no>M.pdf / F.pdf'; }
+    catch (e) { if (e.quality) { F.consentForm = null; $('cfWrap').classList.add('hidden'); $('cfInfo').className = 'msg m-bad'; $('cfInfo').textContent = '✗ ' + e.message + ' Scan again or photograph the form.'; return; }
+      F.consentForm = (await blobToDataUrl(file)).replace(/^data:[^;]*;/, 'data:application/pdf;'); $('cfWrap').classList.add('hidden');
+      $('cfInfo').className = 'msg m-warn'; $('cfInfo').textContent = 'PDF kept as it is (' + Math.round(file.size / 1024) + ' KB) – could not make it smaller without internet. A photo of the form gives a smaller file.'; }
+}
+
+const numIn = (id, lo, hi) => { const v = $(id).value; if (v === '') return null; const n = Number(v); return n >= lo && n <= hi ? n : NaN; };
+function problems() {
+  const p = [], mob = $('mob').value.replace(/\D/g, '');
+  if (!F.site || !F.site.ok) p.push((F.site && F.site.why) || 'Pick a house from the list or type a service number in the list.');
+  if (!F.avail) p.push('Customer available? / కస్టమర్ ఉన్నారా?');
+  if (F.avail === 'No') { if (!F.naWhy) p.push('Why not available? / ఎందుకు లేరు?'); }
+  else if (F.avail === 'Yes') {
+    if ($('nameDiff').checked) { if ($('bname').value.trim().length < 3) p.push('Name as on the bill. / బిల్లుపై పేరు.'); if (!F.nameWhy) p.push('Why is the name different? / పేరు ఎందుకు వేరు?'); }
+    if (!F.gender) p.push('Gender. / లింగం.');
+    if (!/^[6-9]\d{9}$/.test(mob)) p.push('Working mobile: 10 digits starting 6–9. / 10 అంకెల మొబైల్.');
+    if ($('alt').value && !/^[6-9]\d{9}$/.test($('alt').value)) p.push('Alternate mobile: 10 digits, or leave it empty.');
+    if (!F.consent) p.push('Consent: Yes or No? / సమ్మతి?');
+    if (F.consent === 'No' && !F.cnWhy) p.push('Why No? / ఎందుకు వద్దు?');
+    if (F.consent === 'Yes') {
+      const un = numIn('unitsN', 1, 1000); if (un === null) p.push('Units per month. / నెలకు యూనిట్లు.'); else if (isNaN(un)) p.push('Units: 1–1000 only.' + PM);
+      if (!F.phase) p.push('Connection: single or 3 phase? / కనెక్షన్?');
+      if (!F.billName) p.push('Bill in whose name? / బిల్లు ఎవరి పేరున?');
+      if (!F.hasSolar) p.push('Already has solar? / సోలార్ ఉందా?');
+      if (!F.meter) p.push('Meter? / మీటర్?');
+      if (!F.img.bill && !$('noBill').checked) p.push('Photo of the bill (or tick "No bill"). / బిల్లు ఫోటో.');
+      if (F.meter && F.meter !== 'Working' && !F.img.meterPh) p.push('Photo of the meter place. / మీటర్ స్థలం ఫోటో.');
+      if (!F.roof) p.push('Roof type. / పైకప్పు రకం.'); if (!F.floors) p.push('Floors. / అంతస్తులు.'); if (!F.steps) p.push('Steps to the roof? / మెట్లు?');
+      if (!F.shade) p.push('Shade? / నీడ?');
+      if (!F.trees) p.push('Trees / buildings around that cast shadow? / చుట్టూ నీడ?');
+      if (F.trees === 'Yes') [['north', 'ఉత్తరం'], ['east', 'తూర్పు'], ['south', 'దక్షిణం'], ['west', 'పడమర']].forEach(d => { if (!F.img['dir_' + d[0]]) p.push('Photo ' + d[0] + ' / ' + d[1] + ' ఫోటో.'); }); if (!F.roofCond) p.push('Roof condition? / పైకప్పు స్థితి?'); if (!F.signal) p.push('Mobile signal at the roof? / సిగ్నల్?');
+      if (!F.img.photo2) p.push('House photo 2. / ఇంటి ఫోటో 2.');
+      if (!F.struct) p.push('Panel structure. / ప్యానెల్ స్ట్రక్చర్.'); if (!F.pits) p.push('Earth pits? / ఎర్త్ పిట్లు?');
+      [['rl', 1, 40, 'Roof length'], ['rw', 1, 40, 'Roof width']].forEach(x => { if (isNaN(numIn(x[0], x[1], x[2]))) p.push(x[3] + ': ' + x[1] + '–' + x[2] + ' m only.' + PM); });
+      if (F.struct && F.struct !== 'No space') [['earth', 3, 60, 'Earthing'], ['dc', 3, 40, 'DC cable'], ['ac', 2, 50, 'AC cable']].forEach(x => { const v = numIn(x[0], x[1], x[2]);
+        if (v === null) p.push(x[3] + ' length (m). / ' + x[3] + ' పొడవు.'); else if (isNaN(v)) p.push(x[3] + ': ' + x[1] + '–' + x[2] + ' m only.' + PM); });
+      if (!F.consentForm) p.push('Scan the signed consent form. / సమ్మతి పత్రం స్కాన్ చేయండి.');
+    }
+  }
+  if (!F.gps) p.push('Location: needs ' + GPS_MAX + ' m or better, inside the village. / లొకేషన్.');
+  if (!F.img.photo) p.push(F.consent === 'Yes' ? 'Photo: customer holding the signed form. / ఫారం పట్టుకున్న కస్టమర్ ఫోటో.' : 'House photo. / ఇంటి ఫోటో.');
+  return p;
+}
+async function submit() {
+  const p = problems(); $('err').innerHTML = p.map(x => '<li>' + esc(x) + '</li>').join('');
+  if (p.length) { $('err').scrollIntoView({ block: 'center' }); return; }
+  const b = $('submit'); b.disabled = true; b.textContent = 'Saving…';
+  try {
+    const yes = F.avail === 'Yes' && F.consent === 'Yes', v = id => $(id).value;
+    const payload = { cid: 'c' + Date.now().toString(36) + Math.random().toString(36).slice(2, 8), sup: AUTH, sn: v('sn'), name: $('nameDiff').checked ? v('bname') : v('listName'), nameWhy: $('nameDiff').checked ? F.nameWhy : '',
+      gender: F.gender, mobile: v('mob'), alt: v('alt'), lat: F.gps.lat, lng: F.gps.lng, acc: F.gps.acc, photo: F.img.photo, avail: F.avail, naWhy: F.naWhy, pat: phoneTime(),
+      consent: F.avail === 'Yes' ? F.consent : '', cnWhy: F.cnWhy, remarks: F.avail === 'Yes' ? v('remarks') : '' };
+    if (yes) Object.assign(payload, { unitsN: v('unitsN'), phase: F.phase, billName: F.billName, hasSolar: F.hasSolar, signal: F.signal, meter: F.meter, bill: $('noBill').checked ? '' : F.img.bill, noBill: $('noBill').checked && !F.img.bill, meterPh: F.img.meterPh,
+      roof: F.roof, floors: F.floors, steps: F.steps, shade: F.shade, trees: F.trees,
+      dirPh: F.trees === 'Yes' ? { north: F.img.dir_north, east: F.img.dir_east, south: F.img.dir_south, west: F.img.dir_west } : null, roofCond: F.roofCond, photo2: F.img.photo2, roofPh: F.img.roofPh,
+      struct: F.struct, rl: v('rl'), rw: v('rw'), pits: F.pits, inv: F.inv, earth: v('earth'), dc: v('dc'), ac: v('ac'), consentForm: F.consentForm });
+    let r = null, queued = false;
+    try { r = await call('submitSurvey', payload); }
+    catch (e) { if (!e.offline) throw e; await qPut({ cid: payload.cid, at: new Date().toISOString().slice(0, 16).replace('T', ' '), payload }); queued = true; qShow(); }
+    todayAdd();
+    const vd = r && r.verdict ? { v: r.verdict, why: r.why || [] } : verdict();
+    $('doneTxt').innerHTML = '<div class="mono">' + esc(v('sn')) + '</div>' + (F.avail === 'No' ? '<div>Not available – ' + esc(F.naWhy) + '. Saved as a revisit.</div>' :
+      '<div>' + esc(payload.name) + ' · ' + esc(F.gender) + ' · ' + esc(v('dist')) + '</div>') +
+      (vd ? '<div class="msg ' + ({ 'Feasible': 'm-ok', 'Special structure': 'm-info', 'Needs action': 'm-warn', 'Consent No': 'm-info' }[vd.v] || 'm-bad') + '" style="margin-top:8px"><b>' + esc(vd.v) + ' / ' + (VTE[vd.v] || '') + '</b>' + (vd.why && vd.why.filter(Boolean).length ? ' – ' + esc(vd.why.filter(Boolean).join(', ')) : '') + '</div>' : '') +
+      (r && r.loc === 'Check' ? '<div class="msg m-warn" style="margin-top:8px">Location is 3–5 km from the village – the office will check. / కార్యాలయం చెక్ చేస్తుంది.</div>' : '') +
+      (queued ? '<div class="msg m-warn" style="margin-top:8px">No signal – saved on this phone; it sends by itself when signal returns. Do not clear the browser data. <span class="te">సిగ్నల్ వచ్చాక స్వయంగా పంపుతుంది.</span></div>' :
+       r && r.resurvey ? '<div class="sub" style="margin-top:6px">Re-survey – the earlier one is replaced.</div>' : '');
+    const h = HOUSES.find(x => x[0] === v('sn')); if (h) { if (F.avail === 'No') { h[6] = (h[6] || 0) + 1; h[7] = phoneTime(); } else { h[4] = phoneTime(); h[5] = AUTH.name; h[12] = vd ? vd.v : ''; } }
+    show('pDone');
+  } catch (e) { $('err').innerHTML = '<li>' + esc(e.message || e) + '</li>'; }
+  b.disabled = false; layout();
+}
+function nextHouse() { if (CUR) { drawHouses(); show('pHouses'); } else { show('pDist'); } }
+
+// ---------------------------------------------------------------- events
+$('lgGo').onclick = loginGo; $('lgPin').addEventListener('keydown', e => { if (e.key === 'Enter') loginGo(); });
+$('lgOut').onclick = () => { if (confirm('Change supervisor? / సూపర్‌వైజర్ మార్చాలా?')) logout(''); };
+$('dq').addEventListener('input', drawDists);
+$('hq').addEventListener('input', drawHouses);
+$('dList').addEventListener('click', e => { const b = e.target.closest('[data-d]'); if (b) openDist(b.dataset.d); });
+$('nearBtn').addEventListener('click', async () => {
+  if (HERE) { HERE = null; $('nearBtn').textContent = '📍 Nearest first'; $('nearMsg').textContent = ''; return drawHouses(); }
+  try { HERE = await whereAmI(); $('nearBtn').textContent = '↺ Normal order'; drawHouses(); } catch (e) { $('nearMsg').textContent = 'Location not available.'; }
+});
+$('hList').addEventListener('click', e => { const b = e.target.closest('[data-sn]'); if (b) openForm(HOUSES.find(h => h[0] === b.dataset.sn)); });
+$('typeSn').onclick = () => { CUR = ''; openForm(null); };
+$('typeSn2').onclick = () => openForm(null);
+$('hBack').onclick = () => { CUR = ''; show('pDist'); loadDists(); };
+$('fBack').onclick = () => CUR ? show('pHouses') : show('pDist');
+SEGS.forEach(k => $(k).addEventListener('click', e => { const b = e.target.closest('button[data-v]'); if (b) setSeg(k, b.dataset.v); }));
+$('nameDiff').addEventListener('change', () => { if (!$('nameDiff').checked) { $('bname').value = $('listName').value; F.nameWhy = ''; document.querySelectorAll('#nameWhy button').forEach(b => b.classList.remove('on')); } layout(); });
+$('bname').addEventListener('input', () => { $('bname').value = $('bname').value.replace(/[^A-Za-z .,']/g, ''); });
+$('unitsN').addEventListener('input', () => { $('unitsN').value = $('unitsN').value.replace(/\D/g, '').slice(0, 4); verdictShow(); });
+['rl', 'rw', 'earth', 'dc', 'ac'].forEach(id => $(id).addEventListener('input', () => { $(id).value = $(id).value.replace(/[^\d.]/g, '').slice(0, 4); }));
+$('noBill').addEventListener('change', () => { if ($('noBill').checked) { F.img.bill = null; document.querySelector('.pblk[data-k="bill"] .thumb').classList.add('hidden'); } });
+$('sn').addEventListener('input', snCheck);
+$('mob').addEventListener('input', mobCheck);
+['mob', 'alt'].forEach(id => $(id).addEventListener('input', () => { let d = $(id).value.replace(/\D/g, ''); if (d.length > 10 && /^91/.test(d)) d = d.slice(2); else if (d.length > 10 && /^0/.test(d)) d = d.slice(1); $(id).value = d.slice(0, 10); }));
+$('gps').onclick = gps;
+let CAM = null, CAMFOR = '';
+function nativeCam(f) { $('camIn').dataset.for = f; $('camIn').value = ''; $('camIn').click(); }
+async function openCam(f) {
+  CAMFOR = f; $('camHint').innerHTML = f === 'consent' ? 'Hold the phone straight above the form; the whole form on the screen. <span class="te">ఫారం మొత్తం స్క్రీన్‌లో వచ్చేలా పట్టండి.</span>' : '';
+  if (!(navigator.mediaDevices && navigator.mediaDevices.getUserMedia)) return nativeCam(f);
+  try { CAM = await navigator.mediaDevices.getUserMedia({ audio: false, video: { facingMode: { ideal: 'environment' }, width: { ideal: 2560 }, height: { ideal: 1920 } } }); }
+  catch (e) { return nativeCam(f); }
+  $('camV').srcObject = CAM; $('camBox').classList.remove('hidden');
+}
+function closeCam() { if (CAM) CAM.getTracks().forEach(t => t.stop()); CAM = null; $('camV').srcObject = null; $('camBox').classList.add('hidden'); }
+const gotFile = (f, file) => f === 'consent' ? onConsent(file) : onImg(f, file);
+$('camX').onclick = closeCam;
+$('camApp').onclick = () => { closeCam(); nativeCam(CAMFOR); };
+$('camSnap').onclick = () => {
+  const v = $('camV'); if (!v.videoWidth) return;
+  const c = document.createElement('canvas'); c.width = v.videoWidth; c.height = v.videoHeight; c.getContext('2d').drawImage(v, 0, 0);
+  c.toBlob(b => { closeCam(); if (!b) return; gotFile(CAMFOR, new File([b], 'camera.jpg', { type: 'image/jpeg' })); }, 'image/jpeg', 0.92);
+};
+document.addEventListener('click', e => {
+  const c = e.target.closest('[data-cam]'); if (c) { e.preventDefault(); return openCam(c.dataset.cam); }
+  const g = e.target.closest('[data-gal]'); if (g) { e.preventDefault(); $('galIn').dataset.for = g.dataset.gal; $('galIn').value = ''; $('galIn').click(); }
+});
+$('cfCam').onclick = () => openCam('consent');
+$('cfFile').onclick = () => { $('fileIn').value = ''; $('fileIn').click(); };
+$('camIn').onchange = e => gotFile($('camIn').dataset.for, e.target.files[0]);
+$('galIn').onchange = e => onImg($('galIn').dataset.for, e.target.files[0]);
+$('fileIn').onchange = e => onConsent(e.target.files[0]);
+const cvS = $('scanCv'); cvS.addEventListener('pointerdown', scanDown); cvS.addEventListener('pointermove', scanMove); window.addEventListener('pointerup', scanUp);
+$('scanOk').onclick = scanUse; $('scanRe').onclick = () => { $('scanBox').classList.add('hidden'); SC = null; openCam('consent'); };
+window.addEventListener('resize', () => { if (SC) scanDraw(); });
+$('submit').onclick = submit; $('next').onclick = nextHouse;
+$('qSend').onclick = qFlush;
+window.addEventListener('online', qFlush);
+setInterval(qFlush, 60000);
+if (AUTH) startApp(); else loginPage();
+layout();
+if ('serviceWorker' in navigator) navigator.serviceWorker.register('/yemmiganur/sw.js').catch(() => {});
+
+</script>
+</body>
+</html>
