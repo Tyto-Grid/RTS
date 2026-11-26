@@ -300,8 +300,9 @@ async function qFlush() {
   if (qBusy) return; qBusy = true;
   try {
     for (const it of await qAll()) {
+      if (AUTH) it.payload.sup = AUTH;                                    // always send with the login in use now (a new PIN must not strand saved surveys)
       try { await run('submitSurvey', it.payload); await qDel(it.cid); }
-      catch (e) { if (e.offline) break; it.error = e.message; await qPut(it); }          // a real error (e.g. not allowed) stays with its message
+      catch (e) { if (e.offline) break; it.error = e.message; await qPut(it); }          // a real error (e.g. not allowed) stays with its message – never deleted
     }
   } catch (e) {}
   qBusy = false; qShow();
@@ -310,7 +311,11 @@ function cache(k, v) { try { if (v === undefined) { const x = localStorage.getIt
 function store(k, v) { try { if (v === undefined) return localStorage.getItem(k); localStorage.setItem(k, v); } catch (e) { return null; } }
 
 // every field call carries the supervisor's id + PIN
+// the login is kept in two places (browser storage + a 1-year cookie) so a cleared storage does not log the supervisor out
+const authCookie = v => { try { document.cookie = 'ymg_auth=' + (v ? encodeURIComponent(JSON.stringify(v)) + '; max-age=31536000' : '; max-age=0') + '; path=/; SameSite=Lax; Secure'; } catch (e) {} };
 let AUTH = null; try { AUTH = JSON.parse(localStorage.getItem('ymg_auth') || 'null'); } catch (e) {}
+if (!AUTH) try { const m = document.cookie.match(/(?:^|; )ymg_auth=([^;]+)/); if (m) { AUTH = JSON.parse(decodeURIComponent(m[1])); localStorage.setItem('ymg_auth', JSON.stringify(AUTH)); } } catch (e) { AUTH = null; }
+if (AUTH) authCookie(AUTH);
 const call = (fn, ...a) => run(fn, AUTH, ...a).catch(e => { if (/^LOGIN/.test(e.message || '')) { logout(e.message.replace(/^LOGIN: /, '')); } throw e; });
 let DISTS = [], HOUSES = [], CUR = '';
 const F0 = () => ({ site: null, gps: null, consentForm: null, avail: '', naWhy: '', gender: '', consent: '', cnWhy: '', phase: '', billName: '', hasSolar: '', meter: '', roof: '', floors: '', steps: '', shade: '', roofCond: '', signal: '', struct: '', pits: '', inv: '', nameWhy: '',
@@ -334,11 +339,13 @@ async function loginGo() {
   const id = $('lgName').value, pin = $('lgPin').value.replace(/\D/g, '');
   if (!id || pin.length !== 4) { $('lgMsg').innerHTML = '<div class="msg m-bad">Choose your name and type the 4-digit PIN. / పేరు ఎంచుకుని 4 అంకెల PIN టైప్ చేయండి.</div>'; return; }
   $('lgGo').disabled = true;
-  try { const u = await run('supLogin', id, pin); AUTH = { id, pin, name: u.name }; localStorage.setItem('ymg_auth', JSON.stringify(AUTH)); $('lgPin').value = ''; startApp(); }
+  try { const u = await run('supLogin', id, pin); AUTH = { id, pin, name: u.name }; localStorage.setItem('ymg_auth', JSON.stringify(AUTH)); authCookie(AUTH); $('lgPin').value = ''; startApp(); }
   catch (e) { $('lgMsg').innerHTML = '<div class="msg m-bad">' + esc(e.message || e) + '</div>'; }
   $('lgGo').disabled = false;
 }
-function logout(msg) { AUTH = null; try { localStorage.removeItem('ymg_auth'); } catch (e) {} loginPage(msg); }
+function logout(msg) { AUTH = null; try { localStorage.removeItem('ymg_auth'); } catch (e) {} authCookie(null); loginPage(msg); }
+window.addEventListener('online', () => { if (AUTH) qFlush(); });           // signal back → send the saved surveys at once
+setInterval(() => { if (AUTH && navigator.onLine !== false) qFlush(); }, 60000);   // and try every minute while the page is open
 function startApp() { $('meName').textContent = AUTH.name; todayShow(); showView('pDist'); loadDists(); qShow(); qFlush(); }
 // ---------------------------------------------------------------- the choices (one handler for every button row)
 const SEGS = ['avail', 'naWhy', 'gender', 'consent', 'cnWhy', 'phase', 'billName', 'hasSolar', 'meter', 'roof', 'floors', 'steps', 'shade', 'trees', 'roofCond', 'signal', 'struct', 'pits', 'inv', 'nameWhy'];
@@ -748,8 +755,12 @@ async function submit() {
       dirPh: F.trees === 'Yes' ? { north: F.img.dir_north, east: F.img.dir_east, south: F.img.dir_south, west: F.img.dir_west } : null, roofCond: F.roofCond, photo2: F.img.photo2, roofPh: F.img.roofPh,
       struct: F.struct, rl: v('rl'), rw: v('rw'), pits: F.pits, inv: F.inv, earth: v('earth'), dc: v('dc'), ac: v('ac'), consentForm: F.consentForm });
     let r = null, queued = false;
-    try { r = await call('submitSurvey', payload); }
-    catch (e) { if (!e.offline) throw e; await qPut({ cid: payload.cid, at: new Date().toISOString().slice(0, 16).replace('T', ' '), payload }); queued = true; qShow(); }
+    const keep = () => qPut({ cid: payload.cid, at: new Date().toISOString().slice(0, 16).replace('T', ' '), payload });
+    try { r = await run('submitSurvey', payload); }                       // the login travels inside the survey (payload.sup)
+    catch (e) {
+      if (/^LOGIN/.test(e.message || '')) { await keep(); qShow(); logout(e.message.replace(/^LOGIN: /, '') + ' Your survey is kept on this phone and sends after you log in. / సర్వే ఫోన్‌లో ఉంది.'); return; }
+      if (!e.offline) throw e; await keep(); queued = true; qShow();
+    }
     todayAdd();
     const vd = r && r.verdict ? { v: r.verdict, why: r.why || [] } : verdict();
     $('doneTxt').innerHTML = '<div class="mono">' + esc(v('sn')) + '</div>' + (F.avail === 'No' ? '<div>Not available – ' + esc(F.naWhy) + '. Saved as a revisit.</div>' :
