@@ -553,11 +553,19 @@ async function supPage(reload) {
     '<p class="small muted">Names come from the registered list. If a supervisor types the name differently, it shows as two people – ask them to keep the same spelling.</p>';
 }
 let SREG = null;
+// WhatsApp desktop app first (one window, always reused); if it does not open in 2 s, WhatsApp Web in one named tab
+function waOpen(msg, mob) {
+  const m = String(mob || '').replace(/\D/g, '').slice(-10), ph = /^[6-9]\d{9}$/.test(m) ? '91' + m : '';
+  const q = (ph ? 'phone=' + ph + '&' : '') + 'text=' + encodeURIComponent(msg);
+  let left = false; const gone = () => { left = true; }; window.addEventListener('blur', gone, { once: true });
+  location.href = 'whatsapp://send?' + q;
+  setTimeout(() => { window.removeEventListener('blur', gone); if (!left && !document.hidden) { const w = window.open('https://web.whatsapp.com/send?' + q, 'sv_whatsapp'); if (w) w.focus(); } }, 2000);
+}
 function drawSupReg(L) {
   SREG = L; const b = $('supReg'); if (!b) return;
   b.innerHTML = '<div class="tw" style="margin-bottom:10px"><table><thead><tr><th>Name</th><th>Mobile</th><th>Subcontractor</th><th>PIN</th><th>Status</th><th></th></tr></thead><tbody>' +
     L.map(u => '<tr' + (u.on ? '' : ' class="leave"') + '><td><b>' + esc(u.name) + '</b></td><td class="mono">' + esc(u.mob) + '</td><td>' + esc(u.sc) + '</td><td class="mono" style="font-size:16px"><b>' + esc(u.pin) + '</b></td><td>' + (u.on ? 'Active' : 'Stopped') +
-      '</td><td><button class="btn" data-supact="pin|' + esc(u.id) + '">New PIN</button> <button class="btn" data-supact="' + (u.on ? 'off' : 'on') + '|' + esc(u.id) + '">' + (u.on ? 'Stop' : 'Restart') + '</button></td></tr>').join('') +
+      '</td><td>' + (u.on ? '<button class="btn pri" data-supwa="' + esc(u.id) + '" title="Send the link and PIN to this supervisor">WhatsApp</button> ' : '') + '<button class="btn" data-supact="pin|' + esc(u.id) + '">New PIN</button> <button class="btn" data-supact="' + (u.on ? 'off' : 'on') + '|' + esc(u.id) + '">' + (u.on ? 'Stop' : 'Restart') + '</button></td></tr>').join('') +
     (L.length ? '' : '<tr><td colspan="6" class="muted">No supervisor yet – add them below. The phone app works only for registered supervisors.</td></tr>') + '</tbody></table></div>' +
     '<div class="toolbar"><input id="sName" placeholder="Supervisor name" style="width:200px;padding:7px 9px;border:1px solid var(--line);border-radius:8px"><input id="sMob" placeholder="Mobile" style="width:130px;padding:7px 9px;border:1px solid var(--line);border-radius:8px">' +
     '<input id="sSc" placeholder="Subcontractor (optional)" style="width:200px;padding:7px 9px;border:1px solid var(--line);border-radius:8px"><button class="btn pri" id="supAdd">Add supervisor</button></div>';
@@ -654,13 +662,9 @@ document.addEventListener('click', async e => {
   if (t.dataset.supact) { const [a, id] = t.dataset.supact.split('|'), u = (SREG || []).find(x => x.id === id); t.disabled = true;
     try { drawSupReg(a === 'pin' ? await run('supNewPin', KEY, id) : await run('supSave', KEY, id, u.name, u.mob, u.sc, a === 'on')); } catch (er) { toast(er.message || er, 6000); t.disabled = false; } return; }
   if (t.dataset.dec !== undefined && t.dataset.dec) { const [id, dec] = t.dataset.dec.split('|'); t.disabled = true; try { await run('setDecision', KEY, id, dec); PAY = null; toast(dec ? dec + '.' : 'Decision cleared.'); surveyPage(true); } catch (er) { toast(er.message || er, 6000); t.disabled = false; } return; }
-  if (t.id === 'flWa') {   // WhatsApp app (or one reused WhatsApp Web tab) – no new tab each time
-    const msg = 'Yemmiganur survey – open this link on your phone in Chrome, pick your name, type your PIN and start:\n' + FIELD_LINK;
-    // WhatsApp desktop app first (one window, always reused); if the app does not open in 2 s, WhatsApp Web in one named tab
-    let left = false; const gone = () => { left = true; }; window.addEventListener('blur', gone, { once: true });
-    location.href = 'whatsapp://send?text=' + encodeURIComponent(msg);
-    setTimeout(() => { window.removeEventListener('blur', gone); if (!left && !document.hidden) { const w = window.open('https://web.whatsapp.com/send?text=' + encodeURIComponent(msg), 'sv_whatsapp'); if (w) w.focus(); } }, 2000);
-    return; }
+  if (t.id === 'flWa') { waOpen('Yemmiganur survey – open this link on your phone in Chrome, pick your name, type your PIN and start:\n' + FIELD_LINK); return; }
+  if (t.dataset.supwa) { const u = (SREG || []).find(x => x.id === t.dataset.supwa); if (!u) return;
+    waOpen('Yemmiganur survey / యెమ్మిగనూరు సర్వే\n\nName / పేరు: ' + u.name + '\nPIN: ' + u.pin + '\n\nOpen this link on your phone in Chrome, pick your name and type the PIN:\n' + FIELD_LINK + '\n\nKeep the PIN to yourself. / PIN ఎవరికీ చెప్పవద్దు.', u.mob); return; }
   if (t.id === 'flCopy') { try { await navigator.clipboard.writeText(FIELD_LINK); toast('Link copied – paste it in WhatsApp.'); } catch (er) { prompt('Copy this link:', FIELD_LINK); } return; }
   if (t.id === 'repPdf') { t.disabled = true; const x = t.textContent; t.textContent = 'Preparing PDF…'; try { saveB64(await run('surveyReportPdf', KEY)); } catch (er) { toast(er.message || er, 6000); } t.disabled = false; t.textContent = x; return; }
   if (t.id === 'supXls') { t.disabled = true; try { saveB64(await run('supervisorReport', KEY, 31)); } catch (er) { toast(er.message || er, 6000); } t.disabled = false; return; }
@@ -723,11 +727,21 @@ async function loginVerify() {
   $('lVerify').disabled = false;
 }
 async function logoutNow() { try { await run('logout', KEY); } catch (e) {} tokStore.set(''); KEY = ''; D = null; SVD = null; SUP = null; BRIEF_SUP = null; PAGE = 'dash'; LIST = null; CHIP = ''; showLogin('Logged out.'); }
+// the house list (2–3 MB) is kept in this browser and sent again only after new daily files are loaded
+const siteStore = {
+  db() { return new Promise((ok, no) => { try { const r = indexedDB.open('sv_yemmiganur', 1); r.onupgradeneeded = () => r.result.createObjectStore('k'); r.onsuccess = () => ok(r.result); r.onerror = () => no(r.error); } catch (e) { no(e); } }); },
+  async get() { try { const d = await this.db(); return await new Promise(ok => { const q = d.transaction('k').objectStore('k').get('sites'); q.onsuccess = () => ok(q.result || null); q.onerror = () => ok(null); }); } catch (e) { return null; } },
+  async put(v, sites) { try { const d = await this.db(); d.transaction('k', 'readwrite').objectStore('k').put({ v: v, sites: sites }, 'sites'); } catch (e) {} }
+};
 async function load(keep) {
   if (!KEY) { showLogin(); return; }
   if (!keep) $('page').innerHTML = '<div class="loading">Loading…</div>';
   try {
-    D = JSON.parse(await run('getAppData', KEY));
+    const have = await siteStore.get();
+    D = JSON.parse(await run('getAppData', KEY, have && have.v || ''));
+    if (D.sites === null && have) D.sites = have.sites;
+    else if (D.sites === null) D = JSON.parse(await run('getAppData', KEY, ''));
+    else if (D.sitesV) siteStore.put(D.sitesV, D.sites);
     ROLE = (D.me || {}).role || 'mis';
     $('me').innerHTML = esc((D.me || {}).name) + '<br>' + esc(ROLE_T[ROLE] || ROLE) + (/^s[0-9a-f]{32}$/.test(KEY) ? '<br><button class="btn" id="logout" style="margin-top:8px;padding:3px 10px;font-size:12px">Log out</button>' : '');
     $('clientName').textContent = D.client || 'TytoGrid'; document.title = 'Solar Vista – ' + (D.client || 'TytoGrid');
