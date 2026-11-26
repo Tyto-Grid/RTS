@@ -145,6 +145,8 @@ footer.tg { text-align: center; font-size: 12px; color: var(--muted); padding: 1
 .bdg:hover { border-color: var(--accent); } .bdg .l { font-size: 13px; color: var(--muted); } .bdg .v { font-size: 28px; font-weight: 700; margin: 2px 0; } .bdg .s { font-size: 12px; color: var(--muted); }
 .bdg .d { display: inline-block; width: 9px; height: 9px; border-radius: 50%; margin-right: 6px; background: var(--grey-ink); } .bdg.g .d { background: var(--ok); } .bdg.a .d { background: var(--warn); } .bdg.r .d { background: var(--bad); }
 details.det { margin-top: 6px; } details.det > summary { cursor: pointer; color: var(--accent); font-weight: 600; margin-bottom: 10px; }
+.ph.th { padding: 0; overflow: hidden; } #phBig { position: fixed; inset: 0; background: rgba(0,0,0,.82); display: flex; align-items: center; justify-content: center; z-index: 50; cursor: zoom-out; }
+#phBig img { max-width: 94vw; max-height: 92vh; border-radius: 8px; } #phBig[hidden] { display: none; }
 </style>
 </head>
 <body>
@@ -209,10 +211,27 @@ const $ = id => document.getElementById(id);
 const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 const norm = s => String(s || '').toUpperCase().replace(/[^0-9A-Z]/g, '');
 // server calls go to the Apps Script back end (exec URL in /yemmiganur/config.js)
-const run = (fn, ...args) => fetch(window.SV_API, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify({ fn, args }) })
-  .catch(() => { throw new Error('No connection to the server – check the internet and try again.'); })
-  .then(r => { if (!r.ok) throw new Error('Server error ' + r.status); return r.json(); })
-  .then(j => { if (!j.ok) throw new Error(j.error || 'Server error'); return j.data; });
+// one call to the server; a reading call that hangs is stopped after 70 s and tried once more (Google sometimes drops a request)
+const run1 = (fn, args, ms) => { const ac = new AbortController(), tm = setTimeout(() => ac.abort(), ms);
+  return fetch(window.SV_API, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify({ fn, args }), signal: ac.signal })
+    .catch(e => { throw Object.assign(new Error(e.name === 'AbortError' ? 'The server did not answer in time.' : 'No connection to the server – check the internet and try again.'), { retry: true }); })
+    .then(r => { if (!r.ok) throw Object.assign(new Error('Server error ' + r.status), { retry: r.status >= 500 }); return r.json(); })
+    .then(j => { if (!j.ok) throw new Error(j.error || 'Server error'); return j.data; })
+    .finally(() => clearTimeout(tm)); };
+const run = (fn, ...args) => { const read = /^(get|sup(Admin|List))/.test(fn);
+  return run1(fn, args, read ? 70000 : 300000).catch(e => { if (read && e.retry) return run1(fn, args, 90000); throw e; }); };
+// a page's data is fetched once: a second click while it is still coming waits for the same answer instead of starting again
+const INF = {}; const once = (k, f) => INF[k] || (INF[k] = f().finally(() => delete INF[k]));
+// "Loading … 12 s" so a slow server is visible, not a frozen page
+function loading(msg) { const t0 = Date.now(); $('page').innerHTML = '<div class="loading">' + msg + ' <span id="ldT"></span></div>';
+  const iv = setInterval(() => { const e = $('ldT'); if (!e) return clearInterval(iv); const s = Math.round((Date.now() - t0) / 1000); e.textContent = s + ' s' + (s > 25 ? ' – the server is slow, still waiting' : ''); }, 1000); }
+// after the dashboard opens, the other pages' data is fetched quietly one by one, so the tabs open at once
+async function prefetch() {
+  const jobs = [['sv', () => run('getSurveys', KEY), d => { if (!SVD) SVD = JSON.parse(d); }], ['sup', () => run('getSupervisors', KEY, 14), d => { if (!SUP) SUP = JSON.parse(d); }]];
+  if (can.manage()) jobs.push(['tech', () => run('getTechReview', KEY), d => { if (!TECH) TECH = JSON.parse(d); }], ['pay', () => run('getPayments', KEY), d => { if (!PAY) PAY = JSON.parse(d); }]);
+  const have = { sv: () => SVD, sup: () => SUP, tech: () => TECH, pay: () => PAY };
+  for (const [k, f, put] of jobs) { if (have[k]()) continue; try { put(await once(k, f)); } catch (e) {} }
+}
 const toast = (t, ms) => { const e = $('toast'); e.textContent = t; e.style.display = 'block'; clearTimeout(toast.t); toast.t = setTimeout(() => e.style.display = 'none', ms || 3500); };
 const dmy = s => { const m = /^(\d{4})-(\d{2})-(\d{2})(?: (\d{2}:\d{2}))?/.exec(String(s || '')); return m ? m[3] + '-' + m[2] + (m[4] ? ' ' + m[4] : '') : String(s || ''); };
 const ROLE_T = { owner: 'Administrator', manager: 'Manager', mis: 'MIS', viewer: 'Viewer' };
@@ -475,8 +494,9 @@ function csvDownload(rows, name) {
 let SVD = null, SVF = { vil: '', g: '', p: '' };
 async function surveyPage(reload) {
   if (!SVD || reload) {
-    $('page').innerHTML = '<div class="loading">Loading surveys…</div>';
-    try { SVD = JSON.parse(await run('getSurveys', KEY)); } catch (e) { $('page').innerHTML = '<div class="empty">' + esc(e.message || e) + '</div>'; return; }
+    loading('Loading surveys…');
+    try { const d = await once('sv', () => run('getSurveys', KEY)); SVD = JSON.parse(d); } catch (e) { if (PAGE === 'survey') $('page').innerHTML = '<div class="empty">' + esc(e.message || e) + ' <button class="btn" data-page="survey">Try again</button></div>'; return; }
+    if (PAGE !== 'survey') return;
   }
   const vils = [...new Set(SVD.rows.map(r => r.dist))].sort(), rows = svRows(), fresh = rows.filter(r => !r.batch && !r.hold && r.pdf), bt = svBatchMap();
   const opt = (id, vals, cur, all) => '<select id="' + id + '"><option value="">' + all + '</option>' + vals.map(v => '<option value="' + esc(v[0]) + '"' + (v[0] === cur ? ' selected' : '') + '>' + esc(v[1]) + '</option>').join('') + '</select>';
@@ -526,6 +546,7 @@ async function surveyPage(reload) {
         '</td><td>' + esc(r.dist) + '</td><td>' + (r.hold || !r.pdf ? '<span class="b">not for the Department</span>' : '<span class="b ' + GROUP[r.group][0] + '">' + GROUP[r.group][1] + '</span>') + '</td><td><a target="_blank" href="https://maps.google.com/?q=' + encodeURIComponent(r.lat + ',' + r.lng) + '">Map</a><div class="small muted">±' + esc(r.acc) + ' m</div></td><td>' + esc(r.by) +
         '</td><td><div class="ph" data-photo="' + esc(r.photo) + '">tap</div>' + (r.photo2 ? '<div class="ph" data-photo="' + esc(r.photo2) + '" style="margin-top:4px">2</div>' : '') + '</td><td>' + (can.work() && r.pdf ? '<button class="btn" data-svpdf="' + esc(r.pdf) + '">⬇ PDF</button>' : r.pdf ? '' : '<span class="small muted">–</span>') + '<div class="small muted">' + esc(r.from) + '</div>' + (r.bill && r.bill !== 'No bill' ? '<div class="ph" data-photo="' + esc(r.bill) + '" style="margin-top:4px">bill</div>' : '') + '</td></tr>').join('') +
       '</tbody></table></div>' : '<div class="empty">No surveys for this filter.</div>');
+  autoThumbs(48);
 }
 function svRows() {
   const q = norm($('q').value);
@@ -571,8 +592,9 @@ let SUP = null, SUPN = '';
 async function supPage(reload) {
   if (can.manage()) setTimeout(() => { if (SREG) drawSupReg(SREG); run('supAdmin', KEY).then(drawSupReg).catch(e => { const b = $('supReg'); if (b) b.innerHTML = '<div class="flag">' + esc(e.message || e) + '</div>'; }); }, 0);
   if (!SUP || reload) {
-    $('page').innerHTML = '<div class="loading">Loading…</div>';
-    try { SUP = JSON.parse(await run('getSupervisors', KEY, 14)); } catch (e) { $('page').innerHTML = '<div class="empty">' + esc(e.message || e) + '</div>'; return; }
+    loading('Loading supervisors…');
+    try { const d = await once('sup', () => run('getSupervisors', KEY, 14)); SUP = JSON.parse(d); } catch (e) { if (PAGE === 'sup') $('page').innerHTML = '<div class="empty">' + esc(e.message || e) + ' <button class="btn" data-page="sup">Try again</button></div>'; return; }
+    if (PAGE !== 'sup') return;
   }
   const T = SUP.target, R = SUP.rows.filter(r => !SUPN || r.name === SUPN), names = [...new Set(SUP.rows.map(r => r.name))].sort();
   const today = new Date(Date.now() + 5.5 * 36e5).toISOString().slice(0, 10), td = SUP.rows.filter(r => r.day === today);
@@ -616,9 +638,26 @@ let PAY = null;
 // ---------------------------------------------------------------- PM technical review: AI reads roof, earth pit and direction photos + the entries
 let TECH = null, TECHF = '';
 const techSt = r => r.dec || r.tech || 'Waiting';
+// photos: small thumbnails load by themselves (one call per 24 photos); a tap opens the full photo
+async function autoThumbs(max) {
+  const els = [...document.querySelectorAll('#page .ph[data-photo]:not(.th):not(.thl)')].slice(0, max || 48); if (!els.length) return;
+  els.forEach(e => { e.classList.add('thl'); e.textContent = '…'; });
+  for (let i = 0; i < els.length; i += 24) {
+    const part = els.slice(i, i + 24);
+    try { const m = JSON.parse(await run('getThumbs', KEY, [...new Set(part.map(e => e.dataset.photo))]));
+      part.forEach(e => { const d = m[e.dataset.photo]; if (d) { e.classList.add('th'); e.innerHTML = '<img src="' + d + '" alt="">'; } else e.textContent = 'tap'; });
+    } catch (er) { part.forEach(e => e.textContent = 'tap'); }
+  }
+}
+async function bigPhoto(id) {
+  let b = $('phBig'); if (!b) { b = document.createElement('div'); b.id = 'phBig'; b.onclick = () => { b.hidden = true; }; document.body.appendChild(b); }
+  b.hidden = false; b.innerHTML = '<div style="color:#fff">Loading the photo…</div>';
+  try { const u = await run('getPhoto', KEY, id); if (!b.hidden) b.innerHTML = '<img src="' + u + '" alt="">'; } catch (er) { b.innerHTML = '<div style="color:#fff">' + esc(er.message || er) + '</div>'; }
+}
 async function techPage(reload) {
-  if (!TECH || reload) { $('page').innerHTML = '<div class="loading">Loading the technical review…</div>';
-    try { TECH = JSON.parse(await run('getTechReview', KEY)); } catch (e) { $('page').innerHTML = '<div class="empty">' + esc(e.message || e) + '</div>'; return; } }
+  if (!TECH || reload) { loading('Loading the technical review…');
+    try { const d = await once('tech', () => run('getTechReview', KEY)); TECH = JSON.parse(d); } catch (e) { if (PAGE === 'tech') $('page').innerHTML = '<div class="empty">' + esc(e.message || e) + ' <button class="btn" data-page="tech">Try again</button></div>'; return; }
+    if (PAGE !== 'tech') return; }
   const A = TECH.filter(r => (!$('fSec').value || r.sec === $('fSec').value) && (!$('fVil').value || r.dist === $('fVil').value));
   const n = k => A.filter(r => techSt(r) === k).length, L = A.filter(r => !TECHF || techSt(r) === TECHF)
     .sort((a, b) => ({ 'Not ready': 0, Check: 1, Error: 2, Waiting: 3, Unreadable: 3, Ready: 4 }[techSt(a)] - { 'Not ready': 0, Check: 1, Error: 2, Waiting: 3, Unreadable: 3, Ready: 4 }[techSt(b)]) || a.dist.localeCompare(b.dist));
@@ -631,22 +670,24 @@ async function techPage(reload) {
       const st = techSt(r);
       return '<tr><td><span class="mono">' + esc(r.sn) + '</span><div>' + esc(r.name || '') + '</div><div class="small muted">' + esc(r.dist) + ' · ' + esc(r.by) + ' · ' + esc(String(r.at).slice(0, 10)) + '</div>' +
         (r.roofPh ? '<div class="ph" data-photo="' + esc(r.roofPh) + '">roof</div>' : '') + (r.pitPh ? '<div class="ph" data-photo="' + esc(r.pitPh) + '" style="margin-top:4px">pit</div>' : '') + '</td>' +
-        '<td class="small">' + esc(r.roof) + ' · ' + esc(r.floors) + '<br>' + esc(r.struct) + (r.size ? ' · ' + esc(r.size) + ' m' : '') + '<br>Soil: ' + esc(r.soil || 'not recorded') + '<br>Cable E/DC/AC: ' + esc([r.earth, r.dc, r.ac].join(' / ')) + ' m</td>' +
+        '<td class="small">' + esc(r.roof) + ' · ' + esc(r.floors) + '<br>' + esc(r.struct) + (r.size ? ' · ' + esc(r.size) + ' ft' : '') + '<br>Soil: ' + esc(r.soil || 'not recorded') + '<br>Cable E/DC/AC: ' + esc([r.earth, r.dc, r.ac].join(' / ')) + ' m</td>' +
         '<td><b style="color:' + col(r.tech || 'Waiting') + '">' + esc(r.tech || 'Waiting') + '</b><div class="small" style="white-space:pre-line">' + esc(r.notes) + '</div></td>' +
         '<td>' + (r.dec ? '<b style="color:' + col(r.dec) + '">' + esc(r.dec) + '</b><div class="small muted">' + esc(r.decBy) + '</div>' : '<span class="small muted">follows AI</span>') +
         '<div style="display:flex;gap:4px;margin-top:6px;flex-wrap:wrap"><button class="btn" data-tdec="' + esc(r.id) + '|Ready">Ready</button><button class="btn" data-tdec="' + esc(r.id) + '|Not ready">Not ready</button>' + (r.dec ? '<button class="btn" data-tdec="' + esc(r.id) + '|">Clear</button>' : '') + '</div></td></tr>';
     }).join('') + '</tbody></table></div>' : '<div class="empty">No houses here yet.</div>');
+  autoThumbs(96);
 }
 function techCsv() {
   const q = v => '"' + String(v == null ? '' : v).replace(/"/g, '""') + '"', A = TECH.filter(r => !TECHF || techSt(r) === TECHF);
-  const rows = [['Service No', 'Name', 'Section', 'Distribution', 'Supervisor', 'Surveyed', 'Verdict', 'Roof', 'Floors', 'Structure', 'Roof L x W', 'Soil', 'Earthing m', 'DC m', 'AC m', 'AI review', 'AI notes', 'PM decision', 'Final']]
+  const rows = [['Service No', 'Name', 'Section', 'Distribution', 'Supervisor', 'Surveyed', 'Verdict', 'Roof', 'Floors', 'Structure', 'Roof L x W (ft)', 'Soil', 'Earthing m', 'DC m', 'AC m', 'AI review', 'AI notes', 'PM decision', 'Final']]
     .concat(A.map(r => [r.sn, r.name, r.sec, r.dist, r.by, r.at, r.v, r.roof, r.floors, r.struct, r.size, r.soil, r.earth, r.dc, r.ac, r.tech, r.notes.replace(/\n/g, ' | '), r.dec, techSt(r)]));
   const csv = rows.map((x, i) => x.map((v, j) => j === 0 && i ? q('="' + v + '"') : q(v)).join(',')).join('\r\n');
   const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob(['\ufeff' + csv], { type: 'text/csv' })); a.download = 'Yemmiganur_Technical_review_' + new Date().toISOString().slice(0, 10) + '.csv'; a.click();
 }
 async function payPage(reload) {
-  if (!PAY || reload) { $('page').innerHTML = '<div class="loading">Working out payments…</div>';
-    try { PAY = JSON.parse(await run('getPayments', KEY)); } catch (e) { $('page').innerHTML = '<div class="empty">' + esc(e.message || e) + '</div>'; return; } }
+  if (!PAY || reload) { loading('Working out payments…');
+    try { const d = await once('pay', () => run('getPayments', KEY)); PAY = JSON.parse(d); } catch (e) { if (PAGE === 'pay') $('page').innerHTML = '<div class="empty">' + esc(e.message || e) + ' <button class="btn" data-page="pay">Try again</button></div>'; return; }
+    if (PAGE !== 'pay') return; }
   const R = PAY.rows, r = PAY.rates, T = k => R.reduce((a, p) => a + (p[k] || 0), 0), rs = v => '₹' + N(v);
   $('page').innerHTML = '<div class="note"><b>Rules:</b> ₹' + r[0] + ' when a survey is <b>Accepted</b> (Feasible or Special structure, consent form, location within 3 km, ' + (PAY.ai ? 'AI found bill, form and photo in order, ' : '') + 'photo not reused). This is the only payment – nothing more at installation. A <b>Needs action</b> house earns the ₹' + r[0] + ' when the office clicks Accept after the fix. Not eligible, Not feasible and Consent No earn nothing. Supervisors do not see money on the phone.' +
     (PAY.ai ? '' : '<br><b style="color:var(--bad)">AI checks are off</b> – acceptance relies on the location and photo checks only.') + '</div>' +
@@ -748,10 +789,7 @@ document.addEventListener('click', async e => {
   if (t.id === 'supXls') { t.disabled = true; try { saveB64(await run('supervisorReport', KEY, 31)); } catch (er) { toast(er.message || er, 6000); } t.disabled = false; return; }
   if (t.dataset.leave) { const p = t.dataset.leave.split('|'); t.disabled = true; try { SUP = JSON.parse(await run('setLeave', KEY, p[0], p[1], p[2] === '1')); supPage(); } catch (er) { toast(er.message || er); t.disabled = false; } return; }
   if (t.dataset.svpdf) { t.disabled = true; try { saveB64(await run('getSurveyFile', KEY, t.dataset.svpdf)); } catch (er) { toast(er.message || er); } t.disabled = false; return; }
-  if (t.classList.contains('ph') && t.dataset.photo) {
-    if (t.querySelector('img')) { $('zoom').querySelector('img').src = t.querySelector('img').src; $('zoom').classList.add('open'); return; }
-    t.textContent = '…'; try { t.innerHTML = '<img src="' + (await run('getPhoto', KEY, t.dataset.photo)) + '">'; } catch (er) { t.textContent = 'error'; } return;
-  }
+  if (t.classList.contains('ph') && t.dataset.photo) { bigPhoto(t.dataset.photo); return; }
   if (t.id === 'uAdd') { try { drawUsers(await run('saveMailUser', KEY, $('uEmail').value, $('uName').value, $('uRole').value)); toast('Saved'); } catch (er) { toast(er.message || er, 5000); } return; }
   if (t.dataset.deluser) { if (!confirm('Remove ' + t.dataset.deluser + '? All their devices are logged out.')) return; try { drawUsers(await run('removeMailUser', KEY, t.dataset.deluser)); } catch (er) { toast(er.message || er); } return; }
   if (t.id === 'lSend') return loginSend();
@@ -825,6 +863,7 @@ async function load(keep) {
     $('clientName').textContent = D.client || 'TytoGrid'; document.title = 'Solar Vista – ' + (D.client || 'TytoGrid');
     $('fresh').textContent = 'Loaded ' + new Date().toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
     build(); fill(); render();
+    if (!load.pf) { load.pf = 1; setTimeout(prefetch, 1500); }
   } catch (e) {
     if (/Not allowed/.test(e.message || e)) { tokStore.set(''); KEY = ''; showLogin('Your login has ended – log in again.'); return; }
     $('page').innerHTML = '<div class="empty">Could not load: ' + esc(e.message || e) + '</div>';

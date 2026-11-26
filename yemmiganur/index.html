@@ -217,8 +217,8 @@ select{width:100%;font:inherit;color:inherit;background:var(--card);border:1px s
       <div class="card"><h2>Technical <span class="te">సాంకేతిక వివరాలు</span></h2>
         <label>Panel structure * <span class="te">ప్యానెల్ స్ట్రక్చర్</span></label>
         <div class="seg" id="struct"><button data-v="1x4">1 × 4 <span class="te">ఒకే వరుస</span></button><button data-v="2x2">2 × 2 <span class="te">చతురస్రం</span></button><button data-v="No space">No space <span class="te">స్థలం లేదు</span></button></div>
-        <div class="grid2"><div><label for="rl">Free roof length (m) <span class="te">పొడవు</span></label><input id="rl" class="mono" inputmode="decimal" placeholder="1–40"></div>
-          <div><label for="rw">Free roof width (m) <span class="te">వెడల్పు</span></label><input id="rw" class="mono" inputmode="decimal" placeholder="1–40"></div></div>
+        <div class="grid2"><div><label for="rl">Free roof length (feet) <span class="te">పొడవు (అడుగులు)</span></label><input id="rl" class="mono" inputmode="decimal" placeholder="5–150 ft"></div>
+          <div><label for="rw">Free roof width (feet) <span class="te">వెడల్పు (అడుగులు)</span></label><input id="rw" class="mono" inputmode="decimal" placeholder="5–150 ft"></div></div>
         <label>Soil space for 3 earth pits? * <span class="te">3 ఎర్త్ పిట్లకు మట్టి స్థలం?</span></label>
         <div class="seg wrap" id="pits"><button data-v="Yes – 3 pits">Yes – 3 <span class="te">అవును – 3</span></button><button data-v="Only 1 or 2">Only 1–2 <span class="te">1–2 మాత్రమే</span></button><button data-v="No soil (all concrete)">No soil <span class="te">మట్టి లేదు</span></button></div>
         <div id="soilBox" class="hidden">
@@ -229,7 +229,7 @@ select{width:100%;font:inherit;color:inherit;background:var(--card);border:1px s
         </div>
         <label>Inverter place <span class="te">ఇన్వర్టర్ స్థలం</span> <span class="small">(optional)</span></label>
         <div class="seg wrap" id="inv"><button data-v="Inside – wall">Inside wall <span class="te">లోపలి గోడ</span></button><button data-v="Outside – shaded wall">Outside, shade <span class="te">బయట, నీడ</span></button><button data-v="Outside – open">Outside, open <span class="te">బయట, ఎండ</span></button></div>
-        <label>Approximate cable lengths (metres) * <span class="te">సుమారు కేబుల్ పొడవులు (మీటర్లు)</span></label>
+        <label>Approximate cable lengths (metres – 1 m ≈ 3 ft) * <span class="te">సుమారు కేబుల్ పొడవులు (మీటర్లు – 1 మీ ≈ 3 అడుగులు)</span></label>
         <div class="grid3"><div><label for="earth">Earthing <span class="te">ఎర్తింగ్</span> 3–60</label><input id="earth" class="mono" inputmode="decimal"></div>
           <div><label for="dc">DC roof→inverter 3–40</label><input id="dc" class="mono" inputmode="decimal"></div>
           <div><label for="ac">AC inverter→meter 2–50</label><input id="ac" class="mono" inputmode="decimal"></div></div>
