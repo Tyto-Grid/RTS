@@ -147,6 +147,9 @@ footer.tg { text-align: center; font-size: 12px; color: var(--muted); padding: 1
 details.det { margin-top: 6px; } details.det > summary { cursor: pointer; color: var(--accent); font-weight: 600; margin-bottom: 10px; }
 .ph.th { padding: 0; overflow: hidden; } #phBig { position: fixed; inset: 0; background: rgba(0,0,0,.82); display: flex; align-items: center; justify-content: center; z-index: 50; cursor: zoom-out; }
 #phBig img { max-width: 94vw; max-height: 92vh; border-radius: 8px; } #phBig[hidden] { display: none; }
+.tl { margin-top: 4px; } .tli { display: flex; gap: 10px; align-items: flex-start; margin: 6px 0; font-size: 14px; }
+.ph.tph { width: 132px; height: 96px; flex: none; } .phlink { flex: none; font-size: 12px; color: var(--accent); cursor: pointer; text-decoration: underline; white-space: nowrap; margin-top: 2px; }
+.aph { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; } .aph[hidden] { display: none; } .aphi { text-align: center; }
 </style>
 </head>
 <body>
@@ -640,7 +643,7 @@ let TECH = null, TECHF = '';
 const techSt = r => r.dec || r.tech || 'Waiting';
 // photos: small thumbnails load by themselves (one call per 24 photos); a tap opens the full photo
 async function autoThumbs(max) {
-  const els = [...document.querySelectorAll('#page .ph[data-photo]:not(.th):not(.thl)')].slice(0, max || 48); if (!els.length) return;
+  const els = [...document.querySelectorAll('#page .ph[data-photo]:not(.th):not(.thl)')].filter(e => e.offsetParent !== null).slice(0, max || 48); if (!els.length) return;
   els.forEach(e => { e.classList.add('thl'); e.textContent = '…'; });
   for (let i = 0; i < els.length; i += 24) {
     const part = els.slice(i, i + 24);
@@ -669,18 +672,31 @@ async function techPage(reload) {
     (L.length ? '<div class="tw"><table><thead><tr><th>House</th><th>Entered</th><th>AI review</th><th>Your call</th></tr></thead><tbody>' + L.map(r => {
       const st = techSt(r);
       return '<tr><td><span class="mono">' + esc(r.sn) + '</span><div>' + esc(r.name || '') + '</div><div class="small muted">' + esc(r.dist) + ' · ' + esc(r.by) + ' · ' + esc(String(r.at).slice(0, 10)) + '</div>' +
-        (r.roofPh ? '<div class="ph" data-photo="' + esc(r.roofPh) + '">roof</div>' : '') + (r.pitPh ? '<div class="ph" data-photo="' + esc(r.pitPh) + '" style="margin-top:4px">pit</div>' : '') + '</td>' +
+        '<button class="btn" data-allph="' + esc(r.id) + '" style="margin-top:6px;padding:3px 10px;font-size:13px">All photos</button><div id="ap_' + esc(r.id) + '" class="aph" hidden>' + techAllPh(r) + '</div></td>' +
         '<td class="small">' + esc(r.roof) + ' · ' + esc(r.floors) + '<br>' + esc(r.struct) + (r.size ? ' · ' + esc(r.size) + ' ft' : '') + '<br>Soil: ' + esc(r.soil || 'not recorded') + '<br>Cable E/DC/AC: ' + esc([r.earth, r.dc, r.ac].join(' / ')) + ' m</td>' +
-        '<td><b style="color:' + col(r.tech || 'Waiting') + '">' + esc(r.tech || 'Waiting') + '</b><div class="small" style="white-space:pre-line">' + esc(r.notes) + '</div></td>' +
+        '<td><b style="color:' + col(r.tech || 'Waiting') + '">' + esc(r.tech || 'Waiting') + '</b>' + techLines(r) + '</td>' +
         '<td>' + (r.dec ? '<b style="color:' + col(r.dec) + '">' + esc(r.dec) + '</b><div class="small muted">' + esc(r.decBy) + '</div>' : '<span class="small muted">follows AI</span>') +
         '<div style="display:flex;gap:4px;margin-top:6px;flex-wrap:wrap"><button class="btn" data-tdec="' + esc(r.id) + '|Ready">Ready</button><button class="btn" data-tdec="' + esc(r.id) + '|Not ready">Not ready</button>' + (r.dec ? '<button class="btn" data-tdec="' + esc(r.id) + '|">Clear</button>' : '') + '</div></td></tr>';
     }).join('') + '</tbody></table></div>' : '<div class="empty">No houses here yet.</div>');
   autoThumbs(96);
 }
+// each AI line shows the photo it is based on ("[pit] Rock visible…"); a Ready house shows no photos unless asked
+const PHN = { roof: 'Roof', pit: 'Earth pit', house: 'House', north: 'North', east: 'East', south: 'South', west: 'West' };
+function techParse(notes) { return String(notes || '').split('\n').filter(Boolean).map(l => { const m = /^\[(\w+)\] (.*)$/.exec(l); return m ? { p: m[1], t: m[2] } : { p: '', t: l }; }); }
+function techLines(r) {
+  const L = techParse(r.notes), show = r.tech === 'Check' || r.tech === 'Not ready', done = {};
+  return '<div class="tl">' + L.map(x => { const id = x.p && r.ph && r.ph[x.p];
+    let ph = '', big = false;
+    if (id && show && !done[id]) { done[id] = 1; big = true; ph = '<div class="ph tph" data-photo="' + esc(id) + '" title="' + esc(PHN[x.p]) + ' photo"></div>'; }
+    else if (id) ph = '<span class="phlink" data-photo="' + esc(id) + '">' + esc(PHN[x.p]) + ' photo</span>';
+    return '<div class="tli">' + ph + '<div>' + esc(x.t) + (big ? '<div class="small muted">' + esc(PHN[x.p]) + ' photo</div>' : '') + '</div></div>'; }).join('') + '</div>';
+}
+function techAllPh(r) { return Object.keys(PHN).filter(k => r.ph && r.ph[k]).map(k => '<div class="aphi"><div class="ph" data-photo="' + esc(r.ph[k]) + '"></div><div class="small muted">' + PHN[k] + '</div></div>').join('') || '<span class="small muted">no photos</span>'; }
 function techCsv() {
   const q = v => '"' + String(v == null ? '' : v).replace(/"/g, '""') + '"', A = TECH.filter(r => !TECHF || techSt(r) === TECHF);
-  const rows = [['Service No', 'Name', 'Section', 'Distribution', 'Supervisor', 'Surveyed', 'Verdict', 'Roof', 'Floors', 'Structure', 'Roof L x W (ft)', 'Soil', 'Earthing m', 'DC m', 'AC m', 'AI review', 'AI notes', 'PM decision', 'Final']]
-    .concat(A.map(r => [r.sn, r.name, r.sec, r.dist, r.by, r.at, r.v, r.roof, r.floors, r.struct, r.size, r.soil, r.earth, r.dc, r.ac, r.tech, r.notes.replace(/\n/g, ' | '), r.dec, techSt(r)]));
+  const rows = [['Service No', 'Name', 'Section', 'Distribution', 'Supervisor', 'Surveyed', 'Verdict', 'Roof', 'Floors', 'Structure', 'Roof L x W (ft)', 'Soil', 'Earthing m', 'DC m', 'AC m', 'AI review', 'AI notes', 'Photos to see', 'PM decision', 'Final']]
+    .concat(A.map(r => [r.sn, r.name, r.sec, r.dist, r.by, r.at, r.v, r.roof, r.floors, r.struct, r.size, r.soil, r.earth, r.dc, r.ac, r.tech, techParse(r.notes).map(x => x.t).join(' | '),
+      [...new Set(techParse(r.notes).filter(x => x.p).map(x => PHN[x.p]))].join(', '), r.dec, techSt(r)]));
   const csv = rows.map((x, i) => x.map((v, j) => j === 0 && i ? q('="' + v + '"') : q(v)).join(',')).join('\r\n');
   const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob(['\ufeff' + csv], { type: 'text/csv' })); a.download = 'Yemmiganur_Technical_review_' + new Date().toISOString().slice(0, 10) + '.csv'; a.click();
 }
@@ -752,7 +768,9 @@ function drawUsers(list) {
 
 // ---------------------------------------------------------------- events
 document.addEventListener('click', async e => {
-  const t = e.target.closest('button, tr[data-vil], .ph, [data-list]'); if (!t) return;
+  const t = e.target.closest('button, tr[data-vil], .ph, .phlink, [data-list]'); if (!t) return;
+  if (t.dataset.allph) { const x = $('ap_' + t.dataset.allph); if (x) { x.hidden = !x.hidden; if (!x.hidden) autoThumbs(30); } return; }
+  if (t.classList.contains('phlink') && t.dataset.photo) { bigPhoto(t.dataset.photo); return; }
   if (t.dataset.tf !== undefined) { TECHF = TECHF === t.dataset.tf ? '' : t.dataset.tf; return techPage(); }
   if (t.id === 'techReload') return techPage(true);
   if (t.id === 'techCsv') return techCsv();
