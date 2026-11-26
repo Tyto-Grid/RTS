@@ -136,6 +136,15 @@ nav button.on { box-shadow: inset 3px 0 0 #F4A62A; }
 .lbox { border-top: 4px solid #F4A62A; }
 footer.tg { text-align: center; font-size: 12px; color: var(--muted); padding: 18px 0 8px; }
 @media (max-width: 860px) { aside { border-right: 0; border-bottom: 3px solid #F4A62A; } .tyto { display: none; } }
+.goal { background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 16px 18px; margin-bottom: 12px; }
+.goal .top { display: flex; justify-content: space-between; align-items: flex-end; flex-wrap: wrap; gap: 10px; }
+.goal .big { font-size: 34px; font-weight: 700; line-height: 1.1; } .goal .big small { font-size: 17px; font-weight: 400; color: var(--muted); }
+.goal .bar { height: 12px; background: var(--grey); border-radius: 6px; margin: 12px 0 8px; overflow: hidden; } .goal .bar div { height: 100%; background: var(--ok); }
+.badges { display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 10px; margin-bottom: 14px; }
+.bdg { background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 12px 14px; cursor: pointer; text-align: left; font: inherit; color: inherit; }
+.bdg:hover { border-color: var(--accent); } .bdg .l { font-size: 13px; color: var(--muted); } .bdg .v { font-size: 28px; font-weight: 700; margin: 2px 0; } .bdg .s { font-size: 12px; color: var(--muted); }
+.bdg .d { display: inline-block; width: 9px; height: 9px; border-radius: 50%; margin-right: 6px; background: var(--grey-ink); } .bdg.g .d { background: var(--ok); } .bdg.a .d { background: var(--warn); } .bdg.r .d { background: var(--bad); }
+details.det { margin-top: 6px; } details.det > summary { cursor: pointer; color: var(--accent); font-weight: 600; margin-bottom: 10px; }
 </style>
 </head>
 <body>
@@ -251,6 +260,8 @@ const LISTS = {
   V_NE: { t: 'Not eligible – above 200 units or 3 phase', f: s => s.v === 'Not eligible', chips: [] },
   V_NF: { t: 'Not feasible – thatched, tiled / sloped or weak roof, no space', f: s => s.v === 'Not feasible', chips: [] },
   V_NO: { t: 'Consent No', f: s => s.v === 'Consent No', chips: [] },
+  TODAY: { t: 'Surveyed today', f: s => s.sv && String(s.sv[0]).slice(0, 10) === istDay(0), chips: [] },
+  RULED: { t: 'Ruled out – not eligible or not feasible', f: s => s.v === 'Not eligible' || s.v === 'Not feasible', chips: [['', 'All'], ['ne', 'Not eligible'], ['nf', 'Not feasible']], c: { ne: s => s.v === 'Not eligible', nf: s => s.v === 'Not feasible' } },
   REVISIT: { t: 'Customer not available – revisit', f: s => !!s.na && !s.sv, chips: [['', 'All'], ['n3', '3 visits or more']], c: { n3: s => s.na[0] >= 3 } },
   DONE: { t: 'Already installed – not for the survey', f: s => s.done, chips: [['', 'All'], ['dcr', 'DCR done'], ['ins', 'Installed, no DCR']], c: { dcr: s => s.prio === 'DCR', ins: s => s.prio === 'INST' } },
   ULA: { t: 'ULA created (not installed)', f: s => s.prio === 'ULA', chips: [] },
@@ -284,9 +295,38 @@ function counts(A) {
   });
   return c;
 }
+const istDay = k => new Date(Date.now() + 5.5 * 36e5 - k * 864e5).toISOString().slice(0, 10);
+// ---------------------------------------------------------------- management view: one goal bar + clickable badges (details folded away)
+function goalView(A, c) {
+  const T = D.goTarget || 4000, end = D.fieldEnd || '2026-12-12', today = istDay(0);
+  const days = Math.max(0, Math.round((Date.parse(end) - Date.parse(today)) / 864e5) + 1), dm = d => d.slice(8, 10) + '-' + d.slice(5, 7);
+  const inA = {}; A.forEach(s => inA[s.sn] = 1);
+  const svd = {}, gd = {}, who = {}; Object.keys(D.sv || {}).forEach(sn => { if (!inA[sn]) return; const x = D.sv[sn], d = String(x[0]).slice(0, 10); svd[d] = (svd[d] || 0) + 1; if (GO(x[4])) gd[d] = (gd[d] || 0) + 1; if (d === today && x[11]) who[String(x[11]).toUpperCase()] = 1; });
+  let g7 = 0; for (let k = 1; k <= 7; k++) g7 += gd[istDay(k)] || 0; g7 = Math.round(g7 / 7);
+  const left = Math.max(0, T - c.go), need = days ? Math.ceil(left / days) : left, pct = Math.min(100, Math.round(c.go * 100 / T));
+  const ok = !left || (c.met >= 30 && g7 >= need), col = !left ? 'ok' : ok ? 'ok' : days <= 5 ? 'bad' : 'warn';
+  const msg = !left ? 'Target reached.' : !days ? 'Survey window closed on ' + dm(end) + ' – ' + N(left) + ' short of the target.'
+    : 'Need ' + N(need) + ' can-go-ahead houses a day · today ' + N(gd[today] || 0) + ' · 7-day average ' + N(g7) + '.';
+  const cons = c.met - (c['Consent No'] || 0), ruled = (c['Not eligible'] || 0) + (c['Not feasible'] || 0), sw = Object.keys(who).length, alerts = (D.watch || []).length;
+  const b = (attr, cls, l, v, s) => '<button class="bdg ' + cls + '" ' + attr + '><div class="l"><span class="d"></span>' + l + '</div><div class="v">' + v + '</div><div class="s">' + s + '</div></button>';
+  return '<div class="goal"><div class="top"><div><div class="small muted">Can go ahead – Feasible, Special structure, Needs action</div><div class="big">' + N(c.go) + ' <small>/ ' + N(T) + ' target</small></div></div>' +
+    '<div style="text-align:right"><div class="small muted">Survey ends ' + dm(end) + ' · MNRE cut-off ' + dm(D.portalEnd || '2026-12-15') + '</div><div style="font-size:22px;font-weight:700;color:var(--' + (days <= 5 ? 'bad' : 'warn') + ')">' + days + ' day' + (days === 1 ? '' : 's') + ' left</div></div></div>' +
+    '<div class="bar"><div style="width:' + Math.max(pct, 1) + '%"></div></div><div style="font-weight:600;color:var(--' + col + ')">' + msg + '</div></div>' +
+    '<div class="badges">' +
+      b('data-list="GO"', c.go ? 'g' : '', 'Can go ahead', N(c.go), 'Feasible ' + N(c['Feasible']) + ' · Special ' + N(c['Special structure']) + ' · Action ' + N(c['Needs action'])) +
+      b('data-list="TODO"', '', 'To survey', N(c.todo), 'of ' + N(c.field) + ' field houses') +
+      b('data-list="TODAY"', (svd[today] || 0) ? 'g' : 'r', 'Surveyed today', N(svd[today] || 0), 'yesterday ' + N(svd[istDay(1)] || 0)) +
+      b('data-list="V_NO"', '', 'Consent yes / no', N(cons) + ' / ' + N(c['Consent No']), 'all days') +
+      b('data-list="V_ACT"', c['Needs action'] ? 'a' : '', 'Needs action', N(c['Needs action']), 'meter, earth pits, shade') +
+      b('data-list="RULED"', '', 'Ruled out', N(ruled), 'not eligible ' + N(c['Not eligible']) + ' · not feasible ' + N(c['Not feasible'])) +
+      b('data-page="sup"', sw ? 'g' : 'r', 'Supervisors working today', N(sw), 'target ' + (D.dayTarget || 25) + ' houses each') +
+      b('data-list="ULA"', 'g', 'ULA created', N(c.ula), 'not installed yet') +
+      (alerts ? b('id="alertsBtn"', 'a', 'Alerts', N(alerts), 'something has gone quiet') : '') +
+    '</div>' + (alerts ? '<div id="alertsBox" hidden>' + quietBox() + '</div>' : '');
+}
 function dash() {
   const A = scope(), c = counts(A), m = D.meta || {};
-  $('page').innerHTML = brief(A, c) + deadlineBox(c) + quietBox() +
+  $('page').innerHTML = goalView(A, c) + (can.manage() ? '<details class="det"><summary>Details – summary, deadline, material, distributions</summary>' : '<div hidden>') + brief(A, c) + deadlineBox(c) + quietBox() +
     '<h3 class="sec">What the survey found · ' + N(c.met) + ' houses met</h3><div class="cards">' +
       card('GO', c.go, '<b>Can go ahead</b>', 'Feasible + Special structure + Needs action', 'p1') +
       card('V_F', c['Feasible'], '<b>Feasible</b>', 'install as normal', 'p1') +
@@ -302,7 +342,7 @@ function dash() {
       card('ULA', c.ula, '<b>ULA created</b>', 'not installed – left out', 'bal') +
       (c.other ? card('PROB', A.filter(s => !s.done && s.prio !== 'ULA' && !s.field).length, '<b>Other</b>', 'consent taken earlier, CA not verified, bad numbers', 'bal') : '') + '</div>' +
     boqBox(c) +
-    (ROLE === 'viewer' ? '<details class="more"><summary>Details by distribution</summary>' + distTable(A) + '</details>' : distTable(A)) +
+    distTable(A) + (can.manage() ? '</details>' : '</div>') +
     '<p class="small muted">Click a badge to open its list. Data: daily files updated ' + esc(m.at || 'never') + (m.by ? ' by ' + esc(m.by) : '') + '.</p>';
 }
 // ---------------------------------------------------------------- material estimate from the cable lengths the supervisors typed
@@ -640,6 +680,7 @@ function drawUsers(list) {
 // ---------------------------------------------------------------- events
 document.addEventListener('click', async e => {
   const t = e.target.closest('button, tr[data-vil], .ph, [data-list]'); if (!t) return;
+  if (t.id === 'alertsBtn') { const x = $('alertsBox'); if (x) x.hidden = !x.hidden; return; }
   if (t.dataset.page) { PAGE = t.dataset.page; if (PAGE === 'list') CHIP = LISTS[LIST || 'TODO'].def || ''; return render(); }
   if (t.dataset.list) { LIST = t.dataset.list; CHIP = LISTS[LIST].def || ''; PAGE = 'list'; return render(); }
   if (t.dataset.lst) { LIST = t.dataset.lst; CHIP = LISTS[LIST].def || ''; return render(); }
