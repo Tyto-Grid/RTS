@@ -547,10 +547,19 @@ async function toJpeg(file, maxSide) {
 }
 // consent form: black-and-white document, small file (target ~250 KB) – the portal copy is for reference
 const CF_KB = 250, kb = u => Math.round((u.length - u.indexOf(',') - 1) * 0.75 / 1024);
+/** Darker ink, white paper (like Adobe Scan "document"): grey values → paper level (60th percentile) is white, the darkest 0.5 % is black,
+ *  mid-greys pulled down with a curve so faint print and light pen become dark. a = RGBA bytes; works in place. */
+function inkUp(a) {
+  const n = a.length / 4, g = new Uint8Array(n), h = new Uint32Array(256);
+  for (let i = 0; i < n; i++) { const v = (0.3 * a[i * 4] + 0.59 * a[i * 4 + 1] + 0.11 * a[i * 4 + 2]) | 0; g[i] = v; h[v]++; }
+  const pct = f => { let c = 0, t = n * f; for (let v = 0; v < 256; v++) { c += h[v]; if (c >= t) return v; } return 255; };
+  const P = pct(0.6), K = Math.min(pct(0.005), P - 60), span = Math.max(30, P - 8 - K), lut = new Uint8Array(256);
+  for (let v = 0; v < 256; v++) { let x = (v - K) / span; x = x < 0 ? 0 : x > 1 ? 1 : x; x = Math.pow(x, 2.2) * 255; lut[v] = x > 229 ? 255 : x; }
+  for (let i = 0; i < n; i++) { const v = lut[g[i]]; a[i * 4] = a[i * 4 + 1] = a[i * 4 + 2] = v; a[i * 4 + 3] = 255; }
+}
 function docJpeg(c) {
-  const x = c.getContext('2d'), d = x.getImageData(0, 0, c.width, c.height), a = d.data;
-  for (let i = 0; i < a.length; i += 4) { let v = 0.3 * a[i] + 0.59 * a[i + 1] + 0.11 * a[i + 2]; v = v > 200 ? 255 : v * 1.1; a[i] = a[i + 1] = a[i + 2] = v > 255 ? 255 : v; }
-  x.putImageData(d, 0, 0);
+  const x = c.getContext('2d'), d = x.getImageData(0, 0, c.width, c.height);
+  inkUp(d.data); x.putImageData(d, 0, 0);
   let q = 0.62, u = c.toDataURL('image/jpeg', q);
   while (kb(u) > CF_KB && q > 0.3) { q -= 0.08; u = c.toDataURL('image/jpeg', q); }
   if (kb(u) > CF_KB) { const t = document.createElement('canvas'); t.width = Math.round(c.width * 0.75); t.height = Math.round(c.height * 0.75); t.getContext('2d').drawImage(c, 0, 0, t.width, t.height); u = t.toDataURL('image/jpeg', 0.5); }
@@ -691,7 +700,8 @@ function scanFlatten() {
   const sm = document.createElement('canvas'); sm.width = bw; sm.height = bh; const smx = sm.getContext('2d'); smx.filter = 'blur(3px)'; smx.drawImage(bc, 0, 0, bw, bh);
   const big = document.createElement('canvas'); big.width = OW; big.height = OH; const bgx = big.getContext('2d'); bgx.imageSmoothingQuality = 'high'; bgx.drawImage(sm, 0, 0, OW, OH);
   const bg = bgx.getImageData(0, 0, OW, OH).data;
-  for (let i = 0; i < OW * OH; i++) { let v = g[i] / Math.max(40, bg[i * 4]) * 255; v = (v - 60) * 1.35; v = v > 235 ? 255 : v < 0 ? 0 : v; o[i * 4] = o[i * 4 + 1] = o[i * 4 + 2] = v; o[i * 4 + 3] = 255; }
+  for (let i = 0; i < OW * OH; i++) { let v = g[i] / Math.max(40, bg[i * 4]) * 255; v = v > 255 ? 255 : v; o[i * 4] = o[i * 4 + 1] = o[i * 4 + 2] = v; o[i * 4 + 3] = 255; }
+  inkUp(o);                                                              // then dark ink on white paper
   ox.putImageData(od, 0, 0); bc.width = 0; sm.width = 0; big.width = 0;
   return out;
 }
@@ -774,7 +784,7 @@ async function submit() {
     if (yes) Object.assign(payload, { unitsN: v('unitsN'), phase: F.phase, billName: F.billName, hasSolar: F.hasSolar, signal: F.signal, meter: F.meter, bill: $('noBill').checked ? '' : F.img.bill, noBill: $('noBill').checked && !F.img.bill, meterPh: F.img.meterPh,
       roof: F.roof, floors: F.floors, steps: F.steps, shade: F.shade, trees: F.trees,
       dirPh: F.trees === 'Yes' ? { north: F.img.dir_north, east: F.img.dir_east, south: F.img.dir_south, west: F.img.dir_west } : null, roofCond: F.roofCond, photo2: F.img.photo2, roofPh: F.img.roofPh,
-      struct: F.struct, rl: v('rl'), rw: v('rw'), pits: F.pits, soil: F.pits === 'No soil (all concrete)' ? '' : F.soil, pitPh: F.pits === 'No soil (all concrete)' ? null : F.img.pitPh, inv: F.inv, earth: v('earth'), dc: v('dc'), ac: v('ac'), consentForm: F.consentForm });
+      struct: F.struct, rl: v('rl'), rw: v('rw'), cfv: 2, pits: F.pits, soil: F.pits === 'No soil (all concrete)' ? '' : F.soil, pitPh: F.pits === 'No soil (all concrete)' ? null : F.img.pitPh, inv: F.inv, earth: v('earth'), dc: v('dc'), ac: v('ac'), consentForm: F.consentForm });
     let r = null, queued = false;
     const keep = () => qPut({ cid: payload.cid, at: new Date().toISOString().slice(0, 16).replace('T', ' '), payload });
     try { r = await run('submitSurvey', payload); }                       // the login travels inside the survey (payload.sup)

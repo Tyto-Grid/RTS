@@ -754,8 +754,42 @@ async function upload(files) {
 
 // ---------------------------------------------------------------- settings (administrator)
 function settingsPage() {
-  $('page').innerHTML = '<div class="box"><h3>Users (email login)</h3><div id="usersBox"><div class="loading">Loading…</div></div></div>';
+  $('page').innerHTML = '<div class="box"><h3>Users (email login)</h3><div id="usersBox"><div class="loading">Loading…</div></div></div>' +
+    '<div class="box"><h3>Darken consent forms saved earlier</h3><p class="small muted">Forms saved before 26-11-2026 can be faint. This makes the ink dark and the paper white, the same as new scans. ' +
+    'Each original is kept in the Drive folder <b>Consent forms – before contrast</b>. Keep this page open while it runs; you can stop and continue later.</p>' +
+    '<button class="btn pri" id="cfDark">Darken saved consent forms</button> <button class="btn" id="cfStop" hidden>Stop</button><div id="cfProg" class="small" style="margin-top:8px"></div></div>';
   run('listMailUsers', KEY).then(drawUsers).catch(e => { $('usersBox').innerHTML = '<div class="flag">' + esc(e.message || e) + '</div>'; });
+}
+/** Darker ink, white paper (like Adobe Scan "document"): grey values → paper level (60th percentile) is white, the darkest 0.5 % is black,
+ *  mid-greys pulled down with a curve so faint print and light pen become dark. a = RGBA bytes; works in place. */
+function inkUp(a) {
+  const n = a.length / 4, g = new Uint8Array(n), h = new Uint32Array(256);
+  for (let i = 0; i < n; i++) { const v = (0.3 * a[i * 4] + 0.59 * a[i * 4 + 1] + 0.11 * a[i * 4 + 2]) | 0; g[i] = v; h[v]++; }
+  const pct = f => { let c = 0, t = n * f; for (let v = 0; v < 256; v++) { c += h[v]; if (c >= t) return v; } return 255; };
+  const P = pct(0.6), K = Math.min(pct(0.005), P - 60), span = Math.max(30, P - 8 - K), lut = new Uint8Array(256);
+  for (let v = 0; v < 256; v++) { let x = (v - K) / span; x = x < 0 ? 0 : x > 1 ? 1 : x; x = Math.pow(x, 2.2) * 255; lut[v] = x > 229 ? 255 : x; }
+  for (let i = 0; i < n; i++) { const v = lut[g[i]]; a[i * 4] = a[i * 4 + 1] = a[i * 4 + 2] = v; a[i * 4 + 3] = 255; }
+}
+let CF_RUN = false;
+const pdfLib = () => window.pdfjsLib ? Promise.resolve(window.pdfjsLib) : new Promise((ok, no) => { const s = document.createElement('script'); s.src = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js';
+  s.onload = () => { pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js'; ok(pdfjsLib); }; s.onerror = () => no(new Error('Could not load the PDF reader.')); document.head.appendChild(s); });
+async function cfDarkOne(pdfId) {
+  const f = await run('getSurveyFile', KEY, pdfId), lib = await pdfLib(), bin = atob(f.b64), u8 = new Uint8Array(bin.length); for (let i = 0; i < bin.length; i++) u8[i] = bin.charCodeAt(i);
+  const doc = await lib.getDocument({ data: u8 }).promise, pg = await doc.getPage(1), v1 = pg.getViewport({ scale: 1 }), vp = pg.getViewport({ scale: Math.min(3, 1500 / v1.width) });
+  const c = document.createElement('canvas'); c.width = Math.round(vp.width); c.height = Math.round(vp.height); const x = c.getContext('2d'); x.fillStyle = '#fff'; x.fillRect(0, 0, c.width, c.height);
+  await pg.render({ canvasContext: x, viewport: vp }).promise;
+  const d = x.getImageData(0, 0, c.width, c.height); inkUp(d.data); x.putImageData(d, 0, 0);
+  let q = 0.72, u = c.toDataURL('image/jpeg', q); while (u.length * 0.75 / 1024 > 320 && q > 0.35) { q -= 0.08; u = c.toDataURL('image/jpeg', q); }
+  c.width = 0; return run('consentReplace', KEY, pdfId, u);
+}
+async function cfDarkAll() {
+  const P = $('cfProg'); CF_RUN = true; $('cfStop').hidden = false; $('cfDark').disabled = true; P.textContent = 'Finding the forms…';
+  let L = []; try { L = JSON.parse(await run('consentList', KEY)); } catch (e) { P.textContent = e.message || e; CF_RUN = false; $('cfDark').disabled = false; return; }
+  let ok = 0, bad = 0;
+  for (let i = 0; i < L.length && CF_RUN; i++) { P.textContent = 'Darkening ' + (i + 1) + ' of ' + L.length + ' – ' + L[i].sn + ' (done ' + ok + (bad ? ', failed ' + bad : '') + ')';
+    try { await cfDarkOne(L[i].pdf); ok++; } catch (e) { bad++; console.log('consent', L[i].sn, e); } }
+  P.innerHTML = (CF_RUN ? '<b>Finished.</b> ' : '<b>Stopped.</b> ') + ok + ' forms darkened' + (bad ? ', ' + bad + ' failed – press the button again to retry them' : '') + (L.length ? '' : ' – nothing left to darken') + '.';
+  CF_RUN = false; $('cfStop').hidden = true; $('cfDark').disabled = false; SVD = null;
 }
 function drawUsers(list) {
   $('usersBox').innerHTML = '<div class="tw" style="margin-bottom:10px"><table><thead><tr><th>Email</th><th>Name</th><th>Role</th><th>Devices logged in</th><th></th></tr></thead><tbody>' +
@@ -769,6 +803,8 @@ function drawUsers(list) {
 // ---------------------------------------------------------------- events
 document.addEventListener('click', async e => {
   const t = e.target.closest('button, tr[data-vil], .ph, .phlink, [data-list]'); if (!t) return;
+  if (t.id === 'cfDark') return cfDarkAll();
+  if (t.id === 'cfStop') { CF_RUN = false; t.hidden = true; return; }
   if (t.dataset.allph) { const x = $('ap_' + t.dataset.allph); if (x) { x.hidden = !x.hidden; if (!x.hidden) autoThumbs(30); } return; }
   if (t.classList.contains('phlink') && t.dataset.photo) { bigPhoto(t.dataset.photo); return; }
   if (t.dataset.tf !== undefined) { TECHF = TECHF === t.dataset.tf ? '' : t.dataset.tf; return techPage(); }
