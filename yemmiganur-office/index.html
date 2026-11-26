@@ -522,8 +522,7 @@ const FIELD_LINK = window.SV_FIELD_LINK || 'https://solarvista.tech/yemmiganur';
 function fieldLinkBox() {
   if (!can.work()) return '';
   return '<div class="flink"><div class="grow"><div class="small muted">Supervisors\' phone link – they pick their name and type their PIN (Supervisors page). Send it to every supervisor.</div><code>' + esc(FIELD_LINK.replace(/^https?:\/\//, '')) + '</code></div>' +
-    '<button class="btn" id="flCopy">⧉ Copy</button><a class="btn pri" target="_blank" rel="noopener" href="https://wa.me/?text=' +
-    encodeURIComponent('Yemmiganur survey – open this link on your phone in Chrome, type your name and start:\n' + FIELD_LINK) + '">WhatsApp</a></div>';
+    '<button class="btn" id="flCopy">⧉ Copy</button><button class="btn pri" id="flWa">WhatsApp</button></div>';
 }
 
 // ---------------------------------------------------------------- supervisors (Priority tab, 30 visits a day)
@@ -590,7 +589,7 @@ function shrinkPhoto(file) {
 // ---------------------------------------------------------------- daily files
 function filesPage() {
   const m = D.meta || {}, have = {}; (m.files || []).forEach(f => have[f.kind] = f);
-  const kinds = [['CAND', 'New SC/ST candidates list', 'the houses to survey (name, mobile, section, distribution)'], ['DCR', 'DCR done report', 'houses with DCR – left out of the survey'], ['INST', 'Installations report (PMSG cloud)', 'installed houses – left out of the survey'], ['CL', 'Consumer List (MNRE)', 'CA status and consent status'],
+  const kinds = [['CAND', 'New SC/ST candidates list', 'the houses to survey (name, mobile, section, distribution)'], ['DCR', 'DCR done report', 'houses with DCR – left out of the survey'], ['INST', 'Installations report (PMSG cloud)', 'installed houses – left out of the survey'], ['PMSG', 'Consumers (PMSG cloud) – once', 'GPS of houses for the village centres; installed = Yes left out'], ['CL', 'Consumer List (MNRE)', 'CA status and consent status'],
     ['MIS', 'ULA Vendor My Applications List (MIS)', 'ULA numbers – APSPD, candidates only'], ['APP', 'My Applications List (portal) – optional', 'extra ULA numbers – APSPD, candidates only'],
     ['PRE', 'Consents collected before the app – once', 'these houses never go to the field (columns: consumer service number, distribution)']];
   $('page').innerHTML = '<div class="box"><h3>The daily files</h3><div class="tw"><table><thead><tr><th>File</th><th>Used for</th><th>Current file</th><th class="num">Rows</th><th>Uploaded</th></tr></thead><tbody>' +
@@ -655,6 +654,9 @@ document.addEventListener('click', async e => {
   if (t.dataset.supact) { const [a, id] = t.dataset.supact.split('|'), u = (SREG || []).find(x => x.id === id); t.disabled = true;
     try { drawSupReg(a === 'pin' ? await run('supNewPin', KEY, id) : await run('supSave', KEY, id, u.name, u.mob, u.sc, a === 'on')); } catch (er) { toast(er.message || er, 6000); t.disabled = false; } return; }
   if (t.dataset.dec !== undefined && t.dataset.dec) { const [id, dec] = t.dataset.dec.split('|'); t.disabled = true; try { await run('setDecision', KEY, id, dec); PAY = null; toast(dec ? dec + '.' : 'Decision cleared.'); surveyPage(true); } catch (er) { toast(er.message || er, 6000); t.disabled = false; } return; }
+  if (t.id === 'flWa') {   // one WhatsApp Web tab, reused on every click (named window) – no new tab each time
+    const msg = 'Yemmiganur survey – open this link on your phone in Chrome, pick your name, type your PIN and start:\n' + FIELD_LINK;
+    const w = window.open('https://web.whatsapp.com/send?text=' + encodeURIComponent(msg), 'sv_whatsapp'); if (w) w.focus(); return; }
   if (t.id === 'flCopy') { try { await navigator.clipboard.writeText(FIELD_LINK); toast('Link copied – paste it in WhatsApp.'); } catch (er) { prompt('Copy this link:', FIELD_LINK); } return; }
   if (t.id === 'repPdf') { t.disabled = true; const x = t.textContent; t.textContent = 'Preparing PDF…'; try { saveB64(await run('surveyReportPdf', KEY)); } catch (er) { toast(er.message || er, 6000); } t.disabled = false; t.textContent = x; return; }
   if (t.id === 'supXls') { t.disabled = true; try { saveB64(await run('supervisorReport', KEY, 31)); } catch (er) { toast(er.message || er, 6000); } t.disabled = false; return; }
