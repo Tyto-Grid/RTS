@@ -117,6 +117,7 @@ select{width:100%;font:inherit;color:inherit;background:var(--card);border:1px s
     <div class="list" id="dList"></div>
     <button class="more" id="typeSn">Type a service number <span class="te">సర్వీస్ నంబర్ టైప్ చేయండి</span></button>
   </div>
+  <div class="card" id="rvCard"><button class="row" id="rvBtn" style="width:100%"><span class="l"><b>Revisit – customer not available</b><div class="n">మళ్లీ వెళ్లాలి – కస్టమర్ లేరు</div></span><span class="tag trv" id="rvN">…</span></button></div>
 </div>
 <!-- 2. houses of one distribution -->
 <div class="wrap hidden" id="pHouses">
@@ -220,6 +221,12 @@ select{width:100%;font:inherit;color:inherit;background:var(--card);border:1px s
           <div><label for="rw">Free roof width (m) <span class="te">వెడల్పు</span></label><input id="rw" class="mono" inputmode="decimal" placeholder="1–40"></div></div>
         <label>Soil space for 3 earth pits? * <span class="te">3 ఎర్త్ పిట్లకు మట్టి స్థలం?</span></label>
         <div class="seg wrap" id="pits"><button data-v="Yes – 3 pits">Yes – 3 <span class="te">అవును – 3</span></button><button data-v="Only 1 or 2">Only 1–2 <span class="te">1–2 మాత్రమే</span></button><button data-v="No soil (all concrete)">No soil <span class="te">మట్టి లేదు</span></button></div>
+        <div id="soilBox" class="hidden">
+          <label>Soil at the earth pit spot * <span class="te">ఎర్త్ పిట్ దగ్గర మట్టి</span></label>
+          <div class="seg wrap" id="soil"><button data-v="Normal">Normal <span class="te">సాధారణ</span></button><button data-v="Hard (murram)">Hard (murram) <span class="te">గట్టి (మొరం)</span></button><button data-v="Rock">Rock <span class="te">రాయి</span></button><button data-v="Sandy">Sandy <span class="te">ఇసుక</span></button></div>
+          <label>Photo of the earth pit spot * <span class="te">ఎర్త్ పిట్ స్థలం ఫోటో</span> <span class="small">(show the ground / నేల కనిపించాలి)</span></label>
+          <div class="pblk" data-k="pitPh"><div class="thumb hidden"><img alt="Earth pit spot"></div><div class="btns"><button data-cam="pitPh">📷 Camera</button><button data-gal="pitPh">🖼 Gallery</button></div></div>
+        </div>
         <label>Inverter place <span class="te">ఇన్వర్టర్ స్థలం</span> <span class="small">(optional)</span></label>
         <div class="seg wrap" id="inv"><button data-v="Inside – wall">Inside wall <span class="te">లోపలి గోడ</span></button><button data-v="Outside – shaded wall">Outside, shade <span class="te">బయట, నీడ</span></button><button data-v="Outside – open">Outside, open <span class="te">బయట, ఎండ</span></button></div>
         <label>Approximate cable lengths (metres) * <span class="te">సుమారు కేబుల్ పొడవులు (మీటర్లు)</span></label>
@@ -318,8 +325,8 @@ if (!AUTH) try { const m = document.cookie.match(/(?:^|; )ymg_auth=([^;]+)/); if
 if (AUTH) authCookie(AUTH);
 const call = (fn, ...a) => run(fn, AUTH, ...a).catch(e => { if (/^LOGIN/.test(e.message || '')) { logout(e.message.replace(/^LOGIN: /, '')); } throw e; });
 let DISTS = [], HOUSES = [], CUR = '';
-const F0 = () => ({ site: null, gps: null, consentForm: null, avail: '', naWhy: '', gender: '', consent: '', cnWhy: '', phase: '', billName: '', hasSolar: '', meter: '', roof: '', floors: '', steps: '', shade: '', roofCond: '', signal: '', struct: '', pits: '', inv: '', nameWhy: '',
-  img: { photo: null, photo2: null, roofPh: null, bill: null, meterPh: null, dir_north: null, dir_east: null, dir_south: null, dir_west: null }, trees: '' });
+const F0 = () => ({ site: null, gps: null, consentForm: null, avail: '', naWhy: '', gender: '', consent: '', cnWhy: '', phase: '', billName: '', hasSolar: '', meter: '', roof: '', floors: '', steps: '', shade: '', roofCond: '', signal: '', struct: '', pits: '', soil: '', inv: '', nameWhy: '',
+  img: { photo: null, photo2: null, roofPh: null, pitPh: null, bill: null, meterPh: null, dir_north: null, dir_east: null, dir_south: null, dir_west: null }, trees: '' });
 let F = F0();
 const pad2 = n => String(n).padStart(2, '0');
 function phoneTime() { const d = new Date(); return d.getFullYear() + '-' + pad2(d.getMonth() + 1) + '-' + pad2(d.getDate()) + ' ' + pad2(d.getHours()) + ':' + pad2(d.getMinutes()); }
@@ -346,9 +353,9 @@ async function loginGo() {
 function logout(msg) { AUTH = null; try { localStorage.removeItem('ymg_auth'); } catch (e) {} authCookie(null); loginPage(msg); }
 window.addEventListener('online', () => { if (AUTH) qFlush(); });           // signal back → send the saved surveys at once
 setInterval(() => { if (AUTH && navigator.onLine !== false) qFlush(); }, 60000);   // and try every minute while the page is open
-function startApp() { $('meName').textContent = AUTH.name; todayShow(); showView('pDist'); loadDists(); qShow(); qFlush(); }
+function startApp() { $('meName').textContent = AUTH.name; todayShow(); showView('pDist'); loadDists(); loadRevisits(); qShow(); qFlush(); }
 // ---------------------------------------------------------------- the choices (one handler for every button row)
-const SEGS = ['avail', 'naWhy', 'gender', 'consent', 'cnWhy', 'phase', 'billName', 'hasSolar', 'meter', 'roof', 'floors', 'steps', 'shade', 'trees', 'roofCond', 'signal', 'struct', 'pits', 'inv', 'nameWhy'];
+const SEGS = ['avail', 'naWhy', 'gender', 'consent', 'cnWhy', 'phase', 'billName', 'hasSolar', 'meter', 'roof', 'floors', 'steps', 'shade', 'trees', 'roofCond', 'signal', 'struct', 'pits', 'soil', 'inv', 'nameWhy'];
 function setSeg(k, v) { F[k] = v; document.querySelectorAll('#' + k + ' button').forEach(b => b.classList.toggle('on', b.dataset.v === v)); layout(); }
 function layout() {
   const met = F.avail === 'Yes', yes = met && F.consent === 'Yes', no = met && F.consent === 'No';
@@ -359,6 +366,7 @@ function layout() {
   $('cfCard').classList.toggle('hidden', !yes);
   $('rmCard').classList.toggle('hidden', !met);
   $('nameBox').classList.toggle('hidden', !$('nameDiff').checked);
+  $('soilBox').classList.toggle('hidden', !F.pits || F.pits === 'No soil (all concrete)');
   $('dirBox').classList.toggle('hidden', F.trees !== 'Yes'); if (F.trees === 'Yes') compassOn();
   $('ph1Title').innerHTML = yes ? 'Customer holding the signed form, in front of the house * <span class="te">సంతకం చేసిన ఫారం పట్టుకున్న కస్టమర్, ఇంటి ముందు</span>' : 'House photo * <span class="te">ఇంటి ఫోటో</span>';
   $('meterReq').innerHTML = F.meter && F.meter !== 'Working' ? '* (meter place / మీటర్ స్థలం)' : '(optional / ఐచ్ఛికం)';
@@ -393,6 +401,16 @@ function mobCheck() {
   }).catch(() => {}), 400);
 }
 // ---------------------------------------------------------------- distributions
+// ---------------------------------------------------------------- revisits: my 'not available' houses, all villages
+let RV = [], RVMODE = false;
+async function loadRevisits() {
+  try { const j = await call('getRevisits'); cache('rv', j); RV = JSON.parse(j); } catch (e) { const c = cache('rv'); RV = c ? JSON.parse(c.v) : []; }
+  $('rvN').textContent = RV.length; $('rvCard').classList.toggle('hidden', !RV.length);
+}
+function openRevisits() {
+  RVMODE = true; CUR = ''; HOUSES = RV.slice(); $('hTitle').textContent = 'Revisit / మళ్లీ వెళ్లాలి'; $('hq').value = ''; show('pHouses'); drawHouses();
+  $('hSub').textContent = RV.length + ' houses – customer was not available. Go again. / ' + RV.length + ' ఇళ్లు – మళ్లీ వెళ్లండి';
+}
 async function loadDists() {
   $('dMsg').textContent = 'Loading…'; $('dMsg').classList.remove('hidden');
   try { const j = await call('getDists'); cache('dists', j); DISTS = JSON.parse(j); drawDists(); }
@@ -408,6 +426,7 @@ function drawDists() {
 const centreOf = d => { const x = DISTS.find(z => z.d === d); return x && x.c ? x.c : null; };
 // ---------------------------------------------------------------- houses
 async function openDist(d) {
+  RVMODE = false;
   CUR = d; store('dist', d); $('hTitle').textContent = d; $('hSub').textContent = 'Loading…'; $('hList').innerHTML = ''; $('hq').value = ''; show('pHouses');
   try { const j = await call('getHouses', d); cache('h_' + d, j); HOUSES = JSON.parse(j); await markQueued(); drawHouses(); }
   catch (e) { const c = cache('h_' + d); if (c) { HOUSES = JSON.parse(c.v); await markQueued(); drawHouses(); $('hSub').textContent += ' · no signal – list from ' + new Date(c.at).toLocaleString('en-GB', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' }); }
@@ -430,7 +449,7 @@ function drawHouses() {
   const open = L.filter(h => !h[4]), done = L.filter(h => h[4]);
   if (HERE) open.forEach(h => h.m = h[9] ? metres(HERE.lat, HERE.lng, h[9], h[10]) : 1e9), open.sort((a, b) => a.m - b.m);
   const row = h => '<button class="row' + (h[4] ? ' done' : '') + '" data-sn="' + h[0] + '"><span class="l"><span class="mono">' + h[0] + '</span><div class="n">' + esc(h[1] || '') + '</div></span>' +
-    (h[4] ? '<span class="tag ' + (VCLS[h[12]] || 'tdone') + '">✓ ' + esc(h[12] || h[4].slice(5, 10).split('-').reverse().join('-')) + '</span>' : h[6] ? '<span class="tag trv">Not met ×' + h[6] + '</span>' : '<span class="tag ' + PR[h[3]][0] + '">' + PR[h[3]][1] + '</span>') + '</button>';
+    (h[4] ? '<span class="tag ' + (VCLS[h[12]] || 'tdone') + '">✓ ' + esc(h[12] || h[4].slice(5, 10).split('-').reverse().join('-')) + '</span>' : h[6] ? '<span class="tag trv">Not met ×' + h[6] + (h[14] ? ' · ' + esc(h[14]) : '') + '</span>' : '<span class="tag ' + PR[h[3]][0] + '">' + PR[h[3]][1] + '</span>') + '</button>';
   let html = '<div class="grp">To visit / సందర్శించాలి · ' + open.length + '</div><div class="list">' + open.slice(0, 300).map(row).join('') + (open.length > 300 ? '<div class="sub">… type digits to find the rest</div>' : '') + '</div>';
   if (done.length) html += '<div class="grp">Surveyed / పూర్తి · ' + done.length + '</div><div class="list">' + done.slice(0, 200).map(row).join('') + '</div>';
   $('hList').innerHTML = L.length ? html : '<div class="msg m-info">No house matches.</div>';
@@ -449,6 +468,7 @@ function resetForm() {
 function fillHouse(sn, name, dbmob, dist) { $('sn').value = sn; $('listName').value = name || ''; $('bname').value = name || ''; $('dbmob').value = dbmob || ''; $('dist').value = dist || ''; }
 function openForm(h) {               // h = house row from the list, or null (typed)
   resetForm(); show('pForm');
+  if (h && h[13]) CUR = h[13];          // a revisit row carries its own village
   if (h) {
     fillHouse(h[0], h[1], h[2], CUR); $('sn').readOnly = true; F.site = { prio: 'P' + h[3], dist: CUR, ok: true, sn: h[0] };
     $('snMsg').innerHTML = '<div class="msg ' + (h[4] ? 'm-warn' : 'm-info') + '"><span class="tag ' + PR[h[3]][0] + '">' + PR[h[3]][1] + '</span>' +
@@ -731,6 +751,7 @@ function problems() {
       if (F.trees === 'Yes') [['north', 'ఉత్తరం'], ['east', 'తూర్పు'], ['south', 'దక్షిణం'], ['west', 'పడమర']].forEach(d => { if (!F.img['dir_' + d[0]]) p.push('Photo ' + d[0] + ' / ' + d[1] + ' ఫోటో.'); }); if (!F.roofCond) p.push('Roof condition? / పైకప్పు స్థితి?'); if (!F.signal) p.push('Mobile signal at the roof? / సిగ్నల్?');
       if (!F.img.photo2) p.push('House photo 2. / ఇంటి ఫోటో 2.');
       if (!F.struct) p.push('Panel structure. / ప్యానెల్ స్ట్రక్చర్.'); if (!F.pits) p.push('Earth pits? / ఎర్త్ పిట్లు?');
+      if (F.pits && F.pits !== 'No soil (all concrete)') { if (!F.soil) p.push('Soil at the earth pit spot? / ఎర్త్ పిట్ దగ్గర మట్టి?'); if (!F.img.pitPh) p.push('Photo of the earth pit spot. / ఎర్త్ పిట్ స్థలం ఫోటో.'); }
       [['rl', 1, 40, 'Roof length'], ['rw', 1, 40, 'Roof width']].forEach(x => { if (isNaN(numIn(x[0], x[1], x[2]))) p.push(x[3] + ': ' + x[1] + '–' + x[2] + ' m only.' + PM); });
       if (F.struct && F.struct !== 'No space') [['earth', 3, 60, 'Earthing'], ['dc', 3, 40, 'DC cable'], ['ac', 2, 50, 'AC cable']].forEach(x => { const v = numIn(x[0], x[1], x[2]);
         if (v === null) p.push(x[3] + ' length (m). / ' + x[3] + ' పొడవు.'); else if (isNaN(v)) p.push(x[3] + ': ' + x[1] + '–' + x[2] + ' m only.' + PM); });
@@ -753,7 +774,7 @@ async function submit() {
     if (yes) Object.assign(payload, { unitsN: v('unitsN'), phase: F.phase, billName: F.billName, hasSolar: F.hasSolar, signal: F.signal, meter: F.meter, bill: $('noBill').checked ? '' : F.img.bill, noBill: $('noBill').checked && !F.img.bill, meterPh: F.img.meterPh,
       roof: F.roof, floors: F.floors, steps: F.steps, shade: F.shade, trees: F.trees,
       dirPh: F.trees === 'Yes' ? { north: F.img.dir_north, east: F.img.dir_east, south: F.img.dir_south, west: F.img.dir_west } : null, roofCond: F.roofCond, photo2: F.img.photo2, roofPh: F.img.roofPh,
-      struct: F.struct, rl: v('rl'), rw: v('rw'), pits: F.pits, inv: F.inv, earth: v('earth'), dc: v('dc'), ac: v('ac'), consentForm: F.consentForm });
+      struct: F.struct, rl: v('rl'), rw: v('rw'), pits: F.pits, soil: F.pits === 'No soil (all concrete)' ? '' : F.soil, pitPh: F.pits === 'No soil (all concrete)' ? null : F.img.pitPh, inv: F.inv, earth: v('earth'), dc: v('dc'), ac: v('ac'), consentForm: F.consentForm });
     let r = null, queued = false;
     const keep = () => qPut({ cid: payload.cid, at: new Date().toISOString().slice(0, 16).replace('T', ' '), payload });
     try { r = await run('submitSurvey', payload); }                       // the login travels inside the survey (payload.sup)
@@ -774,7 +795,7 @@ async function submit() {
   } catch (e) { $('err').innerHTML = '<li>' + esc(e.message || e) + '</li>'; }
   b.disabled = false; layout();
 }
-function nextHouse() { if (CUR) { drawHouses(); show('pHouses'); } else { show('pDist'); } }
+function nextHouse() { if (RVMODE) { loadRevisits().then(openRevisits); return; } if (CUR) { drawHouses(); show('pHouses'); } else { show('pDist'); } }
 
 // ---------------------------------------------------------------- events
 $('lgGo').onclick = loginGo; $('lgPin').addEventListener('keydown', e => { if (e.key === 'Enter') loginGo(); });
@@ -789,7 +810,8 @@ $('nearBtn').addEventListener('click', async () => {
 $('hList').addEventListener('click', e => { const b = e.target.closest('[data-sn]'); if (b) openForm(HOUSES.find(h => h[0] === b.dataset.sn)); });
 $('typeSn').onclick = () => { CUR = ''; openForm(null); };
 $('typeSn2').onclick = () => openForm(null);
-$('hBack').onclick = () => { CUR = ''; show('pDist'); loadDists(); };
+$('rvBtn').onclick = openRevisits;
+$('hBack').onclick = () => { RVMODE = false; CUR = ''; show('pDist'); loadDists(); loadRevisits(); };
 $('fBack').onclick = () => CUR ? show('pHouses') : show('pDist');
 SEGS.forEach(k => $(k).addEventListener('click', e => { const b = e.target.closest('button[data-v]'); if (b) setSeg(k, b.dataset.v); }));
 $('nameDiff').addEventListener('change', () => { if (!$('nameDiff').checked) { $('bname').value = $('listName').value; F.nameWhy = ''; document.querySelectorAll('#nameWhy button').forEach(b => b.classList.remove('on')); } layout(); });

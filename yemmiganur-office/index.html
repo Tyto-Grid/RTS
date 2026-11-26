@@ -273,16 +273,16 @@ const LISTS = {
   BACK: { t: 'Went back a stage on the portal', f: s => !!s.back, chips: [] },
   PROB: { t: 'Data problems in the files', f: s => !!s.prob, chips: [] },
 };
-const PAGES = [['dash', '▦', 'Dashboard'], ['list', '☰', 'Lists'], ['survey', '📝', 'Survey'], ['sup', '👤', 'Supervisors'], ['pay', '₹', 'Payments', 'manage'], ['-'], ['files', '⬆', 'Daily files'], ['settings', '⚙', 'Settings', 'owner']];
+const PAGES = [['dash', '▦', 'Dashboard'], ['list', '☰', 'Lists'], ['survey', '📝', 'Survey'], ['sup', '👤', 'Supervisors'], ['pay', '₹', 'Payments', 'manage'], ['tech', '🔧', 'Technical review', 'manage'], ['-'], ['files', '⬆', 'Daily files'], ['settings', '⚙', 'Settings', 'owner']];
 function nav() {
   $('nav').innerHTML = PAGES.filter(p => !p[3] || can[p[3]]()).map(p => p[0] === '-' ? '<div class="sep"></div>' :
     '<button data-page="' + p[0] + '" class="' + (PAGE === p[0] ? 'on' : '') + '"><span class="ic">' + p[1] + '</span>' + p[2] +
     (p[0] === 'survey' ? '<span class="n">' + Object.keys(D.sv || {}).length + '</span>' + ((D.bstat || {}).red ? '<span class="n red" title="batches needing action">' + D.bstat.red + '</span>' : '') : '') + '</button>').join('');
 }
 function render() {
-  if ((PAGE === 'settings' && !can.owner()) || (PAGE === 'pay' && !can.manage())) PAGE = 'dash';
-  nav(); $('title').textContent = { dash: 'Dashboard', list: LIST ? LISTS[LIST].t : 'Lists', survey: 'Survey', sup: 'Supervisors', pay: 'Supervisor payments', files: 'Daily files', settings: 'Settings' }[PAGE];
-  ({ dash, list: listPage, survey: surveyPage, sup: supPage, pay: payPage, files: filesPage, settings: settingsPage })[PAGE]();
+  if ((PAGE === 'settings' && !can.owner()) || ((PAGE === 'pay' || PAGE === 'tech') && !can.manage())) PAGE = 'dash';
+  nav(); $('title').textContent = { dash: 'Dashboard', list: LIST ? LISTS[LIST].t : 'Lists', survey: 'Survey', sup: 'Supervisors', pay: 'Supervisor payments', tech: 'Technical review (PM)', files: 'Daily files', settings: 'Settings' }[PAGE];
+  ({ dash, list: listPage, survey: surveyPage, sup: supPage, pay: payPage, tech: techPage, files: filesPage, settings: settingsPage })[PAGE]();
 }
 const daysSince = d => d ? Math.floor((Date.now() - new Date(d + 'T00:00:00+05:30')) / 864e5) : -1;
 const N = v => Number(v || 0).toLocaleString('en-IN');
@@ -316,6 +316,7 @@ function goalView(A, c) {
       b('data-list="GO"', c.go ? 'g' : '', 'Can go ahead', N(c.go), 'Feasible ' + N(c['Feasible']) + ' · Special ' + N(c['Special structure']) + ' · Action ' + N(c['Needs action'])) +
       b('data-list="TODO"', '', 'To survey', N(c.todo), 'of ' + N(c.field) + ' field houses') +
       b('data-list="TODAY"', (svd[today] || 0) ? 'g' : 'r', 'Surveyed today', N(svd[today] || 0), 'yesterday ' + N(svd[istDay(1)] || 0)) +
+      b('data-list="REVISIT"', c.rv ? 'a' : '', 'Not available', N(c.rv), 'customer away – revisit') +
       b('data-list="V_NO"', '', 'Consent yes / no', N(cons) + ' / ' + N(c['Consent No']), 'all days') +
       b('data-list="V_ACT"', c['Needs action'] ? 'a' : '', 'Needs action', N(c['Needs action']), 'meter, earth pits, shade') +
       b('data-list="RULED"', '', 'Ruled out', N(ruled), 'not eligible ' + N(c['Not eligible']) + ' · not feasible ' + N(c['Not feasible'])) +
@@ -612,6 +613,37 @@ function drawSupReg(L) {
 }
 // ---------------------------------------------------------------- payments to supervisors (Manager / owner only)
 let PAY = null;
+// ---------------------------------------------------------------- PM technical review: AI reads roof, earth pit and direction photos + the entries
+let TECH = null, TECHF = '';
+const techSt = r => r.dec || r.tech || 'Waiting';
+async function techPage(reload) {
+  if (!TECH || reload) { $('page').innerHTML = '<div class="loading">Loading the technical review…</div>';
+    try { TECH = JSON.parse(await run('getTechReview', KEY)); } catch (e) { $('page').innerHTML = '<div class="empty">' + esc(e.message || e) + '</div>'; return; } }
+  const A = TECH.filter(r => (!$('fSec').value || r.sec === $('fSec').value) && (!$('fVil').value || r.dist === $('fVil').value));
+  const n = k => A.filter(r => techSt(r) === k).length, L = A.filter(r => !TECHF || techSt(r) === TECHF)
+    .sort((a, b) => ({ 'Not ready': 0, Check: 1, Error: 2, Waiting: 3, Unreadable: 3, Ready: 4 }[techSt(a)] - { 'Not ready': 0, Check: 1, Error: 2, Waiting: 3, Unreadable: 3, Ready: 4 }[techSt(b)]) || a.dist.localeCompare(b.dist));
+  const bd = (k, l, cls, s2) => '<button class="bdg ' + cls + '" data-tf="' + k + '"' + (TECHF === k ? ' style="border-color:var(--accent)"' : '') + '><div class="l"><span class="d"></span>' + l + '</div><div class="v">' + N(k ? n(k) : A.length) + '</div><div class="s">' + s2 + '</div></button>';
+  const col = st => st === 'Ready' ? 'var(--ok)' : st === 'Not ready' ? 'var(--bad)' : st === 'Check' ? 'var(--warn)' : 'var(--muted)';
+  $('page').innerHTML = '<div class="note">The AI reads the <b>roof photo, the earth pit photo, the direction photos</b> and what the supervisor entered, and says whether the team can install. <b>You decide</b> – your Ready / Not ready overrides it. Not linked to the supervisor\'s ₹25.</div>' +
+    '<div class="badges">' + bd('', 'Can go ahead – reviewed', '', 'houses') + bd('Ready', 'Ready to install', 'g', 'standard kit') + bd('Check', 'Check first', 'a', 'needs your look') + bd('Not ready', 'Not ready', 'r', 'hard stop') + bd('Waiting', 'AI not done yet', '', 'every 10 minutes') + '</div>' +
+    '<div class="toolbar"><h2>' + (TECHF || 'All') + ' · ' + N(L.length) + ' houses</h2><button class="btn" id="techCsv">⬇ This list (Excel CSV)</button><button class="btn" id="techReload">↻</button></div>' +
+    (L.length ? '<div class="tw"><table><thead><tr><th>House</th><th>Entered</th><th>AI review</th><th>Your call</th></tr></thead><tbody>' + L.map(r => {
+      const st = techSt(r);
+      return '<tr><td><span class="mono">' + esc(r.sn) + '</span><div>' + esc(r.name || '') + '</div><div class="small muted">' + esc(r.dist) + ' · ' + esc(r.by) + ' · ' + esc(String(r.at).slice(0, 10)) + '</div>' +
+        (r.roofPh ? '<div class="ph" data-photo="' + esc(r.roofPh) + '">roof</div>' : '') + (r.pitPh ? '<div class="ph" data-photo="' + esc(r.pitPh) + '" style="margin-top:4px">pit</div>' : '') + '</td>' +
+        '<td class="small">' + esc(r.roof) + ' · ' + esc(r.floors) + '<br>' + esc(r.struct) + (r.size ? ' · ' + esc(r.size) + ' m' : '') + '<br>Soil: ' + esc(r.soil || 'not recorded') + '<br>Cable E/DC/AC: ' + esc([r.earth, r.dc, r.ac].join(' / ')) + ' m</td>' +
+        '<td><b style="color:' + col(r.tech || 'Waiting') + '">' + esc(r.tech || 'Waiting') + '</b><div class="small" style="white-space:pre-line">' + esc(r.notes) + '</div></td>' +
+        '<td>' + (r.dec ? '<b style="color:' + col(r.dec) + '">' + esc(r.dec) + '</b><div class="small muted">' + esc(r.decBy) + '</div>' : '<span class="small muted">follows AI</span>') +
+        '<div style="display:flex;gap:4px;margin-top:6px;flex-wrap:wrap"><button class="btn" data-tdec="' + esc(r.id) + '|Ready">Ready</button><button class="btn" data-tdec="' + esc(r.id) + '|Not ready">Not ready</button>' + (r.dec ? '<button class="btn" data-tdec="' + esc(r.id) + '|">Clear</button>' : '') + '</div></td></tr>';
+    }).join('') + '</tbody></table></div>' : '<div class="empty">No houses here yet.</div>');
+}
+function techCsv() {
+  const q = v => '"' + String(v == null ? '' : v).replace(/"/g, '""') + '"', A = TECH.filter(r => !TECHF || techSt(r) === TECHF);
+  const rows = [['Service No', 'Name', 'Section', 'Distribution', 'Supervisor', 'Surveyed', 'Verdict', 'Roof', 'Floors', 'Structure', 'Roof L x W', 'Soil', 'Earthing m', 'DC m', 'AC m', 'AI review', 'AI notes', 'PM decision', 'Final']]
+    .concat(A.map(r => [r.sn, r.name, r.sec, r.dist, r.by, r.at, r.v, r.roof, r.floors, r.struct, r.size, r.soil, r.earth, r.dc, r.ac, r.tech, r.notes.replace(/\n/g, ' | '), r.dec, techSt(r)]));
+  const csv = rows.map((x, i) => x.map((v, j) => j === 0 && i ? q('="' + v + '"') : q(v)).join(',')).join('\r\n');
+  const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob(['\ufeff' + csv], { type: 'text/csv' })); a.download = 'Yemmiganur_Technical_review_' + new Date().toISOString().slice(0, 10) + '.csv'; a.click();
+}
 async function payPage(reload) {
   if (!PAY || reload) { $('page').innerHTML = '<div class="loading">Working out payments…</div>';
     try { PAY = JSON.parse(await run('getPayments', KEY)); } catch (e) { $('page').innerHTML = '<div class="empty">' + esc(e.message || e) + '</div>'; return; } }
@@ -680,6 +712,11 @@ function drawUsers(list) {
 // ---------------------------------------------------------------- events
 document.addEventListener('click', async e => {
   const t = e.target.closest('button, tr[data-vil], .ph, [data-list]'); if (!t) return;
+  if (t.dataset.tf !== undefined) { TECHF = TECHF === t.dataset.tf ? '' : t.dataset.tf; return techPage(); }
+  if (t.id === 'techReload') return techPage(true);
+  if (t.id === 'techCsv') return techCsv();
+  if (t.dataset.tdec) { const [id, dec] = t.dataset.tdec.split('|'); t.disabled = true;
+    try { await run('setTechDecision', KEY, id, dec); const r = TECH.find(x => x.id === id); if (r) { r.dec = dec; r.decBy = dec ? 'you' : ''; } techPage(); } catch (er) { alert(er.message || er); t.disabled = false; } return; }
   if (t.id === 'alertsBtn') { const x = $('alertsBox'); if (x) x.hidden = !x.hidden; return; }
   if (t.dataset.page) { PAGE = t.dataset.page; if (PAGE === 'list') CHIP = LISTS[LIST || 'TODO'].def || ''; return render(); }
   if (t.dataset.list) { LIST = t.dataset.list; CHIP = LISTS[LIST].def || ''; PAGE = 'list'; return render(); }
