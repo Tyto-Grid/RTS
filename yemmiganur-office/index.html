@@ -654,9 +654,13 @@ document.addEventListener('click', async e => {
   if (t.dataset.supact) { const [a, id] = t.dataset.supact.split('|'), u = (SREG || []).find(x => x.id === id); t.disabled = true;
     try { drawSupReg(a === 'pin' ? await run('supNewPin', KEY, id) : await run('supSave', KEY, id, u.name, u.mob, u.sc, a === 'on')); } catch (er) { toast(er.message || er, 6000); t.disabled = false; } return; }
   if (t.dataset.dec !== undefined && t.dataset.dec) { const [id, dec] = t.dataset.dec.split('|'); t.disabled = true; try { await run('setDecision', KEY, id, dec); PAY = null; toast(dec ? dec + '.' : 'Decision cleared.'); surveyPage(true); } catch (er) { toast(er.message || er, 6000); t.disabled = false; } return; }
-  if (t.id === 'flWa') {   // one WhatsApp Web tab, reused on every click (named window) – no new tab each time
+  if (t.id === 'flWa') {   // WhatsApp app (or one reused WhatsApp Web tab) – no new tab each time
     const msg = 'Yemmiganur survey – open this link on your phone in Chrome, pick your name, type your PIN and start:\n' + FIELD_LINK;
-    const w = window.open('https://web.whatsapp.com/send?text=' + encodeURIComponent(msg), 'sv_whatsapp'); if (w) w.focus(); return; }
+    // WhatsApp desktop app first (one window, always reused); if the app does not open in 2 s, WhatsApp Web in one named tab
+    let left = false; const gone = () => { left = true; }; window.addEventListener('blur', gone, { once: true });
+    location.href = 'whatsapp://send?text=' + encodeURIComponent(msg);
+    setTimeout(() => { window.removeEventListener('blur', gone); if (!left && !document.hidden) { const w = window.open('https://web.whatsapp.com/send?text=' + encodeURIComponent(msg), 'sv_whatsapp'); if (w) w.focus(); } }, 2000);
+    return; }
   if (t.id === 'flCopy') { try { await navigator.clipboard.writeText(FIELD_LINK); toast('Link copied – paste it in WhatsApp.'); } catch (er) { prompt('Copy this link:', FIELD_LINK); } return; }
   if (t.id === 'repPdf') { t.disabled = true; const x = t.textContent; t.textContent = 'Preparing PDF…'; try { saveB64(await run('surveyReportPdf', KEY)); } catch (er) { toast(er.message || er, 6000); } t.disabled = false; t.textContent = x; return; }
   if (t.id === 'supXls') { t.disabled = true; try { saveB64(await run('supervisorReport', KEY, 31)); } catch (er) { toast(er.message || er, 6000); } t.disabled = false; return; }
