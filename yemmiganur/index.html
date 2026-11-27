@@ -137,6 +137,11 @@ select{width:100%;font:inherit;color:inherit;background:var(--card);border:1px s
     <label for="sn">Service number * <span class="te">సర్వీస్ నంబర్</span></label>
     <input id="sn" class="mono" inputmode="numeric" maxlength="13" placeholder="86…">
     <div id="snMsg"></div>
+    <div id="offBox" class="hidden">
+      <div class="msg m-warn" style="margin-top:8px">This house is <b>not on the survey list</b>. Type the name as on the bill and say why. The office checks it before it counts. <span class="te">ఈ ఇల్లు జాబితాలో లేదు – బిల్లుపై పేరు టైప్ చేసి, ఎందుకో చెప్పండి.</span></div>
+      <label>Why not on the list? * <span class="te">జాబితాలో ఎందుకు లేదు?</span></label>
+      <div class="seg wrap" id="offWhy"><button data-v="New SC/ST connection – not in the list">New SC/ST connection <span class="te">కొత్త కనెక్షన్</span></button><button data-v="Missing from the list">Missing from the list <span class="te">జాబితాలో లేదు</span></button><button data-v="List has another number for this house">List has another number <span class="te">వేరే నంబర్</span></button><button data-v="Other – written in remarks">Other (write in remarks) <span class="te">ఇతర</span></button></div>
+    </div>
     <div id="formBody">
     <label>Customer available? * <span class="te">కస్టమర్ ఉన్నారా?</span></label>
     <div class="seg" id="avail"><button data-v="Yes">Yes <span class="te">ఉన్నారు</span></button><button data-v="No">No <span class="te">లేరు</span></button></div>
@@ -150,8 +155,8 @@ select{width:100%;font:inherit;color:inherit;background:var(--card);border:1px s
       <label>Distribution <span class="te">డిస్ట్రిబ్యూషన్</span></label>
       <input id="dist" readonly>
       <label>Beneficiary name <span class="te">లబ్ధిదారు పేరు</span></label>
-      <input id="listName" readonly>
-      <label class="chk"><input type="checkbox" id="nameDiff"> Name is different on the bill <span class="te">బిల్లుపై పేరు వేరుగా ఉంది</span></label>
+      <input id="listName" readonly maxlength="60">
+      <label class="chk" id="nameDiffL"><input type="checkbox" id="nameDiff"> Name is different on the bill <span class="te">బిల్లుపై పేరు వేరుగా ఉంది</span></label>
       <div id="nameBox" class="hidden">
         <label for="bname">Name as on the bill * <span class="te">బిల్లుపై ఉన్న పేరు</span></label>
         <input id="bname" autocomplete="off" maxlength="60">
@@ -326,7 +331,7 @@ if (!AUTH) try { const m = document.cookie.match(/(?:^|; )ymg_auth=([^;]+)/); if
 if (AUTH) authCookie(AUTH);
 const call = (fn, ...a) => run(fn, AUTH, ...a).catch(e => { if (/^LOGIN/.test(e.message || '')) { logout(e.message.replace(/^LOGIN: /, '')); } throw e; });
 let DISTS = [], HOUSES = [], CUR = '';
-const F0 = () => ({ site: null, gps: null, consentForm: null, avail: '', naWhy: '', gender: '', consent: '', cnWhy: '', phase: '', billName: '', hasSolar: '', meter: '', roof: '', floors: '', steps: '', shade: '', roofCond: '', signal: '', struct: '', pits: '', soil: '', inv: '', nameWhy: '',
+const F0 = () => ({ site: null, gps: null, consentForm: null, offWhy: '', avail: '', naWhy: '', gender: '', consent: '', cnWhy: '', phase: '', billName: '', hasSolar: '', meter: '', roof: '', floors: '', steps: '', shade: '', roofCond: '', signal: '', struct: '', pits: '', soil: '', inv: '', nameWhy: '',
   img: { photo: null, photo2: null, roofPh: null, pitPh: null, bill: null, meterPh: null, dir_north: null, dir_east: null, dir_south: null, dir_west: null }, trees: '' });
 let F = F0();
 const pad2 = n => String(n).padStart(2, '0');
@@ -356,7 +361,7 @@ window.addEventListener('online', () => { if (AUTH) qFlush(); });           // s
 setInterval(() => { if (AUTH && navigator.onLine !== false) qFlush(); }, 60000);   // and try every minute while the page is open
 function startApp() { $('meName').textContent = AUTH.name; todayShow(); showView('pDist'); loadDists(); loadRevisits(); qShow(); qFlush(); }
 // ---------------------------------------------------------------- the choices (one handler for every button row)
-const SEGS = ['avail', 'naWhy', 'gender', 'consent', 'cnWhy', 'phase', 'billName', 'hasSolar', 'meter', 'roof', 'floors', 'steps', 'shade', 'trees', 'roofCond', 'signal', 'struct', 'pits', 'soil', 'inv', 'nameWhy'];
+const SEGS = ['avail', 'naWhy', 'gender', 'consent', 'cnWhy', 'phase', 'billName', 'hasSolar', 'meter', 'roof', 'floors', 'steps', 'shade', 'trees', 'roofCond', 'signal', 'struct', 'pits', 'soil', 'inv', 'nameWhy', 'offWhy'];
 function setSeg(k, v) { F[k] = v; document.querySelectorAll('#' + k + ' button').forEach(b => b.classList.toggle('on', b.dataset.v === v)); layout(); }
 function layout() {
   const met = F.avail === 'Yes', yes = met && F.consent === 'Yes', no = met && F.consent === 'No';
@@ -458,7 +463,7 @@ function drawHouses() {
 // ---------------------------------------------------------------- form
 function resetForm() {
   ['sn', 'bname', 'listName', 'mob', 'dbmob', 'alt', 'unitsN', 'rl', 'rw', 'earth', 'dc', 'ac', 'remarks', 'dist'].forEach(id => $(id).value = '');
-  F = F0(); CF_TRIES = 0; $('noBill').checked = false; $('nameDiff').checked = false;
+  F = F0(); CF_TRIES = 0; $('noBill').checked = false; $('nameDiff').checked = false; offMode(false);
   SEGS.forEach(k => document.querySelectorAll('#' + k + ' button').forEach(b => b.classList.remove('on')));
   document.querySelectorAll('.pblk .thumb').forEach(t => t.classList.add('hidden'));
   $('mobMsg').innerHTML = ''; $('cfWrap').classList.add('hidden'); $('snMsg').innerHTML = ''; $('err').innerHTML = ''; $('formBody').classList.remove('hidden');
@@ -466,6 +471,8 @@ function resetForm() {
   $('cfInfo').className = 'msg m-info'; $('cfInfo').innerHTML = 'Scan the signed form: hold the phone above it, fill the screen. No Aadhaar. <span class="te">సంతకం చేసిన ఫారం పైన ఫోన్ పట్టి స్కాన్ చేయండి. ఆధార్ వద్దు.</span>';
   layout();
 }
+// a typed number that is not on the list: name typed by hand + a reason; the office checks before it counts
+function offMode(on) { $('offBox').classList.toggle('hidden', !on); $('nameDiffL').classList.toggle('hidden', on); $('listName').readOnly = !on; $('listName').placeholder = on ? 'Name as on the bill / బిల్లుపై పేరు' : ''; if (on) $('nameDiff').checked = false; }
 function fillHouse(sn, name, dbmob, dist) { $('sn').value = sn; $('listName').value = name || ''; $('bname').value = name || ''; $('dbmob').value = dbmob || ''; $('dist').value = dist || ''; }
 function openForm(h) {               // h = house row from the list, or null (typed)
   resetForm(); show('pForm');
@@ -491,7 +498,7 @@ function liveCheck(h) {
 }
 function block(msg) { F.site = Object.assign(F.site || {}, { ok: false, why: msg }); $('snMsg').innerHTML = '<div class="msg m-bad"><b>' + esc(msg) + '</b></div>'; $('formBody').classList.add('hidden'); }
 let snT = null;
-/** A typed service number must be one of the houses to survey – nothing else is accepted. */
+/** A typed service number: a listed house, or – if not on the list – any Yemmiganur number (village from its first 7 digits); the office checks those. */
 function snCheck() {
   if ($('sn').readOnly) return;
   const sn = $('sn').value.replace(/\D/g, '').slice(0, 13); $('sn').value = sn; $('snMsg').innerHTML = ''; F.site = null; $('formBody').classList.add('hidden');
@@ -500,7 +507,12 @@ function snCheck() {
   clearTimeout(snT); $('snMsg').innerHTML = '<div class="msg m-info">Checking… / చెక్ చేస్తోంది…</div>';
   snT = setTimeout(() => call('houseStatus', sn).then(st => {
     if ($('sn').value !== sn) return;
-    if (!st.known || st.notOurs) return block('Not in the survey list.' + PM);
+    if (!st.known && st.off) {                                            // not on the list, but a Yemmiganur number: allowed, village from the number
+      F.site = { prio: 'P2', dist: st.off.dist, ok: true, sn, off: true }; fillHouse(sn, '', '', st.off.dist); offMode(true); $('formBody').classList.remove('hidden');
+      $('snMsg').innerHTML = '<div class="msg m-warn">' + esc(st.off.dist) + ' · <b>Not on the survey list</b> – you can still survey it. <span class="te">జాబితాలో లేదు – సర్వే చేయవచ్చు.</span></div>';
+      if (st.last) $('snMsg').innerHTML += '<div class="msg m-warn">Already surveyed on ' + esc(st.last.at) + ' by ' + esc(st.last.by) + '. Submitting again replaces it.</div>';
+      gps(); return; }
+    if (!st.known || st.notOurs) return block('Not a Yemmiganur service number, or not ours.' + PM);
     if (st.done) return block('Already installed – no survey needed. / ఇప్పటికే ఏర్పాటైంది.');
     if (st.ula) return block('ULA already created – no survey needed.');
     if (st.prio === 'PRE') return block('Consent already collected earlier – no survey needed.');
@@ -739,6 +751,7 @@ const numIn = (id, lo, hi) => { const v = $(id).value; if (v === '') return null
 function problems() {
   const p = [], mob = $('mob').value.replace(/\D/g, '');
   if (!F.site || !F.site.ok) p.push((F.site && F.site.why) || 'Pick a house from the list or type a service number in the list.');
+  if (F.site && F.site.off) { if (!F.offWhy) p.push('Why is this house not on the list? / జాబితాలో ఎందుకు లేదు?'); if (F.avail === 'Yes' && $('listName').value.trim().length < 3) p.push('Name of the beneficiary as on the bill. / లబ్ధిదారు పేరు.'); }
   if (!F.avail) p.push('Customer available? / కస్టమర్ ఉన్నారా?');
   if (F.avail === 'No') { if (!F.naWhy) p.push('Why not available? / ఎందుకు లేరు?'); }
   else if (F.avail === 'Yes') {
@@ -774,7 +787,7 @@ function problems() {
   return p;
 }
 // which question each problem belongs to – tap the red line to jump there
-const GO = [[/Customer available/, 'avail'], [/Why not available/, 'naWhy'], [/Name as on the bill/, 'bname'], [/name different/, 'nameWhy'], [/^Gender/, 'gender'], [/Working mobile/, 'mob'], [/Alternate mobile/, 'alt'],
+const GO = [[/not on the list\?/, 'offWhy'], [/^Name of the beneficiary/, 'listName'], [/Customer available/, 'avail'], [/Why not available/, 'naWhy'], [/Name as on the bill/, 'bname'], [/name different/, 'nameWhy'], [/^Gender/, 'gender'], [/Working mobile/, 'mob'], [/Alternate mobile/, 'alt'],
   [/^Consent:/, 'consent'], [/^Why No/, 'cnWhy'], [/^Units/, 'unitsN'], [/^Connection/, 'phase'], [/Bill in whose/, 'billName'], [/Already has solar/, 'hasSolar'], [/^Meter\?/, 'meter'],
   [/Photo of the bill/, '[data-k="bill"]'], [/meter place/, '[data-k="meterPh"]'], [/^Roof type/, 'roof'], [/^Floors/, 'floors'], [/^Steps/, 'steps'], [/^Shade/, 'shade'], [/^Trees/, 'trees'],
   [/^Photo (north|east|south|west)/, 'dirBox'], [/House photo 2/, '[data-k="photo2"]'], [/Panel structure/, 'struct'], [/^Earth pits/, 'pits'], [/^Soil at the earth pit/, 'soil'], [/earth pit spot\./, '[data-k="pitPh"]'],
@@ -790,7 +803,7 @@ async function submit() {
   const b = $('submit'); b.disabled = true; b.textContent = 'Saving…';
   try {
     const yes = F.avail === 'Yes' && F.consent === 'Yes', v = id => $(id).value;
-    const payload = { cid: 'c' + Date.now().toString(36) + Math.random().toString(36).slice(2, 8), sup: AUTH, sn: v('sn'), name: $('nameDiff').checked ? v('bname') : v('listName'), nameWhy: $('nameDiff').checked ? F.nameWhy : '',
+    const payload = { cid: 'c' + Date.now().toString(36) + Math.random().toString(36).slice(2, 8), sup: AUTH, sn: v('sn'), name: $('nameDiff').checked ? v('bname') : v('listName'), offList: !!(F.site && F.site.off), offWhy: F.offWhy, nameWhy: $('nameDiff').checked ? F.nameWhy : '',
       gender: F.gender, mobile: v('mob'), alt: v('alt'), lat: F.gps.lat, lng: F.gps.lng, acc: F.gps.acc, photo: F.img.photo, avail: F.avail, naWhy: F.naWhy, pat: phoneTime(),
       consent: F.avail === 'Yes' ? F.consent : '', cnWhy: F.cnWhy, remarks: F.avail === 'Yes' ? v('remarks') : '' };
     if (yes) Object.assign(payload, { unitsN: v('unitsN'), phase: F.phase, billName: F.billName, hasSolar: F.hasSolar, signal: F.signal, meter: F.meter, bill: $('noBill').checked ? '' : F.img.bill, noBill: $('noBill').checked && !F.img.bill, meterPh: F.img.meterPh,
