@@ -83,6 +83,7 @@ textarea{width:100%;font:inherit;color:inherit;background:var(--card);border:1px
 .card h2 .small{color:var(--muted)}
 .te{font-size:.86em;color:var(--muted);font-weight:400}button.on .te,.primary .te{color:inherit;opacity:.9}
 select{width:100%;font:inherit;color:inherit;background:var(--card);border:1px solid var(--line);border-radius:10px;padding:11px 12px}
+.flash { outline: 3px solid #d93025 !important; outline-offset: 4px; border-radius: 8px; transition: outline-color .3s; }
 </style>
 </head>
 <body>
@@ -762,7 +763,7 @@ function problems() {
       if (!F.img.photo2) p.push('House photo 2. / ఇంటి ఫోటో 2.');
       if (!F.struct) p.push('Panel structure. / ప్యానెల్ స్ట్రక్చర్.'); if (!F.pits) p.push('Earth pits? / ఎర్త్ పిట్లు?');
       if (F.pits && F.pits !== 'No soil (all concrete)') { if (!F.soil) p.push('Soil at the earth pit spot? / ఎర్త్ పిట్ దగ్గర మట్టి?'); if (!F.img.pitPh) p.push('Photo of the earth pit spot. / ఎర్త్ పిట్ స్థలం ఫోటో.'); }
-      [['rl', 1, 40, 'Roof length'], ['rw', 1, 40, 'Roof width']].forEach(x => { if (isNaN(numIn(x[0], x[1], x[2]))) p.push(x[3] + ': ' + x[1] + '–' + x[2] + ' m only.' + PM); });
+      [['rl', 5, 150, 'Roof length'], ['rw', 5, 150, 'Roof width']].forEach(x => { if (isNaN(numIn(x[0], x[1], x[2]))) p.push(x[3] + ': ' + x[1] + '–' + x[2] + ' feet only. / అడుగులు.' + PM); });
       if (F.struct && F.struct !== 'No space') [['earth', 3, 60, 'Earthing'], ['dc', 3, 40, 'DC cable'], ['ac', 2, 50, 'AC cable']].forEach(x => { const v = numIn(x[0], x[1], x[2]);
         if (v === null) p.push(x[3] + ' length (m). / ' + x[3] + ' పొడవు.'); else if (isNaN(v)) p.push(x[3] + ': ' + x[1] + '–' + x[2] + ' m only.' + PM); });
       if (!F.consentForm) p.push('Scan the signed consent form. / సమ్మతి పత్రం స్కాన్ చేయండి.');
@@ -772,9 +773,20 @@ function problems() {
   if (!F.img.photo) p.push(F.consent === 'Yes' ? 'Photo: customer holding the signed form. / ఫారం పట్టుకున్న కస్టమర్ ఫోటో.' : 'House photo. / ఇంటి ఫోటో.');
   return p;
 }
+// which question each problem belongs to – tap the red line to jump there
+const GO = [[/Customer available/, 'avail'], [/Why not available/, 'naWhy'], [/Name as on the bill/, 'bname'], [/name different/, 'nameWhy'], [/^Gender/, 'gender'], [/Working mobile/, 'mob'], [/Alternate mobile/, 'alt'],
+  [/^Consent:/, 'consent'], [/^Why No/, 'cnWhy'], [/^Units/, 'unitsN'], [/^Connection/, 'phase'], [/Bill in whose/, 'billName'], [/Already has solar/, 'hasSolar'], [/^Meter\?/, 'meter'],
+  [/Photo of the bill/, '[data-k="bill"]'], [/meter place/, '[data-k="meterPh"]'], [/^Roof type/, 'roof'], [/^Floors/, 'floors'], [/^Steps/, 'steps'], [/^Shade/, 'shade'], [/^Trees/, 'trees'],
+  [/^Photo (north|east|south|west)/, 'dirBox'], [/House photo 2/, '[data-k="photo2"]'], [/Panel structure/, 'struct'], [/^Earth pits/, 'pits'], [/^Soil at the earth pit/, 'soil'], [/earth pit spot\./, '[data-k="pitPh"]'],
+  [/^Roof length/, 'rl'], [/^Roof width/, 'rw'], [/^Earthing/, 'earth'], [/^DC cable/, 'dc'], [/^AC cable/, 'ac'], [/consent form/, 'cfCam'], [/^Location/, 'gps'], [/^(Photo: customer|House photo\.)/, '[data-k="photo"]']];
+function goTo(msg) {
+  const g = GO.find(x => x[0].test(msg)); if (!g) return; const el = g[1][0] === '[' ? document.querySelector(g[1]) : $(g[1]); if (!el) return;
+  const box = el.closest('.card') || el; box.scrollIntoView({ block: 'center', behavior: 'smooth' }); el.classList.add('flash'); setTimeout(() => el.classList.remove('flash'), 2200);
+}
 async function submit() {
-  const p = problems(); $('err').innerHTML = p.map(x => '<li>' + esc(x) + '</li>').join('');
-  if (p.length) { $('err').scrollIntoView({ block: 'center' }); return; }
+  const p = problems(); $('err').innerHTML = p.map((x, i) => '<li data-go="' + i + '"><u>' + esc(x) + '</u></li>').join('');
+  $('err').onclick = e => { const li = e.target.closest('li[data-go]'); if (li) goTo(p[Number(li.dataset.go)]); };
+  if (p.length) { if (p.length === 1) goTo(p[0]); else $('err').scrollIntoView({ block: 'center' }); return; }
   const b = $('submit'); b.disabled = true; b.textContent = 'Saving…';
   try {
     const yes = F.avail === 'Yes' && F.consent === 'Yes', v = id => $(id).value;
