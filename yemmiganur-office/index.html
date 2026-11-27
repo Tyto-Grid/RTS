@@ -150,6 +150,9 @@ details.det { margin-top: 6px; } details.det > summary { cursor: pointer; color:
 .tl { margin-top: 4px; } .tli { display: flex; gap: 10px; align-items: flex-start; margin: 6px 0; font-size: 14px; }
 .ph.tph { width: 132px; height: 96px; flex: none; } .phlink { flex: none; font-size: 12px; color: var(--accent); cursor: pointer; text-decoration: underline; white-space: nowrap; margin-top: 2px; }
 .aph { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; } .aph[hidden] { display: none; } .aphi { text-align: center; }
+.chips { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; } .chip { border: 1px solid var(--line); background: var(--panel); border-radius: 999px; padding: 6px 14px; cursor: pointer; font: inherit; }
+.chip.on { background: var(--accent); color: #fff; border-color: var(--accent); } .chip.c-bad b { color: var(--bad); } .chip.c-ok b { color: var(--ok); } .chip.on b { color: #fff; }
+tr.golink { cursor: pointer; } tr.golink:hover td { background: var(--info-soft, #eef4ff); }
 </style>
 </head>
 <body>
@@ -477,7 +480,7 @@ function listPage() {
       return '<button class="chip' + (c[0] === CHIP ? ' on' : '') + '" data-chip="' + c[0] + '">' + esc(c[1]) + ' <b>' + N(k) + '</b></button>'; }).join('') + '</div>' : '') +
     '<div class="toolbar"><h2>' + N(R.length) + ' service numbers</h2>' + (can.work() ? '<button class="btn" id="csv">⬇ This list (CSV)</button>' : '') + '</div>' +
     (R.length ? '<div class="tw"><table><thead><tr><th>Service no.</th><th>Name</th><th>Distribution</th><th>Stage</th><th>Survey</th><th>Verdict</th><th>ULA</th></tr></thead><tbody>' +
-      R.slice(0, 1500).map(s => '<tr><td class="mono">' + esc(s.sn) + '</td><td>' + esc(s.name) +
+      R.slice(0, 1500).map(s => '<tr' + (s.sv ? ' class="golink" data-gosn="' + esc(s.sn) + '" title="Open this survey – Accept / Reject"' : '') + '><td class="mono">' + esc(s.sn) + (s.sv ? ' <span class="small" style="color:var(--accent)">open ›</span>' : '') + '</td><td>' + esc(s.name) +
         (s.prob ? '<div class="small" style="color:var(--bad)">' + esc(s.prob) + '</div>' : '') + (s.rej ? '<div class="small" style="color:var(--bad)">Portal rejected: ' + esc(s.rej) + '</div>' : '') +
         (s.shared ? '<div class="small" style="color:var(--warn)">DB mobile ' + esc(s.mob) + ' shared with ' + (MOBMAP[s.mob] || []).filter(x => x !== s.sn).join(', ') + '</div>' : '') +
         (s.na && !s.sv ? '<div class="small muted">Not available ×' + s.na[0] + ' · last ' + esc(dmy(s.na[1])) + (s.na[2] ? ' · ' + esc(s.na[2]) : '') + '</div>' : '') +
@@ -498,7 +501,7 @@ function csvDownload(rows, name) {
 }
 
 // ---------------------------------------------------------------- survey page
-let SVD = null, SVF = { vil: '', g: '', p: '' };
+let SVD = null, SVF = { vil: '', g: '', p: '', a: '' }, SVBACK = '';
 async function surveyPage(reload) {
   if (!SVD || reload) {
     loading('Loading surveys…');
@@ -537,6 +540,9 @@ async function surveyPage(reload) {
     '<div class="toolbar"><h2>' + rows.length + ' surveyed house' + (rows.length === 1 ? '' : 's') + '</h2>' +
     opt('svVil', vils.map(v => [v, v]), SVF.vil, 'All distributions') + opt('svG', [['Male', 'Male'], ['Female', 'Female'], ['Other', 'Other']], SVF.g, 'All genders') +
     opt('svP', [['GO', 'Can go ahead (all three)']].concat(VERD.map(v => [v, v])), SVF.p, 'All verdicts') + '</div>' +
+    (() => { const R0 = svRows0(), n = k => R0.filter(r => svA(r) === k).length, ch = (k, l, cls) => '<button class="chip ' + cls + (SVF.a === k ? ' on' : '') + '" data-sva="' + k + '">' + l + ' <b>' + (k ? n(k) : R0.length) + '</b></button>';
+      return '<div class="chips" style="margin:6px 0 10px">' + (SVBACK ? '<button class="btn" id="svBack">‹ Back to the list</button> ' : '') + ch('', 'All', '') + ch('Held', 'Held – your decision', 'c-bad') + ch('Accepted', 'Accepted', 'c-ok') +
+        ch('Pending', 'Waiting for AI', '') + ch('Not payable', 'Not payable', '') + ch('Rejected', 'Rejected', '') + ch('Other', 'Consent No / not met', '') + '</div>'; })() +
     (!can.work() ? '' : '<div class="toolbar"><button class="btn pri" id="svNew"' + (fresh.length ? '' : ' disabled') + '>⬇ Download new (' + fresh.length + ')</button>' +
     '<span class="small muted">' + (fresh.length ? 'Excel ' + gc(2) + ' · folder 1: ' + gc(1) + ' · folder 2: ' + gc(2) + ' · folder 3: ' + gc(3) : '') + '</span><span class="grow"></span>' +
     '<select id="svAgain"' + ((SVD.batches || []).length ? '' : ' disabled') + '><option value="">Download again…</option>' + (SVD.batches || []).map(b => '<option value="' + esc(b.id) + '">' + esc(svBatchLabel(b)) + ' (' + b.n + ')</option>').join('') + '</select>' +
@@ -556,6 +562,12 @@ async function surveyPage(reload) {
   autoThumbs(48);
 }
 function svRows() {
+  const q = norm($('q').value);
+  return svRows0().filter(r => !SVF.a || svA(r) === SVF.a);
+}
+// payment / office status of a survey row: Held = waits for your Accept or Reject
+const svA = r => r.consent !== 'Yes' ? 'Other' : ({ Accepted: 'Accepted', Held: 'Held', Pending: 'Pending', Rejected: 'Rejected' }[r.acc] || 'Not payable');
+function svRows0() {
   const q = norm($('q').value);
   return (SVD ? SVD.rows : []).filter(r => (!SVF.vil || r.dist === SVF.vil) && (!SVF.g || r.gender === SVF.g) &&
     (!SVF.p || (SVF.p === 'GO' ? GO(r.verdict) : r.verdict === SVF.p)) && (!q || norm(r.sn + r.name + r.mobile + r.dist).includes(q)));
@@ -806,9 +818,12 @@ function drawUsers(list) {
 
 // ---------------------------------------------------------------- events
 document.addEventListener('click', async e => {
-  const t = e.target.closest('button, tr[data-vil], .ph, .phlink, [data-list]'); if (!t) return;
+  const t = e.target.closest('button, tr[data-vil], tr[data-gosn], .ph, .phlink, [data-list]'); if (!t) return;
   if (t.id === 'cfDark') return cfDarkAll();
   if (t.id === 'cfStop') { CF_RUN = false; t.hidden = true; return; }
+  if (t.dataset.sva !== undefined) { SVF.a = SVF.a === t.dataset.sva ? '' : t.dataset.sva; return surveyPage(); }
+  if (t.id === 'svBack') { $('q').value = ''; const back = SVBACK; SVBACK = ''; PAGE = back.page; LIST = back.list || LIST; CHIP = back.chip || ''; return render(); }
+  if (t.dataset.gosn) { SVBACK = { page: PAGE, list: LIST, chip: CHIP }; $('q').value = t.dataset.gosn; SVF = { vil: '', g: '', p: '', a: '' }; PAGE = 'survey'; return render(); }
   if (t.dataset.allph) { const x = $('ap_' + t.dataset.allph); if (x) { x.hidden = !x.hidden; if (!x.hidden) autoThumbs(30); } return; }
   if (t.classList.contains('phlink') && t.dataset.photo) { bigPhoto(t.dataset.photo); return; }
   if (t.dataset.tf !== undefined) { TECHF = TECHF === t.dataset.tf ? '' : t.dataset.tf; return techPage(); }
@@ -817,6 +832,7 @@ document.addEventListener('click', async e => {
   if (t.dataset.tdec) { const [id, dec] = t.dataset.tdec.split('|'); t.disabled = true;
     try { await run('setTechDecision', KEY, id, dec); const r = TECH.find(x => x.id === id); if (r) { r.dec = dec; r.decBy = dec ? 'you' : ''; } techPage(); } catch (er) { alert(er.message || er); t.disabled = false; } return; }
   if (t.id === 'alertsBtn') { const x = $('alertsBox'); if (x) x.hidden = !x.hidden; return; }
+  if (t.dataset.page && SVBACK) { SVBACK = ''; $('q').value = ''; }
   if (t.dataset.page) { PAGE = t.dataset.page; if (PAGE === 'list') CHIP = LISTS[LIST || 'TODO'].def || ''; return render(); }
   if (t.dataset.list) { LIST = t.dataset.list; CHIP = LISTS[LIST].def || ''; PAGE = 'list'; return render(); }
   if (t.dataset.lst) { LIST = t.dataset.lst; CHIP = LISTS[LIST].def || ''; return render(); }
